@@ -33,7 +33,12 @@ def _hint_list(paths: list[str], inv: Inventory) -> str:
 
 
 def _yaml_list(items: list[str], indent: str = "  ") -> str:
-    return "\n".join(f"{indent}- {it}" for it in items) or f"{indent}- []"
+    lines = []
+    for it in items:
+        # quote YAML-unsafe scalars: `**` reads as an alias node, etc.
+        safe = f'"{it}"' if it.startswith(("*", "&", "!", "{", "[", "#")) else it
+        lines.append(f"{indent}- {safe}")
+    return "\n".join(lines) or f"{indent}- []"
 
 
 def _brief_bullets(brief: str) -> str:
