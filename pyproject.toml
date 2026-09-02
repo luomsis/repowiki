@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "repowiki"
+version = "0.1.0"
+description = "Deterministic repo-wiki build system (Qoder RepoWiki-style output), driven by any coding agent. Zero LLM, zero network."
+requires-python = ">=3.10"
+dependencies = ["pyyaml>=6", "rich>=13"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.scripts]
+repowiki = "repowiki.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+repowiki = ["templates/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
