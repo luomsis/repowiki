@@ -8,7 +8,7 @@
 
 ```
 ┌────────────┐  plan     ┌─────────────────────────────────────────┐
-│  驱动 agent │ ────────▶ │ .qoder/repowiki/state/  任务清单+规格    │
+│  驱动 agent │ ────────▶ │ .repowiki/state/  任务清单+规格    │
 │ (串行/并发) │ ◀──────── │  catalog → pages → overview 三阶段      │
 │            │  next     │  原子认领 · 断点续跑 · 过期回收           │
 │  写页面/JSON │ ────────▶ │ zh/content/**.md  (校验+自动修复)       │
@@ -36,7 +36,7 @@ repowiki finalize ~/code/myrepo      # 组装 metadata.json（两步：先创建
 输出结构（与 Qoder RepoWiki 格式一致）：
 
 ```
-myrepo/.qoder/repowiki/
+myrepo/.repowiki/
 ├── zh/
 │   ├── content/            # 章节树：目录名=章节名，索引页+子页，固定模板
 │   │   ├── 快速开始.md      # 顶级独立页

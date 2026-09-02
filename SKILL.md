@@ -57,4 +57,4 @@ loop:
 - **只写任务规格指定的 output 文件**，绝不改动仓库源码。
 - 页面遵循规格内嵌的模板与 STYLE 规范：必备小节齐全、每节末尾「章节来源」、每个 mermaid 图后「图表来源」、`[path:Lx-Ly](file://path#Lx-Ly)` 格式、行号不越界、页间零链接、不用 emoji/表格。
 - `check` 的确定性缺陷（锚点/行号/H1）会被自动修复，无需手动处理；只需修复 `errors` 列出的语义问题。
-- 输出位于 `<repo>/.qoder/repowiki/`（zh/content 页面、zh/meta 元数据、knowledge/zh 知识卡片）。
+- 输出位于 `<repo>/.repowiki/`（zh/content 页面、zh/meta 元数据、knowledge/zh 知识卡片）。

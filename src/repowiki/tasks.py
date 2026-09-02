@@ -88,7 +88,7 @@ def build_page_tasks(paths: WikiPaths, nodes: list[FlatNode], inv: Inventory, ma
             n.title for n in nodes
             if n.parent_id == node.parent_id and n.id != node.id
         ]
-        output_abs = str(Path(".qoder/repowiki") / node.output)
+        output_abs = str(Path(".repowiki") / node.output)
         spec = templates.render_file(
             "page_task.md",
             TASK_ID=node.id,
@@ -114,7 +114,7 @@ def build_page_tasks(paths: WikiPaths, nodes: list[FlatNode], inv: Inventory, ma
 def build_overview_task(paths: WikiPaths, repo_name: str, nodes: list[FlatNode]) -> dict:
     spec = templates.render_file(
         "overview_task.md",
-        OUTPUT_ABS=".qoder/repowiki/zh/meta/wiki-overview.md",
+        OUTPUT_ABS=".repowiki/zh/meta/wiki-overview.md",
         REPO_NAME=repo_name,
         CATALOG_TREE=catalog_tree_text(nodes),
         STYLE=templates.load("STYLE.md"),
@@ -129,7 +129,7 @@ def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str]
     old = (paths.root / node.output)
     old_text = old.read_text(encoding="utf-8") if old.exists() else "<页面文件不存在——按 page 模板全量撰写>"
     task_id = f"{node.id}-update"
-    output_abs = str(Path(".qoder/repowiki") / node.output)
+    output_abs = str(Path(".repowiki") / node.output)
     spec = templates.render_file(
         "update_task.md",
         TASK_ID=task_id,
@@ -179,7 +179,7 @@ def build_knowledge_tasks(paths: WikiPaths, plan: dict) -> list[dict]:
             TASK_ID=task_id,
             TITLE=mod["title"],
             OUTPUT_DIR=out_dir,
-            OUTPUT_DIR_ABS=f".qoder/repowiki/{out_dir}",
+            OUTPUT_DIR_ABS=f".repowiki/{out_dir}",
             SCOPE=", ".join(mod.get("scope") or []) or "<整个仓库>",
             CHILDREN=", ".join(
                 m["title"] for m in plan.get("modules", []) if m["id"] in (mod.get("children") or [])
@@ -198,7 +198,7 @@ def build_knowledge_tasks(paths: WikiPaths, plan: dict) -> list[dict]:
             TITLE=card["title"],
             CATEGORY=card.get("category", ""),
             OUTPUT=out,
-            OUTPUT_ABS=f".qoder/repowiki/{out}",
+            OUTPUT_ABS=f".repowiki/{out}",
             SCOPE_YAML=_yaml_list(card.get("scope") or ["**"]),
             SOURCE_FILES_YAML=_yaml_list(card.get("source_files") or []),
             SOURCE_FILES=_hint_list(card.get("source_files") or [], Inventory(repo_root="")),

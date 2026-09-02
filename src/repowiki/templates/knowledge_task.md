@@ -8,7 +8,7 @@ output: state/knowledge.json
 
 # 任务：规划仓库知识库（模块树 + 机制卡片清单）
 
-你的唯一产出是一个 JSON 文件：`.qoder/repowiki/state/knowledge.json`。
+你的唯一产出是一个 JSON 文件：`.repowiki/state/knowledge.json`。
 **不要写任何卡片或模块文档，不要改动仓库其他文件。**
 
 ## 仓库信息

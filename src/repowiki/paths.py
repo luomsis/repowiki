@@ -80,7 +80,7 @@ class WikiPaths:
 
     @property
     def root(self) -> Path:
-        return self.repo_root / ".qoder" / "repowiki"
+        return self.repo_root / ".repowiki"
 
     @property
     def state_dir(self) -> Path:

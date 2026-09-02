@@ -19,7 +19,7 @@ output: zh/meta/wiki-overview.md
 {{CATALOG_TREE}}
 ```
 
-- 建议通读部分代表性页面（.qoder/repowiki/zh/content/ 下）后再动笔。
+- 建议通读部分代表性页面（.repowiki/zh/content/ 下）后再动笔。
 
 ## 内容要求（纯 markdown，不要 YAML front matter）
 1. 一级标题为「{{REPO_NAME}} Wiki 总览」。

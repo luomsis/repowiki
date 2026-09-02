@@ -38,6 +38,6 @@ hint_files:
 4. 简介之后每个小节末尾都有「章节来源」；每个 mermaid 图后都有「图表来源」；链接格式 `[path:Lx-Ly](file://path#Lx-Ly)`，行号不得超出文件实际行数。
 5. 至少 2 个 mermaid 图（结构图 + 时序/依赖图）。
 6. 除模板列出的必备小节外，可按需增加「附录：<主题>」小节。
-7. 禁止链接任何 `.qoder/repowiki/` 下的其他页面。
+7. 禁止链接任何 `.repowiki/` 下的其他页面。
 
 完成后运行：`repowiki check <仓库路径> --task {{TASK_ID}}`

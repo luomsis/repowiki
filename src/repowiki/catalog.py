@@ -28,7 +28,7 @@ class FlatNode:
     page_brief: str
     parent_id: str | None
     depth: int
-    output: str  # relative to .qoder/repowiki/, e.g. zh/content/项目概述/项目概述.md
+    output: str  # relative to .repowiki/, e.g. zh/content/项目概述/项目概述.md
     dir: str  # containing directory relative to wiki root ("" for standalone pages)
 
     def chapter_path(self, by_id: dict[str, "FlatNode"]) -> str:

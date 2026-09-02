@@ -8,7 +8,7 @@ output: state/catalog.json
 
 # 任务：为仓库规划 Wiki 目录树
 
-你的唯一产出是一个 JSON 文件：`.qoder/repowiki/state/catalog.json`（相对仓库根目录）。
+你的唯一产出是一个 JSON 文件：`.repowiki/state/catalog.json`（相对仓库根目录）。
 **不要写任何 wiki 页面，不要改动仓库其他文件。**
 
 ## 仓库信息
