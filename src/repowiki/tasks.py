@@ -114,6 +114,7 @@ def build_page_tasks(paths: WikiPaths, nodes: list[FlatNode], inv: Inventory, ma
 def build_overview_task(paths: WikiPaths, repo_name: str, nodes: list[FlatNode]) -> dict:
     spec = templates.render_file(
         "overview_task.md",
+        OUTPUT="zh/meta/wiki-overview.md",
         OUTPUT_ABS=".repowiki/zh/meta/wiki-overview.md",
         REPO_NAME=repo_name,
         CATALOG_TREE=catalog_tree_text(nodes),
