@@ -74,31 +74,40 @@ loop:
 **无人值守（任何 headless agent CLI，由你决定用哪个）**：
 
 ```bash
-repowiki plan . && repowiki next . --claim --json | jq -r '.tasks[0].id' >/dev/null
+#!/bin/bash
+# worker.sh —— 把 claude 换成 codex exec / opencode run，工具不感知、不限制用哪个 agent
 while :; do
   TASK=$(repowiki next . --claim --batch 1 --json)
-  echo "$TASK" | jq -e '.tasks | length == 0' >/dev/null && break
-  claude -p "$(echo "$TASK" | jq -r '.tasks[0].instructions')" --permission-mode acceptEdits
-  repowiki check . --task "$(echo "$TASK" | jq -r '.tasks[0].id')"
+  N=$(echo "$TASK" | jq '.tasks | length')
+  if [ "$N" -eq 0 ]; then
+    [ "$(echo "$TASK" | jq '.busy')" -eq 0 ] && break   # 空且无人执行 → 退出
+    sleep 30 && continue                                # 空但 busy>0 → 等待重试
+  fi
+  ID=$(echo "$TASK" | jq -r '.tasks[0].id')
+  claude -p "$(echo "$TASK" | jq -r '.tasks[0].instructions')" --permission-mode acceptEdits &
+  while kill -0 $! 2>/dev/null; do
+    repowiki touch . --task "$ID"; sleep 300            # 执行期心跳，防长任务被回收
+  done
+  repowiki check . --task "$ID" --worker my-worker
 done
-# 把 claude 换成 codex exec / opencode run —— 工具不感知、不限制用哪个 agent
 ```
 
 ## 命令一览
 
 | 命令 | 作用 |
 |---|---|
-| `plan <repo> [--replan] [--max-pages N] [--knowledge]` | 扫描+生成任务清单；已有合法 catalog.json 则直接展开页面任务 |
+| `plan <repo> [--replan [--force]] [--max-pages N] [--knowledge]` | 扫描+生成任务清单；已有合法 catalog.json 则直接展开页面任务；有任务执行中时 replan 需 --force |
 | `next [--claim] [--batch N] [--json]` | 领取就绪任务（阶段门控：attempts 少者优先）；`--json` 含完整 instructions |
-| `check [--task ID]` | 校验产出；锚点/行号/H1 自动修复；catalog/knowledge-plan 通过后自动展开后续任务 |
+| `touch --task ID` | 执行期心跳：刷新认领，防长任务被过期回收 |
+| `check --task ID \| --all` | 校验产出；锚点/行号/H1 自动修复；catalog/knowledge-plan 通过后自动展开后续任务；done 为终态（只读报告）；他人认领的任务需 --force |
 | `release --task ID [--force]` | 释放认领（崩溃恢复） |
 | `finalize` | 组装 metadata.json；要求全部任务 done |
-| `update [--since <sha>]` | git diff → 受影响页面（含祖先链）→ 增量重写任务（附「更新摘要」） |
+| `update [--since <sha>]` | git diff → 受影响页面（含祖先链）→ 增量重写任务（附「更新摘要」）；仅识别**已提交**变更（since..HEAD），工作区未提交改动不可见 |
 | `knowledge` | 追加知识卡片任务集（六类机制卡片 + 模块文档） |
 | `status` | 进度 / 失败列表 / 过期认领 |
 | `clean` | 删除整个 `state/`（wiki 产出保留；失去 update/续跑/幂等 plan） |
 
-退出码：`0` 成功，`1` 校验失败或用法错误，`2` 状态冲突（任务被他人认领）。
+退出码：`0` 成功，`1` 校验失败或用法错误，`2` 状态冲突（任务被他人认领），`3` 进展性等待（finalize 已创建 overview 任务，完成后再次运行即可）。
 
 ## 可靠性设计
 
@@ -117,6 +126,13 @@ done
 - `metadata.json` 形状兼容但不输出加密 `raw_data`/`recovery_checkpoint`（内部状态在 `state/`）。
 - ADR 类知识卡片（源自 Qoder 会话历史）不生成；机制卡片/模块文档完整支持。
 - 仅简体中文（`zh/`）、仅 POSIX 路径。
+
+## 已知边界
+
+- `overview` 总览不参与增量更新：结构性重构后建议 `plan --replan` 全量重生成。
+- 每个任务规格内嵌完整模板与文风规范（约 4-6k tokens）——换取任务自包含与并行安全；
+  小上下文 agent 可将规格中的模板段落替换为对 `templates/` 目录的引用。
+- 页面语言硬性为中文（校验器强制中文小节标题）；`file://` 引用解析、程序化领取依赖 `jq` 属常见但非必需。
 
 ## Non-Goals
 

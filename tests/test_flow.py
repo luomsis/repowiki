@@ -184,8 +184,13 @@ class TestUpdate:
         assert "c0101-update" in index["tasks"]
         assert "c01-update" in index["tasks"]
         assert "c02-update" not in index["tasks"]
-        spec = (paths.tasks_dir / "c0101-update.md").read_text()
-        assert "更新摘要" in spec and "models.py" in spec
+        # c01 has an old page on disk -> real page_update spec with 更新摘要
+        spec = (paths.tasks_dir / "c01-update.md").read_text()
+        assert "更新摘要" in spec
+        # c0101 never generated a page -> falls back to a fresh page task
+        assert index["tasks"]["c0101-update"]["kind"] == "page"
+        spec2 = (paths.tasks_dir / "c0101-update.md").read_text()
+        assert "更新摘要" not in spec2 and "models.py" in spec2
 
     def test_update_requires_git(self, repo):
         write_catalog(WikiPaths(repo))

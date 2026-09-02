@@ -72,6 +72,10 @@ def run_update(paths: WikiPaths, since: str | None, as_json: bool) -> int:
 
     store = TaskStore(paths)
     existing = store.load()["tasks"]
+    stale_pending = [
+        tid for tid, t in existing.items()
+        if tid.endswith("-update") and t["status"] in ("pending", "failed", "in_progress")
+    ]
     records = []
     for n in affected:
         tid = f"{n.id}-update"
@@ -81,6 +85,11 @@ def run_update(paths: WikiPaths, since: str | None, as_json: bool) -> int:
     added = store.add_tasks(records)
 
     warnings = []
+    if stale_pending:
+        warnings.append(
+            f"已存在 {len(stale_pending)} 个未完成的增量任务（{', '.join(sorted(stale_pending)[:5])}），"
+            "其规格基于旧变更快照，可能过期；建议先完成或 release 后重跑 update"
+        )
     covered_top_dirs = {d.split("/")[0] for n in nodes for d in n.dependent_files}
     new_top = {c.split("/")[0] for c in changed_set if c.split("/")[0] not in covered_top_dirs}
     if len(new_top) > 2:

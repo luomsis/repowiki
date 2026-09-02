@@ -126,10 +126,29 @@ def build_overview_task(paths: WikiPaths, repo_name: str, nodes: list[FlatNode])
 # --- incremental updates (phase 2 tasks appended post-finalize) ---
 
 def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str], inv: Inventory) -> dict:
-    old = (paths.root / node.output)
-    old_text = old.read_text(encoding="utf-8") if old.exists() else "<页面文件不存在——按 page 模板全量撰写>"
     task_id = f"{node.id}-update"
     output_abs = str(Path(".repowiki") / node.output)
+    old = paths.root / node.output
+    if not old.exists():
+        # nothing to update against — treat as a fresh page task (a brand-new
+        # page must not be forced to carry an 更新摘要 section)
+        spec = templates.render_file(
+            "page_task.md",
+            TASK_ID=task_id,
+            TITLE=node.title,
+            OUTPUT=node.output,
+            OUTPUT_ABS=output_abs,
+            HINT_FILES=_hint_list(node.dependent_files, inv),
+            HINT_FILES_YAML=_yaml_list(node.dependent_files),
+            CHAPTER_PATH=node.chapter_path({node.id: node}),
+            SUMMARY=node.summary or "<catalog 未提供>",
+            PAGE_BRIEF=_brief_bullets(node.page_brief),
+            SIBLINGS="<无姊妹页面>",
+            PAGE_TEMPLATE=templates.render(templates.load("page_template.md"), TITLE=node.title),
+            STYLE=templates.load("STYLE.md"),
+        )
+        write_spec(paths, task_id, spec)
+        return new_task(task_id, "page", 2, node.title, node.output)
     spec = templates.render_file(
         "update_task.md",
         TASK_ID=task_id,
@@ -138,7 +157,7 @@ def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str]
         OUTPUT_ABS=output_abs,
         CHANGED_FILES=_hint_list(changed_files, inv),
         PAGE_BRIEF=_brief_bullets(node.page_brief),
-        OLD_PAGE=old_text,
+        OLD_PAGE=old.read_text(encoding="utf-8"),
         STYLE=templates.load("STYLE.md"),
         HINT_FILES_YAML=_yaml_list(node.dependent_files),
     )

@@ -42,15 +42,19 @@ catalog 任务完成后所有页面任务相互独立，可安全并行：
 
 ```
 loop:
-  1. 运行 `repowiki next <repo> --claim --json`
+  1. 运行 `repowiki next <repo> --claim --json --worker <名字>`
   2. 若 tasks 为空且 busy>0 → 等待 30 秒重试（其他 worker 正在写）
      若 tasks 为空且 busy=0 → 结束
-  3. 按 tasks[0].instructions 执行（只写 instructions 指定的 output 文件）
-  4. 运行 `repowiki check <repo> --task <id> --json`
+  3. 按 tasks[0].instructions 执行（只写 instructions 指定的 output 文件）；
+     撰写期间每隔几分钟运行 `repowiki touch <repo> --task <id> --worker <名字>` 续期认领
+  4. 运行 `repowiki check <repo> --task <id> --worker <名字> --json`
      - ok=true → 回到 1
      - ok=false → 按 errors 修复同一文件后重新 check（最多 3 次，仍失败则
        `repowiki release <repo> --task <id> --force` 并结束本任务）
 ```
+
+注意：`check` 必须显式带 `--task`（或崩溃恢复用 `--all`）；done 是终态，重复 check 只读不改状态；
+`finalize` 第一次运行退出码为 3（表示已创建 overview 任务，属正常进展）。
 
 3. 全部完成后主 agent 执行 `finalize`（两步：创建 overview → 执行 → 再 finalize）。
 

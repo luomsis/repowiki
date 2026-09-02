@@ -34,7 +34,7 @@ class FlatNode:
     def chapter_path(self, by_id: dict[str, "FlatNode"]) -> str:
         parts = [self.title]
         p = self.parent_id
-        while p:
+        while p and p in by_id:
             parts.append(by_id[p].title)
             p = by_id[p].parent_id
         return " > ".join(reversed(parts))

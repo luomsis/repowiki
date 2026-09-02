@@ -26,3 +26,10 @@
     保留 index.json/catalog.json/knowledge.json——update 的增量映射依赖 catalog.json 的
     dependent_files 与树结构（metadata 无 kind 字段无法重建页面路径），index.json 支撑
     plan 幂等与 status。另提供 `clean` 命令整体删除 state/（不删 wiki 本体）。
+11. **生命周期守卫（P0/P1 评审修复）**：`touch` 心跳命令+check 顺带续期（防执行期被抢双写）；
+    done 为终态、重复 check 只读（spec 已清理后翻失败会产生无规格可执行任务）；failed 超过
+    REPOWIKI_MAX_ATTEMPTS 进 exhausted 需 `release --force` 重置（防毒任务空转 worker）；
+    check 必须显式 `--task`/`--all` 且校验认领归属（防跨 worker 误翻）；index.json 用 flock
+    串行化读改写（mtime 复查有 TOCTOU 窗口，6×12 压测丢 3 次更新）；finalize 校验页面存在
+    （--max-pages 试跑不再产生幽灵条目）且首次运行退出码 3 表达进展；replan 有 in_progress
+    时需 --force。
