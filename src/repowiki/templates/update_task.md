@@ -44,4 +44,6 @@ hint_files:
 ## 硬性检查项
 与首次生成相同（H1=「{{TITLE}}」、必备小节齐全、「更新摘要」存在、章节来源/图表来源链接真实且行号不越界、≥2 个 mermaid 图、页间零链接）。
 
+撰写期间每隔几分钟执行 `repowiki touch <仓库路径> --task {{TASK_ID}}` 续期认领（长任务防被回收）。
+
 完成后运行：`repowiki check <仓库路径> --task {{TASK_ID}}`

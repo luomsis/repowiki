@@ -28,4 +28,6 @@ output: {{OUTPUT_DIR}}
 - 不使用标题层级（这些是片段文档，直接正文/bullet）。
 - 篇幅克制：概述 1~2 句、技术栈 1~3 句、架构设计 3~6 条。
 
+撰写期间每隔几分钟执行 `repowiki touch <仓库路径> --task {{TASK_ID}}` 续期认领（长任务防被回收）。
+
 完成后运行：`repowiki check <仓库路径> --task {{TASK_ID}}`

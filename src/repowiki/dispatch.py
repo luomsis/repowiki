@@ -114,41 +114,104 @@ def run_status(paths: WikiPaths, as_json: bool) -> int:
             print(f"  {status}: {n}")
         for f in stats["failed"]:
             print(f"  ✗ failed: {f['id']} {f['title']}")
+        for e in stats["exhausted"]:
+            print(f"  ⛔ exhausted: {e['id']} {e['title']}（已试 {e['attempts']} 次，`release --task {e['id']} --force` 可重置）")
         for s in stats["stale_claims"]:
             print(f"  ⏰ stale: {s['id']}（worker {s['worker']}，心跳 {s['heartbeat_at']}）")
     return 0
 
 
+def run_touch(paths: WikiPaths, task_id: str, worker: str | None, as_json: bool) -> int:
+    store = TaskStore(paths)
+    store.touch(task_id, worker=worker)
+    if as_json:
+        print(json.dumps({"ok": True, "touched": task_id}, ensure_ascii=False))
+    else:
+        print(f"✓ 已续期任务 {task_id} 的认领")
+    return 0
+
+
 # --- check ---
 
-def run_check(paths: WikiPaths, task_id: str | None, as_json: bool) -> int:
+def run_check(paths: WikiPaths, task_id: str | None, as_json: bool,
+              select_all: bool = False, worker: str | None = None,
+              force: bool = False) -> int:
     store = TaskStore(paths)
     data = store.load()
     if not data["tasks"]:
         raise UsageError("没有任务，请先运行 `repowiki plan <repo>`")
+
     if task_id:
-        targets = [task_id] if task_id in data["tasks"] else None
-        if targets is None:
+        if task_id not in data["tasks"]:
             raise UsageError(f"任务不存在: {task_id}")
-    else:
+        targets = [task_id]
+    elif select_all:
         targets = [
             tid for tid, t in data["tasks"].items()
             if t["status"] in ("in_progress", "failed")
         ]
+    else:
+        raise UsageError("请指定 --task <id>（单任务校验）或 --all（检查全部 in_progress/failed，用于崩溃恢复）")
+
     if not targets:
         _emit_check(as_json, ok=True, results=[], note="没有待检查任务（无 in_progress/failed）")
         return 0
+
+    # claim ownership guard: refuse to flip tasks held by a different live worker
+    if worker and not force:
+        for tid in targets:
+            t = data["tasks"][tid]
+            if t["status"] == "in_progress":
+                try:
+                    held = (store._claim_dir(tid) / "worker").read_text(encoding="utf-8").strip()
+                except OSError:
+                    held = ""
+                if held and held != worker:
+                    raise ConflictError(
+                        f"任务 {tid} 由 {held} 认领；如确要代为校验请加 --force"
+                    )
 
     inv = scan(paths.repo_root)
     results = []
     all_ok = True
     for tid in targets:
-        r = _check_one(paths, store, data["tasks"][tid], inv)
+        task = data["tasks"][tid]
+        if task["status"] == "done":
+            # done is terminal (its spec may already be purged). Report only —
+            # never flip status, otherwise the task becomes unexecutable.
+            r = _check_readonly(paths, task, inv)
+            results.append(r)
+            all_ok = all_ok and r["ok"]
+            continue
+        r = _check_one(paths, store, task, inv)
+        if r["status"] == "in_progress":
+            store.heartbeat(tid)  # validating a task also refreshes its claim
         results.append(r)
         all_ok = all_ok and r["ok"]
 
     _emit_check(as_json, ok=all_ok, results=results)
     return 0 if all_ok else 1
+
+
+def _check_readonly(paths: WikiPaths, task: dict, inv) -> dict:
+    """Validate a done task without touching its status."""
+    base = {"id": task["id"], "kind": task["kind"], "title": task["title"], "status": "done"}
+    out = paths.root / task["output"]
+    exists = out.is_dir() if task["kind"] == "knowledge_module" else out.is_file()
+    if not exists:
+        return {**base, "ok": False, "readonly": True,
+                "errors": [f"产出已不存在: {task['output']}（如需重建请用 update 或 plan --replan）"]}
+    if task["kind"] in ("page", "page_update"):
+        from .validate import check_page
+
+        raw = out.read_text(encoding="utf-8")
+        res = check_page(raw, task["title"].replace("（增量更新）", ""), paths.repo_root,
+                         is_update=(task["kind"] == "page_update"))
+        return {**base, "ok": res.ok, "readonly": True, "errors": res.errors,
+                "fixed": [], "warnings": res.warnings,
+                "note": "done 为终态，此结果仅供参考，状态未改变"}
+    return {**base, "ok": True, "readonly": True, "errors": [], "fixed": [],
+            "warnings": [], "note": "done 为终态，产出存在（不做内容重校验）"}
 
 
 def _emit_check(as_json: bool, ok: bool, results: list[dict], note: str = "") -> None:

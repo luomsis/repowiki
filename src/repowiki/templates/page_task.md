@@ -40,4 +40,6 @@ hint_files:
 6. 除模板列出的必备小节外，可按需增加「附录：<主题>」小节。
 7. 禁止链接任何 `.repowiki/` 下的其他页面。
 
+撰写期间每隔几分钟执行 `repowiki touch <仓库路径> --task {{TASK_ID}}` 续期认领（长任务防被回收）。
+
 完成后运行：`repowiki check <仓库路径> --task {{TASK_ID}}`

@@ -20,6 +20,13 @@ from .paths import WikiPaths
 DEFAULT_STALE_SECONDS = 45 * 60
 
 
+def max_attempts() -> int:
+    try:
+        return max(1, int(os.environ.get("REPOWIKI_MAX_ATTEMPTS", "3")))
+    except ValueError:
+        return 3
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -114,14 +121,19 @@ class TaskStore:
         return min(phases) if phases else None
 
     def ready_tasks(self, limit: int = 1) -> list[dict]:
-        """Tasks claimable now: pending/failed in the current open phase."""
+        """Tasks claimable now: pending/failed in the current open phase.
+
+        Failed tasks whose attempts reached the cap are excluded (exhausted);
+        they need an explicit `release --force` reset before retrying."""
         data = self.load()
         phase = self.current_phase(data)
         if phase is None:
             return []
+        cap = max_attempts()
         ready = [
             t for t in data["tasks"].values()
             if t["phase"] == phase and t["status"] in ("pending", "failed")
+            and not (t["status"] == "failed" and t["attempts"] >= cap)
         ]
         order = {tid: i for i, tid in enumerate(data["tasks"])}
         ready.sort(key=lambda t: (t["attempts"], t["phase"], order[t["id"]]))
@@ -188,6 +200,18 @@ class TaskStore:
         task = self.get(task_id)
         if task is None:
             raise KeyError(task_id)
+        cap = max_attempts()
+        if task["status"] == "failed" and task["attempts"] >= cap:
+            # exhausted poison task: --force is the explicit human reset
+            if not force:
+                raise ConflictError(
+                    f"任务 {task_id} 已重试 {task['attempts']} 次仍未通过（上限 {cap}）。"
+                    "确要重置请加 --force"
+                )
+            task.update(status="pending", attempts=0, worker=None,
+                        claimed_at=None, heartbeat_at=None)
+            self._merge_task(task)
+            return task
         if task["status"] != "in_progress":
             raise ConflictError(f"任务 {task_id} 状态为 {task['status']}，无需释放")
         cd = self._claim_dir(task_id)
@@ -216,6 +240,24 @@ class TaskStore:
         except OSError:
             pass
         self.update(task_id, heartbeat_at=now)
+
+    def touch(self, task_id: str, worker: str | None = None) -> dict:
+        """Worker-side heartbeat: call periodically while executing a long task
+        so the claim is not stolen as stale. Fails on tasks not in flight."""
+        task = self.get(task_id)
+        if task is None:
+            raise KeyError(task_id)
+        if task["status"] != "in_progress":
+            raise ConflictError(f"任务 {task_id} 状态为 {task['status']}，无需续期")
+        if worker:
+            try:
+                held = (self._claim_dir(task_id) / "worker").read_text(encoding="utf-8").strip()
+            except OSError:
+                held = ""
+            if held and held != worker:
+                raise ConflictError(f"任务 {task_id} 由 {held} 认领，不是 {worker}")
+        self.heartbeat(task_id)
+        return self.get(task_id)
 
     def cleanup_runtime(self) -> list[str]:
         """Drop runtime artifacts after successful finalize: claim dirs and
@@ -250,11 +292,18 @@ class TaskStore:
             {"id": t["id"], "title": t["title"]}
             for t in tasks if t["status"] == "failed"
         ]
+        cap = max_attempts()
+        exhausted = [
+            {"id": t["id"], "title": t["title"], "attempts": t["attempts"]}
+            for t in tasks
+            if t["status"] == "failed" and t["attempts"] >= cap
+        ]
         return {
             "total": len(tasks),
             "by_status": by_status,
             "current_phase": self.current_phase(data),
             "failed": failed,
+            "exhausted": exhausted,
             "stale_claims": stale,
         }
 

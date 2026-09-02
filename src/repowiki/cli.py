@@ -42,7 +42,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("check", help="validate task output, auto-fix deterministic defects, update status")
     p.add_argument("repo")
-    p.add_argument("--task", default=None, help="check a single task id (default: all claimed-by-me / failed tasks)")
+    p.add_argument("--task", default=None, help="check a single task id")
+    p.add_argument("--all", dest="select_all", action="store_true",
+                   help="check all in_progress/failed tasks (crash recovery / main agent)")
+    p.add_argument("--worker", default=None, help="caller identity; in_progress tasks held by others are refused")
+    p.add_argument("--force", action="store_true", help="check even if claimed by another worker")
+    p.add_argument("--json", action="store_true")
+
+    p = sub.add_parser("touch", help="refresh a task's claim while executing (heartbeat)")
+    p.add_argument("repo")
+    p.add_argument("--task", required=True)
+    p.add_argument("--worker", default=None)
     p.add_argument("--json", action="store_true")
 
     p = sub.add_parser("release", help="return an in_progress task to pending")
@@ -83,6 +93,7 @@ def main(argv: list[str] | None = None) -> int:
         "plan": cmd_plan,
         "next": cmd_next,
         "check": cmd_check,
+        "touch": cmd_touch,
         "release": cmd_release,
         "finalize": cmd_finalize,
         "update": cmd_update,
@@ -131,7 +142,14 @@ def cmd_next(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in stat
 def cmd_check(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in validate.py
     from .dispatch import run_check
 
-    return run_check(paths, task_id=args.task, as_json=args.json)
+    return run_check(paths, task_id=args.task, as_json=args.json,
+                     select_all=args.select_all, worker=args.worker, force=args.force)
+
+
+def cmd_touch(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in state.py
+    from .dispatch import run_touch
+
+    return run_touch(paths, task_id=args.task, worker=args.worker, as_json=args.json)
 
 
 def cmd_release(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in state.py

@@ -30,4 +30,6 @@ output: zh/meta/wiki-overview.md
 ## 文风
 {{STYLE}}
 
+撰写期间每隔几分钟执行 `repowiki touch <仓库路径> --task {{TASK_ID}}` 续期认领（长任务防被回收）。
+
 完成后运行：`repowiki check <仓库路径> --task overview`

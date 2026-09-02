@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import time
 
 import pytest
 from conftest import valid_catalog, valid_page, write_catalog
@@ -301,3 +302,70 @@ class TestCleanup:
         TaskStore(WikiPaths(repo)).update("catalog", status="done")
         run("finalize", str(repo))  # creates overview task, exit 1
         assert (repo / ".repowiki/state/tasks/overview.md").exists()
+
+
+class TestLifecycleGuards:
+    def test_check_requires_selector(self, repo):
+        write_catalog(WikiPaths(repo))
+        run("plan", str(repo))
+        run("next", str(repo), "--claim")
+        assert run("check", str(repo)) == 1  # no --task / --all
+
+    def test_check_done_is_readonly(self, repo):
+        self._make_done_page(repo)
+        # source file gone → validation would fail, but status must stay done
+        (repo / "README.md").unlink()
+        code = run("check", str(repo), "--task", "c01", "--json")
+        index = json.loads((repo / ".repowiki/state/index.json").read_text())
+        assert index["tasks"]["c01"]["status"] == "done"  # unchanged
+        assert code in (0, 1)
+
+    def _make_done_page(self, repo):
+        write_catalog(WikiPaths(repo))
+        run("plan", str(repo))
+        p = repo / ".repowiki/zh/content/项目概述/项目概述.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(valid_page("项目概述"), encoding="utf-8")
+        TaskStore(WikiPaths(repo)).update("c01", status="done")
+
+    def test_touch_refreshes_claim(self, repo):
+        run("plan", str(repo))  # no catalog.json yet -> catalog task
+        run("next", str(repo), "--claim", "--worker", "wz")
+        store = TaskStore(WikiPaths(repo))
+        before = store._claim_dir("catalog").stat().st_mtime_ns
+        time.sleep(0.01)
+        assert run("touch", str(repo), "--task", "catalog", "--worker", "wz") == 0
+        after = store._claim_dir("catalog").stat().st_mtime_ns
+        assert after > before
+        # other worker's identity is refused
+        assert run("touch", str(repo), "--task", "catalog", "--worker", "other") == 2
+
+    def test_poison_task_exhausts_and_reset(self, repo):
+        run("plan", str(repo))  # -> catalog task
+        run("next", str(repo), "--claim", "--worker", "w0")
+        store = TaskStore(WikiPaths(repo), stale_seconds=1)
+        store.update("catalog", status="failed", attempts=3)  # reached the cap
+        stats = store.stats()
+        assert any(e["id"] == "catalog" for e in stats["exhausted"])
+        assert [t["id"] for t in store.ready_tasks()] == []  # no longer claimable
+        # explicit human reset
+        assert run("release", str(repo), "--task", "catalog", "--force") == 0
+        t = store.get("catalog")
+        assert t["status"] == "pending" and t["attempts"] == 0
+        # without --force the reset is refused
+        store.update("catalog", status="failed", attempts=3)
+        assert run("release", str(repo), "--task", "catalog") == 2
+
+    def test_check_refuses_foreign_claim(self, repo):
+        run("plan", str(repo))
+        write_catalog(WikiPaths(repo))
+        run("next", str(repo), "--claim", "--worker", "holder")
+        assert run("check", str(repo), "--task", "catalog", "--worker", "intruder") == 2
+        assert run("check", str(repo), "--task", "catalog", "--worker", "intruder", "--force") == 0
+
+    def test_check_all_still_works(self, repo):
+        run("plan", str(repo))
+        write_catalog(WikiPaths(repo))
+        run("next", str(repo), "--claim")
+        run("check", str(repo), "--task", "catalog")  # done
+        assert run("check", str(repo), "--all") == 0  # nothing in flight
