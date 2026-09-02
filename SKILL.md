@@ -1,6 +1,7 @@
 ---
 name: repowiki
 description: Generate a Qoder-style RepoWiki (structured Chinese wiki with mermaid diagrams and file:// source links) for any repository. Use when the user asks to "generate repo wiki", "生成/更新 repowiki", "给仓库生成 wiki 文档", or mentions repowiki/仓库文档/RepoWiki. Works on any repo path; concurrent subagents supported.
+trigger: /repowiki
 ---
 
 # repowiki：为仓库生成 Qoder 风格的 Wiki
