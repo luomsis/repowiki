@@ -440,3 +440,38 @@ class TestP1Guards:
         assert all(oks)
         data = store.load()["tasks"]
         assert sum(1 for t in data.values() if t["status"] == "done") == 12
+
+
+class TestWatch:
+    def _setup_tasks(self, repo, n=2):
+        paths = WikiPaths(repo)
+        paths.ensure()
+        store = TaskStore(paths)
+        store.replace_all([new_task(f"t{i}", "page", 2, f"页{i}", f"p{i}.md") for i in range(n)])
+        return store
+
+    def test_watch_exits_zero_when_all_done(self, repo):
+        store = self._setup_tasks(repo)
+
+        def finish():
+            time.sleep(0.15)
+            for tid in ("t0", "t1"):
+                store.update(tid, status="done")
+
+        import threading
+        threading.Thread(target=finish, daemon=True).start()
+        assert run("watch", str(repo), "--interval", "0.05", "--timeout", "10") == 0
+
+    def test_watch_stall_exits_one(self, repo):
+        store = self._setup_tasks(repo)
+        store.update("t0", status="failed", attempts=3)  # exhausted
+        store.update("t1", status="done")
+        assert run("watch", str(repo), "--interval", "0.05", "--timeout", "10") == 1
+
+    def test_watch_timeout_exits_one(self, repo):
+        self._setup_tasks(repo)  # tasks stay pending forever
+        assert run("watch", str(repo), "--interval", "0.05", "--timeout", "0.2") == 1
+
+    def test_watch_empty_manifest(self, repo):
+        WikiPaths(repo).ensure()
+        assert run("watch", str(repo), "--interval", "0.05", "--timeout", "1") == 1

@@ -56,6 +56,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--worker", default=None)
     p.add_argument("--json", action="store_true")
 
+    p = sub.add_parser("watch", help="block until all tasks are done (or stalled/timeout); exit 0=completed, 1=stalled/timeout")
+    p.add_argument("repo")
+    p.add_argument("--interval", type=float, default=10.0, help="poll interval seconds (default 10)")
+    p.add_argument("--timeout", type=float, default=3600.0, help="give up after this many seconds (default 3600)")
+    p.add_argument("--json", action="store_true")
+
     p = sub.add_parser("release", help="return an in_progress task to pending")
     p.add_argument("repo")
     p.add_argument("--task", required=True)
@@ -95,6 +101,7 @@ def main(argv: list[str] | None = None) -> int:
         "next": cmd_next,
         "check": cmd_check,
         "touch": cmd_touch,
+        "watch": cmd_watch,
         "release": cmd_release,
         "finalize": cmd_finalize,
         "update": cmd_update,
@@ -152,6 +159,12 @@ def cmd_touch(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in sta
     from .dispatch import run_touch
 
     return run_touch(paths, task_id=args.task, worker=args.worker, as_json=args.json)
+
+
+def cmd_watch(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in dispatch.py
+    from .dispatch import run_watch
+
+    return run_watch(paths, interval=args.interval, timeout=args.timeout, as_json=args.json)
 
 
 def cmd_release(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in state.py

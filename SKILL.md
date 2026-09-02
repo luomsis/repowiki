@@ -56,7 +56,10 @@ loop:
 注意：`check` 必须显式带 `--task`（或崩溃恢复用 `--all`）；done 是终态，重复 check 只读不改状态；
 `finalize` 第一次运行退出码为 3（表示已创建 overview 任务，属正常进展）。
 
-3. 全部完成后主 agent 执行 `finalize`（两步：创建 overview → 执行 → 再 finalize）。
+3. 主 agent 运行 `repowiki watch <repo> --interval 15 --json` 持续监控（可后台执行），
+   watch 自动退出：**exit 0** = 全部完成 → 执行 finalize（两步：创建 overview → 执行 → 再 finalize）；
+   **exit 1** = 停滞或超时 → 用 `repowiki status <repo>` 查看 exhausted/stale 任务并干预
+   （`release --task <id> --force` 重置毒任务，或补派 worker）。
 
 ## 硬性规则
 

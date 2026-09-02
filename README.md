@@ -99,6 +99,7 @@ done
 | `plan <repo> [--replan [--force]] [--max-pages N] [--knowledge]` | 扫描+生成任务清单；已有合法 catalog.json 则直接展开页面任务；有任务执行中时 replan 需 --force |
 | `next [--claim] [--batch N] [--json]` | 领取就绪任务（阶段门控：attempts 少者优先）；`--json` 含完整 instructions |
 | `touch --task ID` | 执行期心跳：刷新认领，防长任务被过期回收 |
+| `watch [--interval S] [--timeout S]` | 阻塞监控直到全部完成（exit 0）或停滞/超时（exit 1）；主会话据此决定 finalize 或干预 |
 | `check --task ID \| --all` | 校验产出；锚点/行号/H1 自动修复；catalog/knowledge-plan 通过后自动展开后续任务；done 为终态（只读报告）；他人认领的任务需 --force |
 | `release --task ID [--force]` | 释放认领（崩溃恢复） |
 | `finalize` | 组装 metadata.json；要求全部任务 done |

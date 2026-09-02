@@ -131,6 +131,79 @@ def run_touch(paths: WikiPaths, task_id: str, worker: str | None, as_json: bool)
     return 0
 
 
+def run_watch(paths: WikiPaths, interval: float, timeout: float, as_json: bool) -> int:
+    """Block until all tasks are done, the pipeline stalls, or timeout.
+
+    Designed for the driving session: spawn background workers, then run
+    watch (foreground or background) — its exit code tells the session what
+    to do next without any polling logic of its own.
+    """
+    import time as _time
+
+    store = TaskStore(paths)
+    data = store.load()
+    if not data["tasks"]:
+        raise UsageError("没有任务，请先运行 `repowiki plan <repo>`")
+
+    started = _time.monotonic()
+    last_line = ""
+    stats = store.stats()
+
+    def snapshot(s: dict) -> str:
+        return json.dumps(s, ensure_ascii=False, sort_keys=True)
+
+    while True:
+        stats = store.stats()
+        done = stats["by_status"].get("done", 0)
+        total = stats["total"]
+        in_flight = [
+            t for t in store.load()["tasks"].values()
+            if t["status"] == "in_progress"
+        ]
+        ready = store.ready_tasks(limit=1)
+
+        line = (
+            f"[{_time.strftime('%H:%M:%S')}] {done}/{total} done"
+            f" · 阶段{stats['current_phase']}"
+            f" · 进行中: {', '.join(t['id'] + '(' + (t['worker'] or '?') + ')' for t in in_flight) or '无'}"
+            f" · failed {len(stats['failed'])} · exhausted {len(stats['exhausted'])}"
+        )
+        if line != last_line:
+            if not as_json:
+                print(line, flush=True)
+            last_line = line
+
+        # terminal: everything done
+        if total > 0 and done == total:
+            if as_json:
+                print(json.dumps({"reason": "completed", "stats": stats}, ensure_ascii=False, indent=2))
+            else:
+                print(f"✓ 全部 {total} 个任务完成")
+            return 0
+
+        # terminal: stalled — work remains but nothing is running or claimable
+        if not in_flight and not ready:
+            reason = (
+                f"停滞：剩余 {total - done} 个任务未完成，但无执行中且无可领取任务"
+                "（通常是 exhausted 毒任务；`repowiki status` 查看详情，`release --force` 可重置）"
+            )
+            if as_json:
+                print(json.dumps({"reason": "stalled", "detail": reason, "stats": stats}, ensure_ascii=False, indent=2))
+            else:
+                print(f"⏹ {reason}")
+            return 1
+
+        if _time.monotonic() - started >= timeout:
+            reason = f"超时（{int(timeout)}s）：剩余 {total - done} 个任务未完成"
+            if as_json:
+                print(json.dumps({"reason": "timeout", "detail": reason, "stats": stats}, ensure_ascii=False, indent=2))
+            else:
+                print(f"⏰ {reason}")
+            return 1
+
+        _time.sleep(interval)
+
+
 # --- check ---
 
 def run_check(paths: WikiPaths, task_id: str | None, as_json: bool,
