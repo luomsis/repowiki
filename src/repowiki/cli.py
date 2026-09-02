@@ -68,6 +68,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
 
+    p = sub.add_parser("clean", help="remove .repowiki/state entirely (wiki output is kept)")
+    p.add_argument("repo")
+    p.add_argument("--json", action="store_true")
+
     return parser
 
 
@@ -84,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
         "update": cmd_update,
         "knowledge": cmd_knowledge,
         "status": cmd_status,
+        "clean": cmd_clean,
     }
     try:
         return handlers[args.command](args, paths)
@@ -157,6 +162,12 @@ def cmd_status(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in di
     from .dispatch import run_status
 
     return run_status(paths, as_json=args.json)
+
+
+def cmd_clean(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in state.py
+    from .state import run_clean
+
+    return run_clean(paths, as_json=args.json)
 
 
 if __name__ == "__main__":

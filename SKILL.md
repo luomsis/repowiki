@@ -26,6 +26,8 @@ repowiki next <repo> --claim --json   # 2. 领取一个任务（读返回的 ins
 repowiki check <repo> --task <id>     # 4. 校验；失败则按 errors 修复后重新 check
 #    5. 回到第 2 步，直到 next 返回空且 busy=0
 repowiki finalize <repo>      # 6. 首次会创建 overview 任务→执行→再 finalize 生成 metadata.json
+#    （finalize 成功后自动清理 state/claims 与 state/tasks；catalog/index 保留供 update）
+#    不需要增量更新时可执行 `repowiki clean <repo>` 删除全部任务状态
 ```
 
 任务类型：`catalog`（目录树规划，产出 state/catalog.json）→ `page`（逐页撰写）→ `overview`（总览）；

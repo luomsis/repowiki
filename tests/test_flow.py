@@ -234,3 +234,70 @@ def _head(repo) -> str:
     return subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=str(repo), capture_output=True, check=True
     ).stdout.decode().strip()
+
+
+class TestCleanup:
+    def test_finalize_purges_runtime_keeps_planning(self, repo):
+        write_catalog(WikiPaths(repo))
+        run("plan", str(repo))
+        catalog = valid_catalog()
+        for n in flatten(catalog):
+            p = repo / ".repowiki" / n.output
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(valid_page(n.title), encoding="utf-8")
+            TaskStore(WikiPaths(repo)).update(n.id, status="done")
+        TaskStore(WikiPaths(repo)).update("catalog", status="done")
+        run("finalize", str(repo))
+        ov = repo / ".repowiki/zh/meta/wiki-overview.md"
+        ov.write_text("# demo Wiki 总览\n\n## 章节导航\nx\n\n## 如何使用本 Wiki\ny\n", encoding="utf-8")
+        TaskStore(WikiPaths(repo)).update("overview", status="done")
+        run("check", str(repo), "--task", "overview")
+        assert run("finalize", str(repo)) == 0
+        # runtime artifacts purged
+        assert not (repo / ".repowiki/state/claims").exists()
+        assert not (repo / ".repowiki/state/tasks").exists()
+        # planning artifacts kept
+        assert (repo / ".repowiki/state/index.json").exists()
+        assert (repo / ".repowiki/state/catalog.json").exists()
+
+    def test_update_still_works_after_cleanup(self, git_repo):
+        paths = WikiPaths(git_repo)
+        write_catalog(paths)
+        run("plan", str(paths.repo_root))
+        TaskStore(paths).update("catalog", status="done")
+        meta = {"wiki_repo": {"last_commit_id": _head(git_repo)}}
+        paths.meta_dir.mkdir(parents=True, exist_ok=True)
+        paths.metadata_file.write_text(json.dumps(meta), encoding="utf-8")
+        p = paths.root / "zh/content/项目概述/项目概述.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(valid_page("项目概述"), encoding="utf-8")
+        (git_repo / "src/demo/models.py").write_text("# changed\n")
+        subprocess.run(["git", "add", "-A"], cwd=str(git_repo), check=True, capture_output=True)
+        subprocess.run(["git", "commit", "-qm", "c2"], cwd=str(git_repo), check=True, capture_output=True)
+        run("update", str(git_repo))
+        # update wrote the new spec even though tasks/ was purged
+        assert (paths.tasks_dir / "c0101-update.md").exists()
+
+    def test_clean_removes_state_and_is_idempotent(self, repo):
+        write_catalog(WikiPaths(repo))
+        run("plan", str(repo))
+        assert (repo / ".repowiki/state").exists()
+        assert run("clean", str(repo)) == 0
+        assert not (repo / ".repowiki/state").exists()
+        # wiki output untouched
+        assert (repo / ".repowiki/zh/content").exists()
+        # idempotent
+        assert run("clean", str(repo)) == 0
+
+    def test_first_finalize_does_not_purge(self, repo):
+        write_catalog(WikiPaths(repo))
+        run("plan", str(repo))
+        catalog = valid_catalog()
+        for n in flatten(catalog):
+            p = repo / ".repowiki" / n.output
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(valid_page(n.title), encoding="utf-8")
+            TaskStore(WikiPaths(repo)).update(n.id, status="done")
+        TaskStore(WikiPaths(repo)).update("catalog", status="done")
+        run("finalize", str(repo))  # creates overview task, exit 1
+        assert (repo / ".repowiki/state/tasks/overview.md").exists()

@@ -1,13 +1,26 @@
-# 安装 repowiki 到全局技能
+# 完成任务的清理设计
 
-**现状**：全局技能目录为 `~/.agents/skills/<name>/SKILL.md`（现有 graphify 等 13 个技能），frontmatter 惯例为 `name` + `description` + `trigger: /<name>`（提供斜杠命令）。工具本体 `repowiki` CLI 已 `pip install -e` 全局可用，技能无需携带代码。
+## 方案
 
-**步骤**：
+**1. finalize 成功后自动清除运行时产物**（`state.py` 新增 `cleanup_runtime()`，`metadata.py` 在 metadata 写盘成功后调用）：
+- 删除 `state/claims/` 整个目录（含 `.stale-*`/`.released-*` 僵尸目录）
+- 删除 `state/tasks/` 整个目录（所有任务规格 .md）
+- 保留 `index.json`、`catalog.json`、`knowledge.json`
+- 注意：finalize 第一次调用（创建 overview 任务、返回 1）**不**清理；只在 metadata 真正写盘的成功路径清理。`update` 之后再 finalize 会再次清理，行为一致
 
-1. **补全源仓库 SKILL.md 的 frontmatter**：在 `/Users/luoms/workspace/repowiki/SKILL.md` 的 frontmatter 中加入 `trigger: /repowiki`（与 graphify 等本地技能惯例一致），内容其余部分不动。
-2. **安装**：创建 `~/.agents/skills/repowiki/`，把补全后的 SKILL.md 复制过去（保持与源仓库同一份内容，便于日后同步）。
-3. **提交**：在 repowiki 仓库提交 frontmatter 变更（一笔小 commit）。
+**2. 新增 `repowiki clean <repo>` 命令**：删除整个 `state/`（面向不需要增量更新的用户）。删除前打印将失去的能力（update/断点续跑/幂等 plan）；不支持删 wiki 本体（破坏性操作留给用户手动 rm）
+- cli.py 注册子命令；实现放新函数（约 20 行，放 state.py 或独立小函数）
+- 退出码 0；state 不存在时提示并返回 0（幂等）
 
-**验证**：`ls ~/.agents/skills/repowiki/` 存在且 frontmatter 完整；新会话中技能列表会出现 `repowiki`（含 `/repowiki` 触发词）。用户即可在任何会话中说「给某仓库生成 repowiki」或输入 `/repowiki` 触发。
+**3. 文档同步**：README（命令一览表加 clean、可靠性设计小节说明 finalize 自动清理）、SKILL.md（流程说明加一句）、DECISIONS.md 记录该设计决策及理由
 
-**说明**：技能仅是「操作手册」——真正执行时依赖 `repowiki` CLI（已装在当前机器）。若换机器需先 `pip install -e` 工具仓库，此依赖已写在 SKILL.md 的「前置」小节中。
+**4. 测试**：
+- finalize 成功后 tasks/ 与 claims/ 消失、index/catalog/knowledge 仍在；再跑 `update`（有 git 夹具）仍能创建增量任务（specs 目录自动重建）
+- `clean` 后 state/ 消失、`status` 报告 0 任务、`clean` 幂等
+- finalize 首次调用（创建 overview）不触发清理
+
+## 不做
+- 不默认删除整个 state（会坏 update）；不把 kind 等字段补进 metadata 来摆脱 catalog.json 依赖（过度设计）；不做删除 wiki 的破坏性命令
+
+## 验证
+pytest 全绿 + 冒烟：e2e 仓库重跑 finalize 观察 state 瘦身，`clean` 后目录消失

@@ -131,6 +131,8 @@ def run_finalize(paths: WikiPaths, as_json: bool) -> int:
         "knowledge_relations": len(relations),
         "knowledge": knowledge_summary,
     }
+    removed = store.cleanup_runtime()
+    summary["cleaned_runtime"] = removed
     _emit(as_json, True, json.dumps(summary, ensure_ascii=False, indent=2) if as_json else _fmt_summary(summary))
     return 0
 
@@ -142,6 +144,8 @@ def _fmt_summary(s: dict) -> str:
     ]
     if s["knowledge"]:
         lines.append(f"  知识库: {s['knowledge']}")
+    if s.get("cleaned_runtime"):
+        lines.append(f"  已清理运行时产物: state/{', state/'.join(s['cleaned_runtime'])}（保留 index/catalog/knowledge 供增量更新）")
     return "\n".join(lines)
 
 

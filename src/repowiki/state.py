@@ -217,6 +217,20 @@ class TaskStore:
             pass
         self.update(task_id, heartbeat_at=now)
 
+    def cleanup_runtime(self) -> list[str]:
+        """Drop runtime artifacts after successful finalize: claim dirs and
+        task specs. Planning artifacts (index/catalog/knowledge) are kept —
+        `update` and idempotent `plan` depend on them."""
+        import shutil
+
+        removed = []
+        for d in (self.paths.claims_dir, self.paths.tasks_dir):
+            if d.exists():
+                shutil.rmtree(d, ignore_errors=True)
+                removed.append(d.name)
+        return removed
+
+
     # --- reporting ---
 
     def stats(self) -> dict:
@@ -243,3 +257,28 @@ class TaskStore:
             "failed": failed,
             "stale_claims": stale,
         }
+
+
+def run_clean(paths: WikiPaths, as_json: bool = False) -> int:
+    """Remove state/ entirely (opt-in). The wiki output under .repowiki/ is kept."""
+    import json as _json
+    import shutil
+
+    if not paths.state_dir.exists():
+        msg = "state/ 不存在，无需清理"
+        if as_json:
+            print(_json.dumps({"ok": True, "removed": False, "detail": msg}, ensure_ascii=False))
+        else:
+            print(msg)
+        return 0
+    shutil.rmtree(paths.state_dir)
+    msg = (
+        f"已删除 {paths.state_dir}。"
+        "失去的能力：增量更新（update）、断点续跑、plan 幂等（重跑 plan 将全新规划）。"
+        "wiki 产出（zh/ 与 knowledge/）未受影响。"
+    )
+    if as_json:
+        print(_json.dumps({"ok": True, "removed": True, "detail": msg}, ensure_ascii=False))
+    else:
+        print(f"✓ {msg}")
+    return 0

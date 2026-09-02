@@ -22,3 +22,7 @@
    （T9 对 10 文件仓库冒烟时发现原表述诱导过度生成）。
 9. **attempt 计数**：每次 claim attempts+1（含首次）；ready 排序 attempts 升序——
    失败任务不插队，新任务优先，避免坏任务拖死 worker。
+10. **state 清理策略**：finalize 成功后自动清除运行时产物（claims/、tasks/），
+    保留 index.json/catalog.json/knowledge.json——update 的增量映射依赖 catalog.json 的
+    dependent_files 与树结构（metadata 无 kind 字段无法重建页面路径），index.json 支撑
+    plan 幂等与 status。另提供 `clean` 命令整体删除 state/（不删 wiki 本体）。
