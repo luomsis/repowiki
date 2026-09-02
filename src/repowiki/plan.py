@@ -25,8 +25,14 @@ def _load_catalog(paths: WikiPaths) -> dict | None:
 
 
 def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = None,
-             knowledge: bool = False, as_json: bool = False) -> int:
+             knowledge: bool = False, force: bool = False, as_json: bool = False) -> int:
     if replan and paths.root.exists():
+        busy = _busy_tasks(paths)
+        if busy and not force:
+            raise UsageError(
+                f"检测到 {len(busy)} 个 in_progress 任务（{', '.join(busy[:5])}），"
+                "replan 会删除正在被写入的产物；确认请加 --force"
+            )
         shutil.rmtree(paths.root)
     paths.ensure()
     store = TaskStore(paths)
@@ -77,6 +83,16 @@ def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = Non
             print(f"  ⚠ {w}")
         print(result["next"])
     return 0
+
+
+def _busy_tasks(paths: WikiPaths) -> list[str]:
+    if not paths.index_file.exists():
+        return []
+    try:
+        data = json.loads(paths.index_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+    return [tid for tid, t in data.get("tasks", {}).items() if t.get("status") == "in_progress"]
 
 
 def _warn_dangling_outputs(paths: WikiPaths, nodes: list[dict]) -> list[str]:

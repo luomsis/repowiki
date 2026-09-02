@@ -48,8 +48,17 @@ def run_finalize(paths: WikiPaths, as_json: bool) -> int:
         nodes = flatten(catalog)
         store.add_tasks([build_overview_task(paths, catalog.get("repo_name", ""), nodes)])
         msg = "已创建阶段3 overview 任务，请领取执行后再次运行 finalize"
-        _emit(as_json, False, msg)
-        return 1
+        _emit_progress(as_json, msg)
+        return 3  # progress, not error: waiting for the overview task
+
+    missing_pages = _missing_pages(paths, _require_catalog(paths))
+    if missing_pages:
+        raise UsageError(
+            f"catalog 中有 {len(missing_pages)} 个页面尚未生成: "
+            + ", ".join(missing_pages[:8])
+            + ("…" if len(missing_pages) > 8 else "")
+            + "（--max-pages 试跑后请补齐页面再 finalize，或 plan --replan 重来）"
+        )
 
     unfinished = {tid: t["status"] for tid, t in data["tasks"].items() if t["status"] != "done"}
     if unfinished:
@@ -157,6 +166,24 @@ def _emit(as_json: bool, ok: bool, payload: str) -> None:
             print(json.dumps({"ok": ok, "detail": payload}, ensure_ascii=False))
     else:
         print(payload)
+
+
+def _emit_progress(as_json: bool, msg: str) -> None:
+    if as_json:
+        print(json.dumps({"ok": True, "waiting": True, "detail": msg,
+                          "next_action": "执行 overview 任务后再次运行 finalize"}, ensure_ascii=False))
+    else:
+        print(msg)
+
+
+def _missing_pages(paths: WikiPaths, catalog: dict) -> list[str]:
+    """Catalog nodes whose output page does not exist on disk (e.g. created
+    via `plan --max-pages` trial runs). finalize refuses to claim completion."""
+    missing = []
+    for n in flatten(catalog):
+        if not (paths.root / n.output).is_file():
+            missing.append(f"{n.id}({n.title})")
+    return missing
 
 
 def _require_catalog(paths: WikiPaths) -> dict:

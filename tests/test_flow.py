@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import multiprocessing as mp
 import subprocess
 import time
 
@@ -12,7 +13,7 @@ from conftest import valid_catalog, valid_page, write_catalog
 from repowiki.catalog import flatten
 from repowiki.cli import main
 from repowiki.paths import WikiPaths
-from repowiki.state import TaskStore
+from repowiki.state import TaskStore, new_task
 
 
 def run(*argv):
@@ -121,7 +122,7 @@ class TestFinalize:
         self._full_gen(repo)
         # first finalize creates the overview task
         code = run("finalize", str(repo))
-        assert code == 1
+        assert code == 3
         index = json.loads((repo / ".repowiki/state/index.json").read_text())
         assert "overview" in index["tasks"]
         # simulate agent writing overview
@@ -143,6 +144,16 @@ class TestFinalize:
     def test_finalize_blocked_by_unfinished(self, repo):
         write_catalog(WikiPaths(repo))
         run("plan", str(repo))
+        TaskStore(WikiPaths(repo)).update("catalog", status="done")
+        for nid in ("c01", "c0101", "c02"):
+            pth = repo / ".repowiki" / dict(
+                (n.id, n.output) for n in flatten(valid_catalog())
+            )[nid]
+            pth.parent.mkdir(parents=True, exist_ok=True)
+            pth.write_text(valid_page(TaskStore(WikiPaths(repo)).get(nid)["title"].replace("（增量更新）", "")), encoding="utf-8")
+            TaskStore(WikiPaths(repo)).update(nid, status="done")
+        run("finalize", str(repo))  # creates overview (exit 3)
+        TaskStore(WikiPaths(repo)).update("overview", status="in_progress")  # unfinished
         assert run("finalize", str(repo)) == 1
 
 
@@ -369,3 +380,58 @@ class TestLifecycleGuards:
         run("next", str(repo), "--claim")
         run("check", str(repo), "--task", "catalog")  # done
         assert run("check", str(repo), "--all") == 0  # nothing in flight
+
+
+def _flip_done(args):
+    root, tid = args
+    s = TaskStore(WikiPaths(root))
+    return s.update(tid, status="done") is not None
+
+
+class TestP1Guards:
+    def test_finalize_first_step_exit_3(self, repo):
+        write_catalog(WikiPaths(repo))
+        run("plan", str(repo))
+        catalog = valid_catalog()
+        for n in flatten(catalog):
+            p = repo / ".repowiki" / n.output
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(valid_page(n.title), encoding="utf-8")
+            TaskStore(WikiPaths(repo)).update(n.id, status="done")
+        TaskStore(WikiPaths(repo)).update("catalog", status="done")
+        assert run("finalize", str(repo)) == 3  # progress, not error
+
+    def test_finalize_refuses_missing_pages(self, repo):
+        write_catalog(WikiPaths(repo))
+        run("plan", str(repo))
+        TaskStore(WikiPaths(repo)).update("catalog", status="done")
+        # only c01 exists; c0101/c02 missing (--max-pages style trial run)
+        p = repo / ".repowiki/zh/content/项目概述/项目概述.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(valid_page("项目概述"), encoding="utf-8")
+        TaskStore(WikiPaths(repo)).update("c01", status="done")
+        run("finalize", str(repo))  # creates overview task
+        TaskStore(WikiPaths(repo)).update("overview", status="done")
+        assert run("finalize", str(repo)) == 1  # missing pages gate
+        assert not (repo / ".repowiki/zh/meta/repowiki-metadata.json").exists()
+
+    def test_replan_guard(self, repo):
+        write_catalog(WikiPaths(repo))
+        run("plan", str(repo))
+        run("next", str(repo), "--claim")  # catalog in_progress
+        assert run("plan", str(repo), "--replan") == 1
+        assert (repo / ".repowiki/state/index.json").exists()  # untouched
+        assert run("plan", str(repo), "--replan", "--force") == 0
+
+    def test_index_transaction_no_lost_updates(self, repo):
+        """Multi-process status flips on distinct tasks: no flip may be lost."""
+        paths = WikiPaths(repo)
+        paths.ensure()
+        store = TaskStore(paths)
+        store.replace_all([new_task(f"t{i:02d}", "page", 2, f"页{i}", f"p{i}.md") for i in range(12)])
+
+        with mp.Pool(processes=6) as pool:
+            oks = pool.map(_flip_done, [(str(repo), f"t{i:02d}") for i in range(12)])
+        assert all(oks)
+        data = store.load()["tasks"]
+        assert sum(1 for t in data.values() if t["status"] == "done") == 12

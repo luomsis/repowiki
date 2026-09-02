@@ -80,21 +80,46 @@ class TaskStore:
         tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
         os.replace(tmp, f)
 
+    def _lock(self):
+        """Process-level exclusive lock around index read-modify-write.
+        flock is single-machine POSIX — matches the tool's deployment model."""
+        import fcntl
+
+        self.paths.state_dir.mkdir(parents=True, exist_ok=True)
+        fh = open(self.paths.state_dir / ".index.lock", "a+")
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        return fh
+
+    def _transaction(self, mutate) -> None:
+        """Serialize index.json read-modify-write across processes."""
+        fh = self._lock()
+        try:
+            data = self.load()
+            mutate(data)
+            self._save_atomic(data)
+        finally:
+            fh.close()
+
     def _merge_task(self, task: dict) -> None:
-        """Re-read index, update only this task entry, write atomically."""
-        data = self.load()
-        data["tasks"][task["id"]] = task
-        self._save_atomic(data)
+        """Update only this task entry inside a transaction."""
+
+        def apply(data: dict) -> None:
+            data["tasks"][task["id"]] = task
+
+        self._transaction(apply)
 
     def add_tasks(self, records: list[dict]) -> list[str]:
         """Insert new tasks; existing ids are skipped. Returns added ids."""
         added: list[str] = []
-        data = self.load()
-        for rec in records:
-            if rec["id"] not in data["tasks"]:
-                data["tasks"][rec["id"]] = rec
-                added.append(rec["id"])
-        self._save_atomic(data)
+
+        def apply(data: dict) -> None:
+            added.clear()
+            for rec in records:
+                if rec["id"] not in data["tasks"]:
+                    data["tasks"][rec["id"]] = rec
+                    added.append(rec["id"])
+
+        self._transaction(apply)
         return added
 
     def replace_all(self, records: list[dict]) -> None:
@@ -104,13 +129,16 @@ class TaskStore:
         return self.load()["tasks"].get(task_id)
 
     def update(self, task_id: str, **fields) -> dict | None:
-        data = self.load()
-        task = data["tasks"].get(task_id)
-        if not task:
-            return None
-        task.update(fields)
-        self._save_atomic(data)
-        return task
+        result: list[dict | None] = [None]
+
+        def apply(data: dict) -> None:
+            task = data["tasks"].get(task_id)
+            if task:
+                task.update(fields)
+                result[0] = task
+
+        self._transaction(apply)
+        return result[0]
 
     # --- readiness / priority ---
 
