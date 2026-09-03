@@ -3,7 +3,7 @@
 复刻 Qoder [RepoWiki](https://docs.qoder.com/user-guide/repo-wiki) 的仓库 Wiki 生成器——但**不含任何 LLM**。
 
 `repowiki` 是一个确定性的构建系统：负责任务规划、原子认领、产出校验、自动修复、元数据组装；
-智能工作（读代码、写 wiki）由驱动它的 agent（ZCode / Claude Code / Codex / OpenCode / 人）完成。
+智能工作（读代码、写 wiki）由驱动它的 agent（Claude Code / Codex / OpenCode 等 agent CLI，或人）完成。
 零 API Key、零网络调用、零 agent CLI 依赖——任何「能跑 shell + 读写文件」的执行者都能参与，包括并发。
 
 ```
@@ -19,9 +19,23 @@
 
 ## 安装
 
+### 1. CLI（必需，Python ≥ 3.10，macOS/Linux）
+
 ```bash
-pip install -e .        # 依赖仅 pyyaml + rich，Python ≥ 3.10
+pip install git+https://github.com/luomsis/repowiki.git   # 或 pipx install git+同URL
+# 已克隆本仓库时：cd repowiki && pip install -e .
 ```
+
+### 2. Agent Skill（可选，让 agent 自动触发本工作流）
+
+`skills/repowiki/` 是符合 SKILL.md 开放约定的 skill 目录，两种装法任选：
+
+- **插件安装**（支持版本管理）：把本仓库作为插件市场目录或直接指向其 git 地址安装，
+  仓库根部的插件清单会被自动识别；
+- **手动拷贝**：把 `skills/repowiki/` 整个目录拷进所用客户端的个人 skills 目录
+  （常见为 `~/.claude/skills/repowiki/`、`~/.agents/skills/repowiki/` 等）。
+
+skill 只是指引（告诉 agent 按什么流程调用 CLI），真正干活的是第 1 步装的 `repowiki` 命令。
 
 ## 快速开始
 
@@ -67,9 +81,9 @@ loop:
 
 ### 并发配方
 
-**Subagent 型（ZCode / Claude Code / OpenCode）**：主 agent 先串行完成 plan + catalog，
+**Subagent 型（Claude Code / OpenCode 等）**：主 agent 先串行完成 plan + catalog，
 然后 spawn N 个 subagent 各自跑 worker 循环（N=3~6 即可，页面任务相互独立）。
-详见 [SKILL.md](SKILL.md)。
+详见 [skills/repowiki/SKILL.md](skills/repowiki/SKILL.md)。
 
 **无人值守（任何 headless agent CLI，由你决定用哪个）**：
 
@@ -120,7 +134,7 @@ done
 - **自动瘦身**：finalize 成功后自动清除运行时产物（`state/claims/`、`state/tasks/`），
   保留 `index.json`/`catalog.json`/`knowledge.json` 供增量更新与幂等重跑；
   不需要增量更新可执行 `repowiki clean <repo>` 删除全部状态（wiki 产出不受影响）。
-- **测试**：81 个单测覆盖竞态、过期回收、校验规则正反例、增量映射、知识聚合（`pytest`）。
+- **测试**：106 个单测覆盖竞态、过期回收、校验规则正反例、增量映射、知识聚合、损坏状态文件与非法输入的友好报错（`pytest`）。
 
 ## 与 Qoder 原版的差异
 

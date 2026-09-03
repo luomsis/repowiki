@@ -1,7 +1,6 @@
 ---
 name: repowiki
-description: Generate a Qoder-style RepoWiki (structured Chinese wiki with mermaid diagrams and file:// source links) for any repository. Use when the user asks to "generate repo wiki", "生成/更新 repowiki", "给仓库生成 wiki 文档", or mentions repowiki/仓库文档/RepoWiki. Works on any repo path; concurrent subagents supported.
-trigger: /repowiki
+description: 为任意代码仓库生成 Qoder 风格的中文 RepoWiki（结构化 wiki、mermaid 图、file:// 源码引用）。Use when the user asks to generate a repo wiki, "生成/更新 repowiki", "给仓库生成 wiki 文档", or mentions repowiki / 仓库文档 / RepoWiki. Works on any repo path; supports concurrent subagents.
 ---
 
 # repowiki：为仓库生成 Qoder 风格的 Wiki
@@ -11,9 +10,14 @@ trigger: /repowiki
 
 ## 前置
 
+`repowiki` CLI 需一次性安装（Python ≥ 3.10，仅 macOS/Linux）：
+
 ```bash
-pip install -e /Users/luoms/workspace/repowiki   # 一次性安装，提供 repowiki 命令
+pip install git+https://github.com/luomsis/repowiki.git   # 或 pipx install git+同URL
+# 已克隆仓库时：cd repowiki && pip install -e .
 ```
+
+执行前先确认 `repowiki` 命令可用（`command -v repowiki`）；不存在则先安装。
 
 ## 标准流程（串行）
 

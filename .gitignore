@@ -10,3 +10,6 @@ venv/
 .idea/
 .vscode/
 .DS_Store
+# local agent-session artifacts
+.z*/
+

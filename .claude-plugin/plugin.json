@@ -1,0 +1,9 @@
+{
+  "name": "repowiki",
+  "version": "0.1.0",
+  "description": "Generate a Qoder-style RepoWiki (structured Chinese wiki with mermaid diagrams and file:// source links) for any repository. Deterministic task orchestrator + any coding agent.",
+  "author": "luomsis",
+  "license": "MIT",
+  "keywords": ["wiki", "documentation", "repo-wiki", "agent-skills", "mermaid"],
+  "skills": "skills"
+}

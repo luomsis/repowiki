@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,16 @@ name = "repowiki"
 version = "0.1.0"
 description = "Deterministic repo-wiki build system (Qoder RepoWiki-style output), driven by any coding agent. Zero LLM, zero network."
 requires-python = ">=3.10"
-dependencies = ["pyyaml>=6", "rich>=13"]
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "luomsis" }]
+dependencies = ["pyyaml>=6"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+]
 
 [project.optional-dependencies]
 test = ["pytest>=8"]

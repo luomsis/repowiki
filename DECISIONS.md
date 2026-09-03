@@ -16,7 +16,7 @@
 6. **catalog 任务幂等**：`plan` 遇到已存在且合法的 catalog.json 时不再创建 catalog 任务
    （直接展开页面任务）；`--replan` 清空重来。这是评审阶段补充的「目录评审回路」入口：
    人/agent 可直接编辑 state/catalog.json 后重新 plan。
-7. **overview 两步 finalize**：首次 finalize 创建阶段3 overview 任务并退出码 1；
+7. **overview 两步 finalize**：首次 finalize 创建阶段3 overview 任务并退出码 3（进展性等待，非错误）；
    agent 写完 overview 并 check done 后再次 finalize 才写 metadata.json。
 8. **章节数建议**：catalog 任务规格中根章节数改为「大仓库 12~18，小仓库 4~8，宁精勿滥」
    （T9 对 10 文件仓库冒烟时发现原表述诱导过度生成）。
