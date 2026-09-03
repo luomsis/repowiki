@@ -1,12 +1,12 @@
 ---
 name: repowiki
-description: 为任意代码仓库生成 Qoder 风格的中文 RepoWiki（结构化 wiki、mermaid 图、file:// 源码引用）。Use when the user asks to generate a repo wiki, "生成/更新 repowiki", "给仓库生成 wiki 文档", or mentions repowiki / 仓库文档 / RepoWiki. Works on any repo path; supports concurrent subagents.
+description: 为任意代码仓库生成结构化的仓库 Wiki（mermaid 图、file:// 源码引用；产出语言自动跟随仓库 zh/en，可 --locale 指定）。Use when the user asks to generate a repo wiki, "生成/更新 repowiki", "给仓库生成 wiki 文档", or mentions repowiki / 仓库文档 / repo wiki. Works on any repo path; supports concurrent subagents.
 ---
 
-# repowiki：为仓库生成 Qoder 风格的 Wiki
+# repowiki：为仓库生成结构化的 Wiki
 
 `repowiki` 是一个确定性的任务编排器（无 LLM）：它规划任务、校验产出、组装元数据。
-**你（agent）负责所有智能工作**：读仓库源码、按任务规格撰写中文 wiki 页面。
+**你（agent）负责所有智能工作**：读仓库源码、按任务规格撰写 wiki 页面（产出语言跟随目标仓库）。
 
 ## 前置
 
@@ -24,7 +24,7 @@ pip install git+https://github.com/luomsis/repowiki.git   # 或 pipx install git
 对目标仓库（下称 `<repo>`）依次执行：
 
 ```bash
-repowiki plan <repo>          # 1. 扫描并生成任务清单（首个任务是 catalog 目录规划）
+repowiki plan <repo>          # 1. 扫描并生成任务清单（自动检测产出语言 zh/en；首个任务是 catalog 目录规划）
 repowiki next <repo> --claim --json   # 2. 领取一个任务（读返回的 instructions 字段）
 #    3. 按任务规格执行：通读 hint_files 源码 → 按模板撰写 → 写到规格指定的 output 路径
 repowiki check <repo> --task <id>     # 4. 校验；失败则按 errors 修复后重新 check
@@ -35,7 +35,8 @@ repowiki finalize <repo>      # 6. 首次会创建 overview 任务→执行→�
 ```
 
 任务类型：`catalog`（目录树规划，产出 state/catalog.json）→ `page`（逐页撰写）→ `overview`（总览）；
-可选：`repowiki knowledge <repo>`（知识卡片）、`repowiki update <repo>`（基于 git diff 的增量更新，重写受影响页并附「更新摘要」小节）。
+可选：`repowiki knowledge <repo>`（知识卡片）、`repowiki update <repo>`（基于 git diff 的增量更新，重写受影响页并附「更新摘要/Update Summary」小节）。
+产出语言由 plan 时确定（README 权重最高的自动检测，或 `--locale zh|en`），持久化于 `state/locale`，规格中的模板即对应语言。
 
 ## 并发流程（推荐，subagent 加速）
 
@@ -68,6 +69,6 @@ loop:
 ## 硬性规则
 
 - **只写任务规格指定的 output 文件**，绝不改动仓库源码。
-- 页面遵循规格内嵌的模板与 STYLE 规范：必备小节齐全、每节末尾「章节来源」、每个 mermaid 图后「图表来源」、`[path:Lx-Ly](file://path#Lx-Ly)` 格式、行号不越界、页间零链接、不用 emoji/表格。
+- 页面遵循规格内嵌的模板与 STYLE 规范：必备小节齐全、每节末尾「Section sources/章节来源」、每个 mermaid 图后「Diagram sources/图表来源」、`[path:Lx-Ly](file://path#Lx-Ly)` 格式、行号不越界、页间零链接、不用 emoji/表格。
 - `check` 的确定性缺陷（锚点/行号/H1）会被自动修复，无需手动处理；只需修复 `errors` 列出的语义问题。
-- 输出位于 `<repo>/.repowiki/`（zh/content 页面、zh/meta 元数据、knowledge/zh 知识卡片）。
+- 输出位于 `<repo>/.repowiki/`（`<locale>/content` 页面、`<locale>/meta` 元数据、`knowledge/<locale>/` 知识卡片；locale 已在 plan 时确定）。

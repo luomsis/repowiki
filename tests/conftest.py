@@ -11,7 +11,7 @@ import pytest
 from repowiki.paths import WikiPaths
 
 FILES: dict[str, str] = {
-    "README.md": "# demo\nA tiny demo service.\n",
+    "README.md": "# demo\n\n一个用于测试的微型示例服务，包含 API、模型与脚本工具。\n",
     "pyproject.toml": "[project]\nname = 'demo'\n",
     "src/demo/__init__.py": "",
     "src/demo/main.py": "def main():\n    '''entry'''\n    from demo.api import serve\n    serve()\n\n\nif __name__ == '__main__':\n    main()\n",

@@ -279,7 +279,7 @@ def _check_readonly(paths: WikiPaths, task: dict, inv) -> dict:
 
         raw = out.read_text(encoding="utf-8")
         res = check_page(raw, task["title"].replace("（增量更新）", ""), paths.repo_root,
-                         is_update=(task["kind"] == "page_update"))
+                         is_update=(task["kind"] == "page_update"), locale=paths.locale)
         return {**base, "ok": res.ok, "readonly": True, "errors": res.errors,
                 "fixed": [], "warnings": res.warnings,
                 "note": "done 为终态，此结果仅供参考，状态未改变"}
@@ -326,15 +326,16 @@ def _check_one(paths: WikiPaths, store: TaskStore, task: dict, inv) -> dict:
                 store.update(tid, status="failed")
                 return {**base, "ok": False, "status": "failed",
                         "errors": [f"state/catalog.json 无法读取（{e}），无法校验 overview"]}
-            res = check_overview(raw, repo_name)
+            res = check_overview(raw, repo_name, locale=paths.locale)
         elif kind == "knowledge_card":
             plan = _load_json(paths.knowledge_plan_file) or {}
             card = next(
                 (c for c in plan.get("cards", []) if c.get("id") == tid), {}
             )
-            res = check_knowledge_card(raw, card.get("title", task["title"]), card.get("category", ""), paths.repo_root)
+            res = check_knowledge_card(raw, card.get("title", task["title"]), card.get("category", ""), paths.repo_root, locale=paths.locale)
         else:
-            res = check_page(raw, task["title"].replace("（增量更新）", ""), paths.repo_root, is_update=(kind == "page_update"))
+            res = check_page(raw, task["title"].replace("（增量更新）", ""), paths.repo_root,
+                             is_update=(kind == "page_update"), locale=paths.locale)
         if res.fixed and res.text != raw:
             out_file.write_text(res.text, encoding="utf-8")
         status = "done" if res.ok else "failed"
@@ -343,7 +344,7 @@ def _check_one(paths: WikiPaths, store: TaskStore, task: dict, inv) -> dict:
 
     if kind == "knowledge_module":
         out_dir = paths.root / task["output"]
-        res = check_knowledge_module(out_dir)
+        res = check_knowledge_module(out_dir, locale=paths.locale)
         status = "done" if res.ok else "failed"
         store.update(tid, status=status)
         return {**base, "ok": res.ok, "status": status, "errors": res.errors, "fixed": res.fixed}
@@ -392,7 +393,7 @@ def _check_plan_task(paths: WikiPaths, store: TaskStore, task: dict, inv, base: 
 
 
 def _expand_pages(paths: WikiPaths, store: TaskStore, catalog: dict, inv) -> list[str]:
-    nodes = flatten(catalog)
+    nodes = flatten(catalog, paths.locale)
     return store.add_tasks(task_builders.build_page_tasks(paths, nodes, inv))
 
 

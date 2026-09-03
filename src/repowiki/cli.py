@@ -32,6 +32,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--force", action="store_true", help="with --replan: proceed even if tasks are in flight")
     p.add_argument("--max-pages", type=int, default=None, help="cap number of page tasks (for cheap trial runs)")
     p.add_argument("--knowledge", action="store_true", help="also append the knowledge-card task set")
+    p.add_argument("--locale", default="auto", choices=["auto", "zh", "en"],
+                   help="output language: auto-detect from the repo (README-weighted) or force zh/en")
     p.add_argument("--json", action="store_true")
 
     p = sub.add_parser("next", help="list (and optionally claim) ready tasks")
@@ -149,7 +151,8 @@ def cmd_plan(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in task
     from .plan import run_plan
 
     return run_plan(paths, replan=args.replan, max_pages=args.max_pages,
-                    knowledge=args.knowledge, force=args.force, as_json=args.json)
+                    knowledge=args.knowledge, force=args.force, as_json=args.json,
+                    locale=args.locale)
 
 
 def cmd_next(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in state.py

@@ -71,7 +71,7 @@ def run_update(paths: WikiPaths, since: str | None, as_json: bool) -> int:
         raise UsageError(
             f"state/catalog.json 损坏（{e}）：可手工修复该文件，或 `repowiki plan --replan` 重新规划"
         ) from e
-    nodes = flatten(catalog)
+    nodes = flatten(catalog, paths.locale)
     inv = scan(paths.repo_root)
     affected = map_affected(nodes, changed_set)
 

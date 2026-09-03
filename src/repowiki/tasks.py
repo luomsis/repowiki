@@ -66,6 +66,7 @@ def build_catalog_task(paths: WikiPaths, inv: Inventory) -> dict:
         file_list += f"\n… (+{len(code_paths) - len(shown)} more)"
     spec = templates.render_file(
         "catalog_task.md",
+        locale=paths.locale,
         REPO_NAME=inv.repo_root.rstrip("/").split("/")[-1],
         CODE_FILE_COUNT=inv.code_file_count,
         KEY_FILES=", ".join(inv.key_files) or "<未发现>",
@@ -91,6 +92,7 @@ def build_page_tasks(paths: WikiPaths, nodes: list[FlatNode], inv: Inventory, ma
         output_abs = str(Path(".repowiki") / node.output)
         spec = templates.render_file(
             "page_task.md",
+            locale=paths.locale,
             TASK_ID=node.id,
             TITLE=node.title,
             OUTPUT=node.output,
@@ -101,8 +103,8 @@ def build_page_tasks(paths: WikiPaths, nodes: list[FlatNode], inv: Inventory, ma
             SUMMARY=node.summary or "<catalog 未提供>",
             PAGE_BRIEF=_brief_bullets(node.page_brief),
             SIBLINGS="\n".join(f"- {s}" for s in siblings) or "<无姊妹页面>",
-            PAGE_TEMPLATE=templates.render(templates.load("page_template.md"), TITLE=node.title),
-            STYLE=templates.load("STYLE.md"),
+            PAGE_TEMPLATE=templates.render(templates.load("page_template.md", paths.locale), TITLE=node.title),
+            STYLE=templates.load("STYLE.md", paths.locale),
         )
         write_spec(paths, node.id, spec)
         records.append(new_task(node.id, "page", 2, node.title, node.output))
@@ -112,16 +114,19 @@ def build_page_tasks(paths: WikiPaths, nodes: list[FlatNode], inv: Inventory, ma
 # --- phase 3: overview ---
 
 def build_overview_task(paths: WikiPaths, repo_name: str, nodes: list[FlatNode]) -> dict:
+    overview_rel = f"{paths.locale}/meta/wiki-overview.md"
     spec = templates.render_file(
         "overview_task.md",
-        OUTPUT="zh/meta/wiki-overview.md",
-        OUTPUT_ABS=".repowiki/zh/meta/wiki-overview.md",
+        locale=paths.locale,
+        OUTPUT=overview_rel,
+        OUTPUT_ABS=f".repowiki/{overview_rel}",
+        LOCALE=paths.locale,
         REPO_NAME=repo_name,
         CATALOG_TREE=catalog_tree_text(nodes),
-        STYLE=templates.load("STYLE.md"),
+        STYLE=templates.load("STYLE.md", paths.locale),
     )
     write_spec(paths, "overview", spec)
-    return new_task("overview", "overview", 3, "Wiki 总览（wiki_overview）", "zh/meta/wiki-overview.md")
+    return new_task("overview", "overview", 3, "Wiki 总览（wiki_overview）", overview_rel)
 
 
 # --- incremental updates (phase 2 tasks appended post-finalize) ---
@@ -135,6 +140,7 @@ def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str]
         # page must not be forced to carry an 更新摘要 section)
         spec = templates.render_file(
             "page_task.md",
+            locale=paths.locale,
             TASK_ID=task_id,
             TITLE=node.title,
             OUTPUT=node.output,
@@ -145,13 +151,14 @@ def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str]
             SUMMARY=node.summary or "<catalog 未提供>",
             PAGE_BRIEF=_brief_bullets(node.page_brief),
             SIBLINGS="<无姊妹页面>",
-            PAGE_TEMPLATE=templates.render(templates.load("page_template.md"), TITLE=node.title),
-            STYLE=templates.load("STYLE.md"),
+            PAGE_TEMPLATE=templates.render(templates.load("page_template.md", paths.locale), TITLE=node.title),
+            STYLE=templates.load("STYLE.md", paths.locale),
         )
         write_spec(paths, task_id, spec)
         return new_task(task_id, "page", 2, node.title, node.output)
     spec = templates.render_file(
         "update_task.md",
+        locale=paths.locale,
         TASK_ID=task_id,
         TITLE=node.title,
         OUTPUT=node.output,
@@ -159,7 +166,7 @@ def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str]
         CHANGED_FILES=_hint_list(changed_files, inv),
         PAGE_BRIEF=_brief_bullets(node.page_brief),
         OLD_PAGE=old.read_text(encoding="utf-8"),
-        STYLE=templates.load("STYLE.md"),
+        STYLE=templates.load("STYLE.md", paths.locale),
         HINT_FILES_YAML=_yaml_list(node.dependent_files),
     )
     write_spec(paths, task_id, spec)
@@ -177,6 +184,7 @@ KNOWLEDGE_CATEGORIES = [
 def build_knowledge_plan_task(paths: WikiPaths, inv: Inventory) -> dict:
     spec = templates.render_file(
         "knowledge_task.md",
+        locale=paths.locale,
         REPO_NAME=inv.repo_root.rstrip("/").split("/")[-1],
         KEY_FILES=", ".join(inv.key_files) or "<未发现>",
         TREE_SUMMARY=inv.tree_summary or "<空仓库>",
@@ -192,10 +200,11 @@ def build_knowledge_tasks(paths: WikiPaths, plan: dict) -> list[dict]:
     for mod in plan.get("modules", []):
         task_id = mod["id"]
         dir_name = unique_name(sanitize_component(mod["title"]), used_dirs)
-        out_dir = f"knowledge/zh/{dir_name}"
+        out_dir = f"knowledge/{paths.locale}/{dir_name}"
         (paths.root / out_dir).mkdir(parents=True, exist_ok=True)
         spec = templates.render_file(
             "knowledge_module_task.md",
+            locale=paths.locale,
             TASK_ID=task_id,
             TITLE=mod["title"],
             OUTPUT_DIR=out_dir,
@@ -210,10 +219,11 @@ def build_knowledge_tasks(paths: WikiPaths, plan: dict) -> list[dict]:
     for card in plan.get("cards", []):
         task_id = card["id"]
         dir_name = unique_name(sanitize_component(card["title"]), used_dirs)
-        out = f"knowledge/zh/{dir_name}/{dir_name}.md"
+        out = f"knowledge/{paths.locale}/{dir_name}/{dir_name}.md"
         (paths.root / out).parent.mkdir(parents=True, exist_ok=True)
         spec = templates.render_file(
             "knowledge_card_task.md",
+            locale=paths.locale,
             TASK_ID=task_id,
             TITLE=card["title"],
             CATEGORY=card.get("category", ""),

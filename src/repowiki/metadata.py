@@ -1,8 +1,8 @@
-"""``repowiki finalize``: assemble zh/meta/repowiki-metadata.json.
+"""``repowiki finalize``: assemble <locale>/meta/repowiki-metadata.json.
 
 Parses every finished page for file:// references and builds the metadata
-document (source_files / code_snippets / knowledge_relations), mirroring the
-shape of Qoder's repowiki-metadata.json minus its encrypted internals.
+document (source_files / code_snippets / knowledge_relations); runtime state
+stays in ``state/``.
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ def run_finalize(paths: WikiPaths, as_json: bool) -> int:
 
     if "overview" not in data["tasks"]:
         catalog = _require_catalog(paths)
-        nodes = flatten(catalog)
+        nodes = flatten(catalog, paths.locale)
         store.add_tasks([build_overview_task(paths, catalog.get("repo_name", ""), nodes)])
         msg = "已创建阶段3 overview 任务，请领取执行后再次运行 finalize"
         _emit_progress(as_json, msg)
@@ -68,7 +68,7 @@ def run_finalize(paths: WikiPaths, as_json: bool) -> int:
         )
 
     catalog = _require_catalog(paths)
-    nodes = flatten(catalog)
+    nodes = flatten(catalog, paths.locale)
     by_id = {n.id: n for n in nodes}
 
     source_files: dict[str, dict] = {}
@@ -96,6 +96,7 @@ def run_finalize(paths: WikiPaths, as_json: bool) -> int:
             "name": repo_name,
             "progress_status": "completed",
             "wiki_present_status": "COMPLETED",
+            "locale": paths.locale,
             "last_commit_id": _git(paths.repo_root, "rev-parse", "HEAD"),
             "generated_at": now_iso(),
         },
@@ -180,7 +181,7 @@ def _missing_pages(paths: WikiPaths, catalog: dict) -> list[str]:
     """Catalog nodes whose output page does not exist on disk (e.g. created
     via `plan --max-pages` trial runs). finalize refuses to claim completion."""
     missing = []
-    for n in flatten(catalog):
+    for n in flatten(catalog, paths.locale):
         if not (paths.root / n.output).is_file():
             missing.append(f"{n.id}({n.title})")
     return missing

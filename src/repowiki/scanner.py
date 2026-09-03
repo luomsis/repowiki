@@ -2,7 +2,7 @@
 
 Uses ``git ls-files`` when available (accurate .gitignore handling), else
 falls back to a manual walk. Skips binaries, VCS/build/vendor directories
-and the tool's own output (``.repowiki``, legacy ``.qoder``).
+and the tool's own output (``.repowiki``).
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ LANG_BY_EXT = {
 
 IGNORE_DIRS = {
     ".git", "node_modules", "venv", ".venv", "env", "dist", "target", "build",
-    "out", "__pycache__", ".qoder", ".repowiki", ".idea", ".vscode", ".next", ".tox",
+    "out", "__pycache__", ".repowiki", ".idea", ".vscode", ".next", ".tox",
     ".eggs", "coverage", ".mypy_cache", ".pytest_cache", "site-packages",
     ".ruff_cache", ".hypothesis",
 }

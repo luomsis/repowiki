@@ -13,22 +13,9 @@ from pathlib import Path
 
 import yaml
 
+from .i18n import strings
 from .paths import github_anchor, nfc
 
-# (section name, match mode) — prefix sections accept variants like
-# 性能与一致性考量 / 性能考量 / 故障排除指南
-REQUIRED_SECTIONS: list[tuple[str, str]] = [
-    ("简介", "exact"),
-    ("项目结构", "exact"),
-    ("核心组件", "exact"),
-    ("架构总览", "exact"),
-    ("详细组件分析", "exact"),
-    ("依赖关系分析", "exact"),
-    ("性能", "prefix"),
-    ("故障", "prefix"),
-    ("结论", "exact"),
-]
-UPDATE_EXTRA = ("更新摘要", "exact")
 MIN_SECTIONS = 6
 MIN_MERMAID = 2
 MAX_CITED_FILES = 15
@@ -86,9 +73,11 @@ def _file_loc(repo_root: Path, rel: str) -> int | None:
         return None
 
 
-def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False) -> CheckResult:
+def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False,
+               locale: str = "zh") -> CheckResult:
     res = CheckResult(text=raw)
     text = raw
+    lang = strings(locale)
 
     # leftover template placeholders are always an error
     if _PLACEHOLDER_RE.search(text):
@@ -106,14 +95,14 @@ def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False) -
 
     # required sections
     headings = _headings(text)
-    required = list(REQUIRED_SECTIONS)
+    required = list(lang["required_sections"])
     if is_update:
-        required.insert(0, UPDATE_EXTRA)
+        required.insert(0, lang["update_extra"])
     for name, mode in required:
         if mode == "exact":
             hit = any(h == name for h in headings)
         else:
-            hit = any(h.startswith(name) or ("故障" == name and h.startswith("故障")) for h in headings)
+            hit = any(h.startswith(name) for h in headings)
         if not hit:
             res.fail(f"缺少必备小节「## {name}」")
     if len(headings) < MIN_SECTIONS:
@@ -178,7 +167,7 @@ def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False) -
         res.warnings.append("存在指向 .md 的页间链接（应为页间零链接）: " + ", ".join(wiki_refs[:3]))
 
     # TOC anchors: rebuild deterministically from actual headings (auto-fix)
-    toc_fixed = _fix_toc(text)
+    toc_fixed = _fix_toc(text, lang["toc"])
     if toc_fixed:
         text, note = toc_fixed
         res.fixed.append(note)
@@ -187,22 +176,22 @@ def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False) -
     return res
 
 
-def _fix_toc(text: str) -> tuple[str, str] | None:
+def _fix_toc(text: str, toc_name: str = "目录") -> tuple[str, str] | None:
     """Rebuild the numbered TOC from actual ## headings; return (text, note) if changed."""
-    m = re.search(r"^## 目录\s*$", text, re.M)
+    m = re.search(rf"^## {re.escape(toc_name)}\s*$", text, re.M)
     if not m:
         return None
     start = m.end()
     nxt = re.search(r"^## .+$", text[start:], re.M)
     body = text[start:start + nxt.start()] if nxt else text[start:]
-    headings = [h for h in _headings(text) if h != "目录"]
+    headings = [h for h in _headings(text) if h != toc_name]
     expected = [(h, github_anchor(h)) for h in headings]
     got = [(m2.group("t"), m2.group("a")) for m2 in _TOC_LINE_RE.finditer(body)]
     if got == expected:
         return None
     new_body = "\n" + "\n".join(f"{i}. [{h}](#{a})" for i, (h, a) in enumerate(expected, 1)) + "\n\n"
     new_text = text[:start] + new_body + text[start + len(body):]
-    return new_text, "「目录」锚点列表已按实际章节标题重建"
+    return new_text, f"「{toc_name}」锚点列表已按实际章节标题重建"
 
 
 # --- catalog / knowledge plan ---
@@ -273,16 +262,13 @@ def check_knowledge_plan(data, known_paths: set[str]) -> tuple[list[str], list[s
 
 # --- knowledge module / card / overview ---
 
-MODULE_REQUIRED_FILES = ["概述.md", "技术栈.md", "架构设计.md"]
-MODULE_OPTIONAL_FILES = ["特殊配置与命令.md", "编码规范.md"]
-
-
-def check_knowledge_module(out_dir: Path) -> CheckResult:
+def check_knowledge_module(out_dir: Path, locale: str = "zh") -> CheckResult:
     res = CheckResult()
+    lang = strings(locale)
     if not out_dir.is_dir():
         res.fail(f"模块目录不存在：{out_dir}")
         return res
-    for name in MODULE_REQUIRED_FILES:
+    for name in lang["module_required_files"]:
         f = out_dir / name
         if not f.is_file():
             res.fail(f"缺少必需文件 {name}")
@@ -291,8 +277,10 @@ def check_knowledge_module(out_dir: Path) -> CheckResult:
     return res
 
 
-def check_knowledge_card(raw: str, title: str, category: str, repo_root: Path) -> CheckResult:
+def check_knowledge_card(raw: str, title: str, category: str, repo_root: Path,
+                         locale: str = "zh") -> CheckResult:
     res = CheckResult(text=raw)
+    lang = strings(locale)
     if _PLACEHOLDER_RE.search(raw):
         res.fail("卡片仍含未替换的模板占位符")
     fm = re.match(r"^---\s*\n(.*?)\n---\s*\n", raw, re.S)
@@ -315,9 +303,7 @@ def check_knowledge_card(raw: str, title: str, category: str, repo_root: Path) -
         if not (repo_root / str(p)).exists():
             res.fail(f"source_files 引用不存在的文件 `{p}`")
     body = raw[fm.end():]
-    for i, sec in enumerate(
-        ["体系概览", "关键文件与包", "架构与设计约定", "开发者应遵循的规则"], start=1
-    ):
+    for i, sec in enumerate(lang["card_sections"], start=1):
         if f"## {i}. {sec}" not in body:
             res.fail(f"缺少小节「## {i}. {sec}」")
     h1s = _headings(body, 1)
@@ -330,13 +316,14 @@ def check_knowledge_card(raw: str, title: str, category: str, repo_root: Path) -
     return res
 
 
-def check_overview(raw: str, repo_name: str) -> CheckResult:
+def check_overview(raw: str, repo_name: str, locale: str = "zh") -> CheckResult:
     res = CheckResult(text=raw)
+    lang = strings(locale)
     if _PLACEHOLDER_RE.search(raw):
         res.fail("总览仍含未替换的模板占位符")
     if raw.lstrip().startswith("---"):
         res.fail("总览不应包含 YAML front matter")
-    expected_h1 = f"{repo_name} Wiki 总览"
+    expected_h1 = f"{repo_name} {lang['overview_h1_suffix']}"
     h1s = _headings(raw, 1)
     if not h1s:
         res.fail("缺少一级标题")
@@ -344,7 +331,7 @@ def check_overview(raw: str, repo_name: str) -> CheckResult:
         new_text = _H1_RE.sub(f"# {expected_h1}\n", raw, count=1)
         res.text = new_text
         res.fixed.append(f"H1 由「{h1s[0]}」改为「{expected_h1}」")
-    for sec in ("章节导航", "如何使用本 Wiki"):
+    for sec in lang["overview_sections"]:
         if not any(h == sec for h in _headings(res.text)):
             res.fail(f"缺少小节「## {sec}」")
     return res

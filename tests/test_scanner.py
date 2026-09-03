@@ -32,12 +32,9 @@ def test_scan_ignores_build_dirs(repo):
     (repo / "node_modules" / "pkg" / "index.js").write_text("x\n")
     (repo / ".repowiki" / "state").mkdir(parents=True)
     (repo / ".repowiki" / "x.md").write_text("x\n")
-    (repo / ".qoder" / "repowiki").mkdir(parents=True)  # legacy location
-    (repo / ".qoder" / "repowiki" / "x.md").write_text("x\n")
     inv = scan(repo)
     assert not any("node_modules" in f.path for f in inv.files)
     assert not any(".repowiki" in f.path for f in inv.files)
-    assert not any(".qoder" in f.path for f in inv.files)
 
 
 def test_scan_skips_binary(repo):

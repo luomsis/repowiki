@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "repowiki"
 version = "0.1.0"
-description = "Deterministic repo-wiki build system (Qoder RepoWiki-style output), driven by any coding agent. Zero LLM, zero network."
+description = "Deterministic repo wiki build system, driven by any coding agent. Output language follows the repository (zh/en). Zero LLM, zero network."
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -28,7 +28,7 @@ repowiki = "repowiki.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-repowiki = ["templates/*"]
+repowiki = ["templates/*/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

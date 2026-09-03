@@ -1,10 +1,11 @@
 # repowiki
 
-复刻 Qoder [RepoWiki](https://docs.qoder.com/user-guide/repo-wiki) 的仓库 Wiki 生成器——但**不含任何 LLM**。
+为任意仓库生成结构化 Wiki 的构建系统——但**不含任何 LLM**。
 
 `repowiki` 是一个确定性的构建系统：负责任务规划、原子认领、产出校验、自动修复、元数据组装；
 智能工作（读代码、写 wiki）由驱动它的 agent（Claude Code / Codex / OpenCode 等 agent CLI，或人）完成。
 零 API Key、零网络调用、零 agent CLI 依赖——任何「能跑 shell + 读写文件」的执行者都能参与，包括并发。
+Wiki 产出语言自动跟随目标仓库（中文仓库 → `zh/`，英文仓库 → `en/`；`plan --locale` 可显式指定）。
 
 ```
 ┌────────────┐  plan     ┌─────────────────────────────────────────┐
@@ -47,23 +48,24 @@ repowiki check ~/code/myrepo --task c01      # 校验+自动修复+状态流转
 repowiki finalize ~/code/myrepo      # 组装 metadata.json（两步：先创建 overview 任务）
 ```
 
-输出结构（与 Qoder RepoWiki 格式一致）：
+输出结构（`<locale>` 由 plan 自动检测或 `--locale` 指定，当前支持 `zh` / `en`）：
 
 ```
 myrepo/.repowiki/
-├── zh/
+├── zh/                     # 或 en/ —— 语言跟随目标仓库
 │   ├── content/            # 章节树：目录名=章节名，索引页+子页，固定模板
 │   │   ├── 快速开始.md      # 顶级独立页
 │   │   └── 项目概述/项目概述.md, 核心概念.md, ...
 │   └── meta/repowiki-metadata.json   # catalogs/items/source_files/snippets/relations
 ├── knowledge/zh/           # 知识卡片：_index.yaml + 模块文档 + 机制卡片
-└── state/                  # 任务清单/规格/认领（内部状态，可随时删除重规划）
+└── state/                  # 任务清单/规格/认领/locale（内部状态，可随时删除重规划）
 ```
 
-页面模板（校验器强制）：H1 → `<cite>` 引用块 → 目录（中文锚点）→ 简介 → 项目结构（mermaid
+页面模板（校验器按语言强制）：H1 → `<cite>` 引用块 → 目录 → 简介 → 项目结构（mermaid
 graph TB）→ 核心组件 → 架构总览（sequenceDiagram）→ 详细组件分析 → 依赖关系分析（graph LR）
-→ 性能与一致性考量 → 故障排查指南 → 结论；每节末尾「章节来源」、每图后「图表来源」，
-链接格式 `[path:Lx-Ly](file://path#Lx-Ly)`；页间零链接（正因如此所有页面任务可完全并行）。
+→ 性能与一致性考量 → 故障排查指南 → 结论；每节末尾「Section sources/章节来源」、每图后
+「Diagram sources/图表来源」，链接格式 `[path:Lx-Ly](file://path#Lx-Ly)`；页间零链接
+（正因如此所有页面任务可完全并行）。
 
 ## Worker 循环契约
 
@@ -110,7 +112,7 @@ done
 
 | 命令 | 作用 |
 |---|---|
-| `plan <repo> [--replan [--force]] [--max-pages N] [--knowledge]` | 扫描+生成任务清单；已有合法 catalog.json 则直接展开页面任务；有任务执行中时 replan 需 --force |
+| `plan <repo> [--replan [--force]] [--max-pages N] [--knowledge] [--locale auto\|zh\|en]` | 扫描+生成任务清单；产出语言自动检测（README 权重最高）或显式指定，持久化于 `state/locale`；已有合法 catalog.json 则直接展开页面任务；有任务执行中时 replan 需 --force |
 | `next [--claim] [--batch N] [--json]` | 领取就绪任务（阶段门控：attempts 少者优先）；`--json` 含完整 instructions |
 | `touch --task ID` | 执行期心跳：刷新认领，防长任务被过期回收 |
 | `watch [--interval S] [--timeout S]` | 阻塞监控直到全部完成（exit 0）或停滞/超时（exit 1）；主会话据此决定 finalize 或干预 |
@@ -130,25 +132,27 @@ done
   `REPOWIKI_STALE_SECONDS` 可调）；崩溃 worker 的任务可被安全回收。
 - **确定性优先**：锚点、行号区间、H1、路径分隔符由程序自动修复；
   只有语义缺陷（缺章节、引用不存在文件、mermaid 不闭合）才判失败。
-- **断点续跑**：每任务状态落盘（`state/index.json`），随时中断随时继续。
+- **断点续跑**：每任务状态落盘（`state/index.json`），随时中断随时继续；产出语言持久化于 `state/locale`。
+- **损坏防护**：`state/index.json` 或 `catalog.json` 损坏时保留现场并明确报错（绝不静默清空任务清单），`plan --replan --force` 为显式恢复路径。
 - **自动瘦身**：finalize 成功后自动清除运行时产物（`state/claims/`、`state/tasks/`），
   保留 `index.json`/`catalog.json`/`knowledge.json` 供增量更新与幂等重跑；
   不需要增量更新可执行 `repowiki clean <repo>` 删除全部状态（wiki 产出不受影响）。
-- **测试**：106 个单测覆盖竞态、过期回收、校验规则正反例、增量映射、知识聚合、损坏状态文件与非法输入的友好报错（`pytest`）。
+- **测试**：120 个单测覆盖竞态、过期回收、校验规则正反例、增量映射、知识聚合、双语产出（zh/en）、损坏状态文件与非法输入的友好报错（`pytest`）。
 
-## 与 Qoder 原版的差异
+## 设计取舍
 
-- `metadata.json` 形状兼容但不输出加密 `raw_data`/`recovery_checkpoint`（内部状态在 `state/`）。
-- ADR 类知识卡片（源自 Qoder 会话历史）不生成；机制卡片/模块文档完整支持。
-- 仅简体中文（`zh/`）、仅 POSIX 路径。
+- `metadata.json` 只含可读字段（catalogs/items/source_files/snippets/relations），不输出加密内部状态（运行时状态在 `state/`）。
+- ADR 类知识卡片不生成；机制卡片/模块文档完整支持。
+- 产出语言为简体中文（`zh/`）与英文（`en/`），表驱动设计，新增语言 = 一张字符串表 + 一套模板。
+- CLI 交互消息当前为中文（面向驱动它的 agent），不影响 wiki 产出语言。
 
 ## 已知边界
 
 - `overview` 总览不参与增量更新：结构性重构后建议 `plan --replan` 全量重生成。
 - 每个任务规格内嵌完整模板与文风规范（约 4-6k tokens）——换取任务自包含与并行安全；
   小上下文 agent 可将规格中的模板段落替换为对 `templates/` 目录的引用。
-- 页面语言硬性为中文（校验器强制中文小节标题）；`file://` 引用解析、程序化领取依赖 `jq` 属常见但非必需。
+- 产出语言由 plan 时确定并持久化，中途换语言需 `plan --replan`；`file://` 引用解析、程序化领取依赖 `jq` 属常见但非必需。
 
 ## Non-Goals
 
-LLM API 后端 · 内置 agent CLI 检测/执行器 · MCP 封装 · HTML 预览服务 · Windows · en 语言。
+LLM API 后端 · 内置 agent CLI 检测/执行器 · MCP 封装 · HTML 预览服务 · Windows · zh/en 之外的产出语言。

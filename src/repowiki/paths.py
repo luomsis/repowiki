@@ -14,6 +14,8 @@ import re
 import unicodedata
 from pathlib import Path
 
+from .i18n import DEFAULT_LOCALE, SUPPORTED
+
 _ILLEGAL_MAP = {
     "/": "／",
     "\\": "＼",
@@ -73,10 +75,34 @@ def github_anchor(heading: str) -> str:
 
 
 class WikiPaths:
-    """Resolves every location the tool reads/writes under a repository."""
+    """Resolves every location the tool reads/writes under a repository.
 
-    def __init__(self, repo_root: str | Path):
+    The output locale follows the target repository: explicit argument wins,
+    else the persisted ``state/locale`` file, else the default (zh).
+    """
+
+    def __init__(self, repo_root: str | Path, locale: str | None = None):
         self.repo_root = Path(repo_root).resolve()
+        self._locale = locale
+
+    @property
+    def locale(self) -> str:
+        if self._locale is None:
+            f = self.state_dir / "locale"
+            try:
+                value = f.read_text(encoding="utf-8").strip()
+            except OSError:
+                value = ""
+            self._locale = value if value in SUPPORTED else DEFAULT_LOCALE
+        return self._locale
+
+    def persist_locale(self, locale: str) -> None:
+        """Pin the output locale for this and all later commands."""
+        if locale not in SUPPORTED:
+            raise ValueError(f"unsupported locale: {locale}")
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        (self.state_dir / "locale").write_text(locale, encoding="utf-8")
+        self._locale = locale
 
     @property
     def root(self) -> Path:
@@ -108,15 +134,15 @@ class WikiPaths:
 
     @property
     def content_dir(self) -> Path:
-        return self.root / "zh" / "content"
+        return self.root / self.locale / "content"
 
     @property
     def meta_dir(self) -> Path:
-        return self.root / "zh" / "meta"
+        return self.root / self.locale / "meta"
 
     @property
     def knowledge_dir(self) -> Path:
-        return self.root / "knowledge" / "zh"
+        return self.root / "knowledge" / self.locale
 
     @property
     def metadata_file(self) -> Path:

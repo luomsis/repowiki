@@ -36,7 +36,7 @@ def run_knowledge(paths: WikiPaths, as_json: bool) -> int:
 
 
 def aggregate_knowledge(paths: WikiPaths, plan: dict, task_records: dict) -> str:
-    """Write knowledge/zh/_index.yaml and per-module _module.yaml.
+    """Write knowledge/<locale>/_index.yaml and per-module _module.yaml.
 
     Returns a human summary. Module -> directory mapping comes from the
     knowledge_module task outputs (recorded when the task set was expanded).
@@ -102,7 +102,7 @@ def aggregate_knowledge(paths: WikiPaths, plan: dict, task_records: dict) -> str
         }
     index = {
         "schema_version": 1,
-        "locale": "zh-CN",
+        "locale": "zh-CN" if paths.locale == "zh" else "en",
         "branch": branch,
         "nodes_managed": True,
         "exported_at": now_iso(),

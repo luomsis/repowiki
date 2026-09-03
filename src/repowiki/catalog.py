@@ -3,7 +3,7 @@
 The catalog is the chapter tree produced by the planning task
 (``state/catalog.json``). This module is the single source of truth for
 what a valid catalog looks like and where each page lands under
-``zh/content/``.
+``<locale>/content/``.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ class FlatNode:
     page_brief: str
     parent_id: str | None
     depth: int
-    output: str  # relative to .repowiki/, e.g. zh/content/项目概述/项目概述.md
+    output: str  # relative to .repowiki/, e.g. zh/content/Overview/Overview.md
     dir: str  # containing directory relative to wiki root ("" for standalone pages)
 
     def chapter_path(self, by_id: dict[str, "FlatNode"]) -> str:
@@ -122,13 +122,14 @@ def validate_catalog(data, known_paths: set[str]) -> tuple[list[str], list[str]]
     return errors, warnings
 
 
-def flatten(data: dict) -> list[FlatNode]:
+def flatten(data: dict, locale: str = "zh") -> list[FlatNode]:
     """Flatten validated catalog into nodes with derived output paths.
 
     Path rules: every chapter gets a directory named after its title plus an
     index page with the same name; root-level pages are standalone files at
-    ``zh/content/``. Collisions among siblings get ``__2`` suffixes.
+    ``<locale>/content/``. Collisions among siblings get ``__2`` suffixes.
     """
+    content_root = f"{locale}/content"
     by_id: dict[str, FlatNode] = {}
     out: list[FlatNode] = []
 
@@ -139,11 +140,11 @@ def flatten(data: dict) -> list[FlatNode]:
             if kind == "chapter":
                 chain = dir_chain + [comp]
                 rel_dir = "/".join(chain)
-                output = f"zh/content/{rel_dir}/{comp}.md"
+                output = f"{content_root}/{rel_dir}/{comp}.md"
             else:
                 chain = dir_chain
                 rel_dir = "/".join(chain)
-                output = f"zh/content/{rel_dir}/{comp}.md" if chain else f"zh/content/{comp}.md"
+                output = f"{content_root}/{rel_dir}/{comp}.md" if chain else f"{content_root}/{comp}.md"
             flat = FlatNode(
                 id=node["id"],
                 title=nfc(node["title"]).strip(),
@@ -155,7 +156,7 @@ def flatten(data: dict) -> list[FlatNode]:
                 parent_id=parent.id if parent else None,
                 depth=(parent.depth + 1) if parent else 1,
                 output=output,
-                dir=f"zh/content/{rel_dir}" if rel_dir else "zh/content",
+                dir=f"{content_root}/{rel_dir}" if rel_dir else content_root,
             )
             by_id[flat.id] = flat
             out.append(flat)

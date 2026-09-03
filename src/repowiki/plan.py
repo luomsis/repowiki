@@ -6,6 +6,7 @@ import json
 import shutil
 
 from .cli import UsageError
+from .i18n import SUPPORTED, detect_locale, strings
 from .paths import WikiPaths
 from . import tasks
 from .catalog import validate_catalog, flatten
@@ -24,8 +25,18 @@ def _load_catalog(paths: WikiPaths) -> dict | None:
         return None
 
 
+def _resolve_locale(paths: WikiPaths, locale_flag: str, inv) -> str:
+    """Explicit --locale wins; else a persisted state/locale; else detect."""
+    if locale_flag != "auto":
+        return locale_flag
+    if (paths.state_dir / "locale").exists():
+        return paths.locale  # lazy property reads the persisted value
+    return detect_locale(paths.repo_root, [f.path for f in inv.files if f.is_code])
+
+
 def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = None,
-             knowledge: bool = False, force: bool = False, as_json: bool = False) -> int:
+             knowledge: bool = False, force: bool = False, as_json: bool = False,
+             locale: str = "auto") -> int:
     if replan and paths.root.exists():
         busy = _busy_tasks(paths)
         if busy is None and not force:
@@ -39,7 +50,6 @@ def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = Non
                 "replan 会删除正在被写入的产物；确认请加 --force"
             )
         shutil.rmtree(paths.root)
-    paths.ensure()
     store = TaskStore(paths)
     inv = scan(paths.repo_root)
 
@@ -47,6 +57,15 @@ def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = Non
         raise UsageError(
             f"代码文件数 {inv.code_file_count} < {MIN_CODE_FILES}，仓库太小，不适合生成 RepoWiki"
         )
+
+    # locale must be resolved before ensure(): the locale decides which
+    # <locale>/content and <locale>/meta directories get created
+    resolved = _resolve_locale(paths, locale, inv)
+    persisted = (paths.state_dir / "locale").exists()
+    if not persisted or locale != "auto":
+        paths.persist_locale(resolved)
+    paths.ensure()
+    lang_name = strings(resolved)["name"]
 
     warnings: list[str] = []
     added: list[str] = []
@@ -61,7 +80,7 @@ def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = Non
     if catalog is None:
         added += store.add_tasks([tasks.build_catalog_task(paths, inv)])
     else:
-        nodes = flatten(catalog)
+        nodes = flatten(catalog, resolved)
         added += store.add_tasks(tasks.build_page_tasks(paths, nodes, inv, max_pages))
         warnings.extend(_warn_dangling_outputs(paths, nodes))
 
@@ -71,6 +90,7 @@ def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = Non
     stats = store.stats()
     result = {
         "repo": str(paths.repo_root),
+        "locale": resolved,
         "code_file_count": inv.code_file_count,
         "tasks_added": added,
         "tasks_total": stats["total"],
@@ -82,7 +102,7 @@ def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = Non
     if as_json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
-        print(f"仓库：{result['repo']}（代码文件 {result['code_file_count']} 个）")
+        print(f"仓库：{result['repo']}（代码文件 {result['code_file_count']} 个，产出语言：{lang_name}）")
         print(f"新增任务 {len(added)} 个，总任务 {result['tasks_total']} 个，当前阶段 {result['current_phase']}")
         for w in warnings:
             print(f"  ⚠ {w}")
@@ -109,7 +129,7 @@ def _warn_dangling_outputs(paths: WikiPaths, nodes: list[dict]) -> list[str]:
     if not content.exists():
         return dangling
     for p in content.rglob("*.md"):
-        rel = "zh/content/" + p.relative_to(content).as_posix()
+        rel = f"{paths.locale}/content/" + p.relative_to(content).as_posix()
         if rel not in expected:
             dangling.append(rel)
     if dangling:

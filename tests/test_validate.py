@@ -66,7 +66,8 @@ class TestPageRules:
         res = check_page(text, "项目概述", repo)
         assert res.ok
         assert any("钳制" in f for f in res.fixed)
-        assert "README.md:1-2" in res.text
+        # README.md is 3 lines in the fixture; the out-of-range 9999 gets clamped
+        assert "README.md:1-3" in res.text
 
     def test_backslash_path_normalized(self, repo):
         text = valid_page().replace("file://src/demo/main.py", "file://src\\demo\\main.py")
