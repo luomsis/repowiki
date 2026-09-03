@@ -35,13 +35,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--locale", default="auto", choices=["auto", "zh", "en"],
                    help="output language: auto-detect from the repo (README-weighted) or force zh/en")
     p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_plan)
 
     p = sub.add_parser("next", help="list (and optionally claim) ready tasks")
     p.add_argument("repo")
     p.add_argument("--claim", action="store_true", help="atomically claim the returned tasks")
-    p.add_argument("--batch", type=int, default=1, help="number of tasks to return/claim")
     p.add_argument("--worker", default=None, help="worker identifier recorded on claim")
     p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_next)
 
     p = sub.add_parser("check", help="validate task output, auto-fix deterministic defects, update status")
     p.add_argument("repo")
@@ -51,82 +52,77 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--worker", default=None, help="caller identity; in_progress tasks held by others are refused")
     p.add_argument("--force", action="store_true", help="check even if claimed by another worker")
     p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_check)
 
     p = sub.add_parser("touch", help="refresh a task's claim while executing (heartbeat)")
     p.add_argument("repo")
     p.add_argument("--task", required=True)
     p.add_argument("--worker", default=None)
     p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_touch)
 
     p = sub.add_parser("watch", help="block until all tasks are done (or stalled/timeout); exit 0=completed, 1=stalled/timeout")
     p.add_argument("repo")
     p.add_argument("--interval", type=float, default=10.0, help="poll interval seconds (default 10)")
     p.add_argument("--timeout", type=float, default=3600.0, help="give up after this many seconds (default 3600)")
     p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_watch)
 
     p = sub.add_parser("release", help="return an in_progress task to pending")
     p.add_argument("repo")
     p.add_argument("--task", required=True)
     p.add_argument("--force", action="store_true", help="release even if claimed by another worker")
     p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_release)
 
     p = sub.add_parser("finalize", help="assemble zh/meta/repowiki-metadata.json (requires all tasks done)")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_finalize)
 
     p = sub.add_parser("update", help="map git changes to page_update tasks (incremental regeneration)")
     p.add_argument("repo")
     p.add_argument("--since", default=None, help="commit sha to diff from (default: last_commit_id in metadata)")
     p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_update)
 
     p = sub.add_parser("knowledge", help="append the knowledge-card task set (planning + cards)")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_knowledge)
 
     p = sub.add_parser("status", help="show task statistics, failures and stale claims")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_status)
 
     p = sub.add_parser("clean", help="remove .repowiki/state entirely (wiki output is kept)")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_clean)
 
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = build_parser()
-    args = parser.parse_args(argv)
+    args = build_parser().parse_args(argv)
     paths = WikiPaths(args.repo)
-    handlers = {
-        "plan": cmd_plan,
-        "next": cmd_next,
-        "check": cmd_check,
-        "touch": cmd_touch,
-        "watch": cmd_watch,
-        "release": cmd_release,
-        "finalize": cmd_finalize,
-        "update": cmd_update,
-        "knowledge": cmd_knowledge,
-        "status": cmd_status,
-        "clean": cmd_clean,
-    }
     try:
-        return handlers[args.command](args, paths)
+        return args.func(args, paths)
     except ConflictError as e:
-        if getattr(args, "json", False):
+        if args.json:
             _print_json({"ok": False, "error": "conflict", "detail": str(e)})
         else:
             print(f"conflict: {e}", file=sys.stderr)
         return 2
     except StateError as e:
-        if getattr(args, "json", False):
+        if args.json:
             _print_json({"ok": False, "error": "state_corrupt", "detail": str(e)})
         else:
             print(f"state error: {e}", file=sys.stderr)
         return 1
     except UsageError as e:
-        if getattr(args, "json", False):
+        if args.json:
             _print_json({"ok": False, "error": "usage", "detail": str(e)})
         else:
             print(f"error: {e}", file=sys.stderr)
@@ -155,10 +151,10 @@ def cmd_plan(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in task
                     locale=args.locale)
 
 
-def cmd_next(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in state.py
+def cmd_next(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in dispatch.py
     from .dispatch import run_next
 
-    return run_next(paths, claim=args.claim, batch=args.batch, worker=args.worker, as_json=args.json)
+    return run_next(paths, claim=args.claim, worker=args.worker, as_json=args.json)
 
 
 def cmd_check(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in validate.py

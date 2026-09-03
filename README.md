@@ -82,7 +82,7 @@ loop:
     ok=false → 按 errors 修复后重查；放弃则 repowiki release <repo> --task <id> --force
 ```
 
-一次只持有一个认领：当前任务 check 通过（或放弃）后才回到 `next`，禁止 `--batch>1` 预支——
+一次只持有一个认领：当前任务 check 通过（或放弃）后才回到 `next`（每次 next 只发放一个任务）——
 worker 中途退出时手中不留孤儿认领；即便异常退出，过期认领也会自动回队列（见可靠性设计）。
 
 ### 并发配方
@@ -97,7 +97,7 @@ worker 中途退出时手中不留孤儿认领；即便异常退出，过期认�
 #!/bin/bash
 # worker.sh —— 把 claude 换成 codex exec / opencode run，工具不感知、不限制用哪个 agent
 while :; do
-  TASK=$(repowiki next . --claim --batch 1 --json)
+  TASK=$(repowiki next . --claim --json)
   N=$(echo "$TASK" | jq '.tasks | length')
   if [ "$N" -eq 0 ]; then
     [ "$(echo "$TASK" | jq '.busy')" -eq 0 ] && break   # 空且无人执行 → 退出
@@ -117,7 +117,7 @@ done
 | 命令 | 作用 |
 |---|---|
 | `plan <repo> [--replan [--force]] [--max-pages N] [--knowledge] [--locale auto\|zh\|en]` | 扫描+生成任务清单；产出语言自动检测（README 权重最高）或显式指定，持久化于 `state/locale`；已有合法 catalog.json 则直接展开页面任务；有任务执行中时 replan 需 --force |
-| `next [--claim] [--batch N] [--json]` | 领取就绪任务（阶段门控：attempts 少者优先）；worker 死亡后过期的认领会自动回队列，无需人工释放；`--json` 含完整 instructions |
+| `next [--claim] [--json]` | 领取就绪任务，每次只发放一个（阶段门控：attempts 少者优先）；worker 死亡后过期的认领会自动回队列，无需人工释放；`--json` 含完整 instructions |
 | `touch --task ID` | 执行期心跳：刷新认领，防长任务被过期回收 |
 | `watch [--interval S] [--timeout S]` | 阻塞监控直到全部完成（exit 0）或停滞/超时（exit 1）；过期认领不算执行中，真停滞可被及时报告 |
 | `check --task ID \| --all` | 校验产出；锚点/行号/H1 自动修复；catalog/knowledge-plan 通过后自动展开后续任务；done 为终态（只读报告）；他人认领的任务需 --force |

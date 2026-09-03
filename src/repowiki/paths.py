@@ -158,6 +158,3 @@ class WikiPaths:
 
     def task_spec(self, task_id: str) -> Path:
         return self.tasks_dir / f"{task_id}.md"
-
-    def repo_rel(self, p: Path) -> str:
-        return p.resolve().relative_to(self.repo_root).as_posix()

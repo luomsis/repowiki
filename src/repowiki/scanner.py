@@ -8,9 +8,10 @@ and the tool's own output (``.repowiki``).
 from __future__ import annotations
 
 import os
-import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from .gitutil import run_git
 
 CODE_EXTS = {
     "py", "ts", "tsx", "js", "jsx", "mjs", "cjs", "go", "rs", "java", "kt",
@@ -56,7 +57,6 @@ class FileEntry:
     loc: int
     lang: str
     is_code: bool
-    size: int
 
 
 @dataclass
@@ -67,15 +67,6 @@ class Inventory:
     tree_summary: str = ""
     code_file_count: int = 0
 
-    def to_dict(self) -> dict:
-        return {
-            "repo_root": self.repo_root,
-            "files": [f.__dict__ for f in self.files],
-            "key_files": self.key_files,
-            "tree_summary": self.tree_summary,
-            "code_file_count": self.code_file_count,
-        }
-
     def known_paths(self) -> set[str]:
         return {f.path for f in self.files}
 
@@ -83,14 +74,10 @@ class Inventory:
 def _git_ls_files(root: Path) -> list[str] | None:
     if not (root / ".git").exists():
         return None
-    try:
-        out = subprocess.run(
-            ["git", "ls-files", "-z"],
-            cwd=str(root), capture_output=True, check=True, timeout=120,
-        ).stdout
-    except (subprocess.SubprocessError, OSError):
+    out = run_git(root, "ls-files", "-z", timeout=120)
+    if out is None:
         return None
-    return [p for p in out.decode("utf-8", "replace").split("\0") if p]
+    return [p for p in out.split("\0") if p]
 
 
 def _walk_files(root: Path) -> list[str]:
@@ -146,7 +133,7 @@ def scan(repo_root: str | Path) -> Inventory:
         if not lang and no_ext in {"dockerfile", "makefile", "procfile"}:
             lang = no_ext.lower()
         is_code = ext in CODE_EXTS
-        files.append(FileEntry(path=rel, loc=_count_loc(p, size), lang=lang, is_code=is_code, size=size))
+        files.append(FileEntry(path=rel, loc=_count_loc(p, size), lang=lang, is_code=is_code))
 
     inv = Inventory(
         repo_root=str(root),

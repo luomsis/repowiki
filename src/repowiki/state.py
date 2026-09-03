@@ -346,10 +346,14 @@ class TaskStore:
             for t in tasks
             if t["status"] == "failed" and t["attempts"] >= cap
         ]
+        stale_ids = {s["id"] for s in stale}
         return {
             "total": len(tasks),
             "by_status": by_status,
             "current_phase": self.current_phase(data),
+            # in-flight claims that are actually alive (stale ones will be
+            # handed back out, so they don't count as busy)
+            "busy": sum(1 for t in tasks if t["status"] == "in_progress" and t["id"] not in stale_ids),
             "failed": failed,
             "exhausted": exhausted,
             "stale_claims": stale,

@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import json
-import subprocess
 
 from .catalog import flatten
 from .cli import UsageError
+from .gitutil import run_git
 from .paths import WikiPaths
 from . import tasks as task_builders
 from .scanner import scan
@@ -14,16 +14,10 @@ from .state import TaskStore
 
 
 def _git_diff(repo, since: str) -> list[str] | None:
-    try:
-        out = subprocess.run(
-            ["git", "diff", "--name-only", f"{since}..HEAD"],
-            cwd=str(repo), capture_output=True, check=True, timeout=60,
-        ).stdout.decode("utf-8", "replace")
-        return [l.strip() for l in out.splitlines() if l.strip()]
-    except subprocess.CalledProcessError:
+    out = run_git(repo, "diff", "--name-only", f"{since}..HEAD", timeout=60)
+    if out is None:
         return None
-    except (subprocess.SubprocessError, OSError):
-        return None
+    return [l.strip() for l in out.splitlines() if l.strip()]
 
 
 def _last_commit_id(paths: WikiPaths) -> str | None:

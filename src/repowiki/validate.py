@@ -196,12 +196,6 @@ def _fix_toc(text: str, toc_name: str = "目录") -> tuple[str, str] | None:
 
 # --- catalog / knowledge plan ---
 
-def check_catalog(data, known_paths: set[str]) -> tuple[list[str], list[str]]:
-    from .catalog import validate_catalog
-
-    return validate_catalog(data, known_paths)
-
-
 KNOWLEDGE_CATEGORIES = {
     "configuration_system", "logging_system", "error_handling",
     "build_system", "dependency_management", "frontend_style",

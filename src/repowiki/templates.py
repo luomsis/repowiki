@@ -36,7 +36,3 @@ def render(text: str, **kwargs) -> str:
 
 def render_file(name: str, locale: str = DEFAULT_LOCALE, **kwargs) -> str:
     return render(load(name, locale), **kwargs)
-
-
-def placeholders(text: str) -> list[str]:
-    return sorted(set(_PLACEHOLDER_RE.findall(text)))

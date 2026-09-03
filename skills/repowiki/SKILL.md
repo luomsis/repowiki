@@ -54,7 +54,7 @@ loop:
   2. 若 tasks 为空且 busy>0 → 等待 30 秒重试（其他 worker 正在写）
      若 tasks 为空且 busy=0 → 结束
   3. 按 tasks[0].instructions 执行（只写 instructions 指定的 output 文件）。
-     一次只持有一个认领：当前任务完成前不得再次 next --claim（禁止 --batch>1 预支）；
+     一次只持有一个认领：每次 next 只发放一个任务，当前任务完成前不得再次 next --claim；
      认领后立即 `repowiki touch <repo> --task <id> --worker <名字>` 一次，
      撰写期间每约 3 分钟 touch 一次（认领超过 stale 窗口未续期会被自动回收转给他人）
   4. 运行 `repowiki check <repo> --task <id> --worker <名字> --json`

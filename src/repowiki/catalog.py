@@ -29,7 +29,6 @@ class FlatNode:
     parent_id: str | None
     depth: int
     output: str  # relative to .repowiki/, e.g. zh/content/Overview/Overview.md
-    dir: str  # containing directory relative to wiki root ("" for standalone pages)
 
     def chapter_path(self, by_id: dict[str, "FlatNode"]) -> str:
         parts = [self.title]
@@ -142,9 +141,8 @@ def flatten(data: dict, locale: str = "zh") -> list[FlatNode]:
                 rel_dir = "/".join(chain)
                 output = f"{content_root}/{rel_dir}/{comp}.md"
             else:
-                chain = dir_chain
-                rel_dir = "/".join(chain)
-                output = f"{content_root}/{rel_dir}/{comp}.md" if chain else f"{content_root}/{comp}.md"
+                rel_dir = "/".join(dir_chain)
+                output = f"{content_root}/{rel_dir}/{comp}.md" if rel_dir else f"{content_root}/{comp}.md"
             flat = FlatNode(
                 id=node["id"],
                 title=nfc(node["title"]).strip(),
@@ -156,7 +154,6 @@ def flatten(data: dict, locale: str = "zh") -> list[FlatNode]:
                 parent_id=parent.id if parent else None,
                 depth=(parent.depth + 1) if parent else 1,
                 output=output,
-                dir=f"{content_root}/{rel_dir}" if rel_dir else content_root,
             )
             by_id[flat.id] = flat
             out.append(flat)

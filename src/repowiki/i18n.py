@@ -35,7 +35,6 @@ STRINGS: dict[str, dict] = {
         "overview_h1_suffix": "Wiki 总览",
         "overview_sections": ("章节导航", "如何使用本 Wiki"),
         "module_required_files": ["概述.md", "技术栈.md", "架构设计.md"],
-        "module_optional_files": ["特殊配置与命令.md", "编码规范.md"],
         "card_sections": ["体系概览", "关键文件与包", "架构与设计约定", "开发者应遵循的规则"],
     },
     "en": {
@@ -56,7 +55,6 @@ STRINGS: dict[str, dict] = {
         "overview_h1_suffix": "Wiki Overview",
         "overview_sections": ("Section Navigation", "How to Use This Wiki"),
         "module_required_files": ["overview.md", "tech-stack.md", "architecture.md"],
-        "module_optional_files": ["configuration-and-commands.md", "coding-conventions.md"],
         "card_sections": [
             "System Overview", "Key Files and Packages",
             "Architecture and Design Conventions", "Rules for Developers",

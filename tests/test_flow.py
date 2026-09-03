@@ -64,7 +64,7 @@ class TestCheckLoop:
     def _prepare(self, repo):
         write_catalog(WikiPaths(repo))
         run("plan", str(repo))
-        run("next", str(repo), "--claim", "--batch", "5")
+        run("next", str(repo), "--claim")
 
     def test_check_catalog_expands_pages(self, repo):
         # no catalog.json yet: plan creates the catalog task, agent writes

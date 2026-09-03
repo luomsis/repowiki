@@ -10,13 +10,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import subprocess
-import uuid
-from datetime import datetime, timezone
-from pathlib import Path
 
 from .catalog import flatten
 from .cli import UsageError
+from .gitutil import run_git
 from .paths import WikiPaths
 from .state import TaskStore, now_iso
 from .tasks import build_overview_task
@@ -25,16 +22,6 @@ from .validate import extract_refs
 
 def _md5(s: str) -> str:
     return hashlib.md5(s.encode("utf-8")).hexdigest()
-
-
-def _git(repo: Path, *args: str) -> str | None:
-    try:
-        out = subprocess.run(
-            ["git", *args], cwd=str(repo), capture_output=True, check=True, timeout=30
-        ).stdout.decode().strip()
-        return out or None
-    except (subprocess.SubprocessError, OSError):
-        return None
 
 
 def run_finalize(paths: WikiPaths, as_json: bool) -> int:
@@ -51,7 +38,9 @@ def run_finalize(paths: WikiPaths, as_json: bool) -> int:
         _emit_progress(as_json, msg)
         return 3  # progress, not error: waiting for the overview task
 
-    missing_pages = _missing_pages(paths, _require_catalog(paths))
+    catalog = _require_catalog(paths)
+    nodes = flatten(catalog, paths.locale)
+    missing_pages = [f"{n.id}({n.title})" for n in nodes if not (paths.root / n.output).is_file()]
     if missing_pages:
         raise UsageError(
             f"catalog 中有 {len(missing_pages)} 个页面尚未生成: "
@@ -67,8 +56,6 @@ def run_finalize(paths: WikiPaths, as_json: bool) -> int:
             + ", ".join(f"{k}({v})" for k, v in list(unfinished.items())[:8])
         )
 
-    catalog = _require_catalog(paths)
-    nodes = flatten(catalog, paths.locale)
     by_id = {n.id: n for n in nodes}
 
     source_files: dict[str, dict] = {}
@@ -97,7 +84,7 @@ def run_finalize(paths: WikiPaths, as_json: bool) -> int:
             "progress_status": "completed",
             "wiki_present_status": "COMPLETED",
             "locale": paths.locale,
-            "last_commit_id": _git(paths.repo_root, "rev-parse", "HEAD"),
+            "last_commit_id": (run_git(paths.repo_root, "rev-parse", "HEAD") or "").strip() or None,
             "generated_at": now_iso(),
         },
         "wiki_catalogs": [
@@ -143,7 +130,10 @@ def run_finalize(paths: WikiPaths, as_json: bool) -> int:
     }
     removed = store.cleanup_runtime()
     summary["cleaned_runtime"] = removed
-    _emit(as_json, True, json.dumps(summary, ensure_ascii=False, indent=2) if as_json else _fmt_summary(summary))
+    if as_json:
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+    else:
+        print(_fmt_summary(summary))
     return 0
 
 
@@ -159,32 +149,12 @@ def _fmt_summary(s: dict) -> str:
     return "\n".join(lines)
 
 
-def _emit(as_json: bool, ok: bool, payload: str) -> None:
-    if as_json:
-        try:
-            print(json.dumps(json.loads(payload), ensure_ascii=False, indent=2))
-        except json.JSONDecodeError:
-            print(json.dumps({"ok": ok, "detail": payload}, ensure_ascii=False))
-    else:
-        print(payload)
-
-
 def _emit_progress(as_json: bool, msg: str) -> None:
     if as_json:
         print(json.dumps({"ok": True, "waiting": True, "detail": msg,
                           "next_action": "执行 overview 任务后再次运行 finalize"}, ensure_ascii=False))
     else:
         print(msg)
-
-
-def _missing_pages(paths: WikiPaths, catalog: dict) -> list[str]:
-    """Catalog nodes whose output page does not exist on disk (e.g. created
-    via `plan --max-pages` trial runs). finalize refuses to claim completion."""
-    missing = []
-    for n in flatten(catalog, paths.locale):
-        if not (paths.root / n.output).is_file():
-            missing.append(f"{n.id}({n.title})")
-    return missing
 
 
 def _require_catalog(paths: WikiPaths) -> dict:

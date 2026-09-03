@@ -5,11 +5,11 @@ knowledge outputs (_index.yaml / _module.yaml) at finalize time.
 from __future__ import annotations
 
 import json
-import subprocess
 
 import yaml
 
 from .cli import UsageError
+from .gitutil import run_git
 from .paths import WikiPaths, sanitize_component
 from . import tasks as task_builders
 from .scanner import scan
@@ -56,7 +56,7 @@ def aggregate_knowledge(paths: WikiPaths, plan: dict, task_records: dict) -> str
         return mod_dirs.get(mid)
 
     modules_by_id = {m["id"]: m for m in plan.get("modules", []) if isinstance(m, dict)}
-    branch = _git_branch(paths) or "main"
+    branch = ((run_git(paths.repo_root, "rev-parse", "--abbrev-ref", "HEAD") or "").strip()) or "main"
 
     # per-module _module.yaml
     for mid, mod in modules_by_id.items():
@@ -115,14 +115,3 @@ def aggregate_knowledge(paths: WikiPaths, plan: dict, task_records: dict) -> str
     )
     cards = len(plan.get("cards", []))
     return f"_index.yaml + {len(index_modules)} 个 _module.yaml（卡片 {cards} 张）"
-
-
-def _git_branch(paths: WikiPaths) -> str | None:
-    try:
-        out = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            cwd=str(paths.repo_root), capture_output=True, check=True, timeout=15,
-        ).stdout.decode().strip()
-        return out or None
-    except (subprocess.SubprocessError, OSError):
-        return None

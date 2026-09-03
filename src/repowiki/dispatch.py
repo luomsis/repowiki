@@ -11,7 +11,7 @@ import json
 import os
 import socket
 
-from .catalog import flatten
+from .catalog import flatten, validate_catalog
 from .cli import ConflictError, UsageError
 from .paths import WikiPaths
 from . import tasks as task_builders
@@ -23,7 +23,6 @@ from .validate import (
     check_knowledge_plan,
     check_overview,
     check_page,
-    check_catalog,
 )
 
 
@@ -46,38 +45,29 @@ def _task_payload(paths: WikiPaths, task: dict) -> dict:
     }
 
 
-def run_next(paths: WikiPaths, claim: bool, batch: int, worker: str | None, as_json: bool) -> int:
+def run_next(paths: WikiPaths, claim: bool, worker: str | None, as_json: bool) -> int:
     store = TaskStore(paths)
     if not paths.index_file.exists():
         raise UsageError("尚未规划任务，请先运行 `repowiki plan <repo>`")
     worker = worker or _worker_id()
-    ready = store.ready_tasks(limit=batch if claim else max(batch, 1))
-    claimed: list[dict] = []
+    result_tasks: list[dict] = []
     if claim:
-        for task in ready:
+        # 队列是纯 FIFO 拉取，一次只发放一个任务（worker 契约：一次只持有一个认领）
+        for task in store.ready_tasks(limit=1):
             try:
-                claimed.append(store.claim(task["id"], worker))
+                result_tasks.append(store.claim(task["id"], worker))
             except ConflictError:
-                continue  # lost the race; try the next one
-            if len(claimed) >= batch:
-                break
-        result_tasks = claimed
+                pass  # lost the race; the next `next` will re-pick
     else:
-        result_tasks = ready
+        result_tasks = store.ready_tasks(limit=1)
 
     payload = [_task_payload(paths, t) for t in result_tasks]
     stats = store.stats()
-    data = store.load()
-    busy = sum(
-        1 for t in data["tasks"].values()
-        if t["status"] == "in_progress"
-        and not (t["id"] in {s["id"] for s in stats["stale_claims"]})
-    )
     out = {
         "ok": True,
         "claimed": claim,
         "tasks": payload,
-        "busy": busy,
+        "busy": stats["busy"],
         "progress": {"total": stats["total"], "by_status": stats["by_status"], "current_phase": stats["current_phase"]},
     }
     if as_json:
@@ -148,9 +138,6 @@ def run_watch(paths: WikiPaths, interval: float, timeout: float, as_json: bool) 
     started = _time.monotonic()
     last_line = ""
     stats = store.stats()
-
-    def snapshot(s: dict) -> str:
-        return json.dumps(s, ensure_ascii=False, sort_keys=True)
 
     while True:
         stats = store.stats()
@@ -278,8 +265,6 @@ def _check_readonly(paths: WikiPaths, task: dict, inv) -> dict:
         return {**base, "ok": False, "readonly": True,
                 "errors": [f"产出已不存在: {task['output']}（如需重建请用 update 或 plan --replan）"]}
     if task["kind"] in ("page", "page_update"):
-        from .validate import check_page
-
         raw = out.read_text(encoding="utf-8")
         res = check_page(raw, task["title"].replace("（增量更新）", ""), paths.repo_root,
                          is_update=(task["kind"] == "page_update"), locale=paths.locale)
@@ -367,10 +352,7 @@ def _load_json(path) -> dict | None:
 
 def _check_plan_task(paths: WikiPaths, store: TaskStore, task: dict, inv, base: dict) -> dict:
     tid = task["id"]
-    if tid == "catalog":
-        plan_file, expand = paths.catalog_file, _expand_pages
-    else:
-        plan_file, expand = paths.knowledge_plan_file, _expand_knowledge
+    plan_file = paths.catalog_file if tid == "catalog" else paths.knowledge_plan_file
 
     data = _load_json(plan_file)
     if data is None:
@@ -381,7 +363,7 @@ def _check_plan_task(paths: WikiPaths, store: TaskStore, task: dict, inv, base: 
         return {**base, "ok": False, "status": "failed", "errors": [f"JSON 解析失败: {data['__parse_error__']}"]}
 
     if tid == "catalog":
-        errors, warnings = check_catalog(data, inv.known_paths())
+        errors, warnings = validate_catalog(data, inv.known_paths())
     else:
         errors, warnings = check_knowledge_plan(data, inv.known_paths())
 
@@ -389,7 +371,10 @@ def _check_plan_task(paths: WikiPaths, store: TaskStore, task: dict, inv, base: 
         store.update(tid, status="failed")
         return {**base, "ok": False, "status": "failed", "errors": errors, "warnings": warnings}
 
-    added = expand(paths, store, data, inv)
+    if tid == "catalog":
+        added = _expand_pages(paths, store, data, inv)
+    else:
+        added = _expand_knowledge(paths, store, data)
     store.update(tid, status="done")
     return {**base, "ok": True, "status": "done", "warnings": warnings,
             "expanded_tasks": added}
@@ -400,5 +385,5 @@ def _expand_pages(paths: WikiPaths, store: TaskStore, catalog: dict, inv) -> lis
     return store.add_tasks(task_builders.build_page_tasks(paths, nodes, inv))
 
 
-def _expand_knowledge(paths: WikiPaths, store: TaskStore, plan: dict, inv) -> list[str]:
+def _expand_knowledge(paths: WikiPaths, store: TaskStore, plan: dict) -> list[str]:
     return store.add_tasks(task_builders.build_knowledge_tasks(paths, plan))
