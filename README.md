@@ -77,9 +77,13 @@ loop:
   tasks 为空且 busy>0  → 等待重试（他人执行中）
   tasks 为空且 busy=0  → 退出
   按 t.tasks[0].instructions 执行（只写指定的 output 文件）
+  执行期定期 repowiki touch <repo> --task <id>   # 心跳续期，防被过期回收
   repowiki check <repo> --task <id> --json
     ok=false → 按 errors 修复后重查；放弃则 repowiki release <repo> --task <id> --force
 ```
+
+一次只持有一个认领：当前任务 check 通过（或放弃）后才回到 `next`，禁止 `--batch>1` 预支——
+worker 中途退出时手中不留孤儿认领；即便异常退出，过期认领也会自动回队列（见可靠性设计）。
 
 ### 并发配方
 
@@ -113,9 +117,9 @@ done
 | 命令 | 作用 |
 |---|---|
 | `plan <repo> [--replan [--force]] [--max-pages N] [--knowledge] [--locale auto\|zh\|en]` | 扫描+生成任务清单；产出语言自动检测（README 权重最高）或显式指定，持久化于 `state/locale`；已有合法 catalog.json 则直接展开页面任务；有任务执行中时 replan 需 --force |
-| `next [--claim] [--batch N] [--json]` | 领取就绪任务（阶段门控：attempts 少者优先）；`--json` 含完整 instructions |
+| `next [--claim] [--batch N] [--json]` | 领取就绪任务（阶段门控：attempts 少者优先）；worker 死亡后过期的认领会自动回队列，无需人工释放；`--json` 含完整 instructions |
 | `touch --task ID` | 执行期心跳：刷新认领，防长任务被过期回收 |
-| `watch [--interval S] [--timeout S]` | 阻塞监控直到全部完成（exit 0）或停滞/超时（exit 1）；主会话据此决定 finalize 或干预 |
+| `watch [--interval S] [--timeout S]` | 阻塞监控直到全部完成（exit 0）或停滞/超时（exit 1）；过期认领不算执行中，真停滞可被及时报告 |
 | `check --task ID \| --all` | 校验产出；锚点/行号/H1 自动修复；catalog/knowledge-plan 通过后自动展开后续任务；done 为终态（只读报告）；他人认领的任务需 --force |
 | `release --task ID [--force]` | 释放认领（崩溃恢复） |
 | `finalize` | 组装 metadata.json；要求全部任务 done |
@@ -128,8 +132,12 @@ done
 
 ## 可靠性设计
 
-- **并发安全**：原子 `mkdir` 认领 + 目录 mtime 过期判定（默认 45 分钟，
-  `REPOWIKI_STALE_SECONDS` 可调）；崩溃 worker 的任务可被安全回收。
+- **并发安全**：原子 `mkdir` 认领 + 目录 mtime 过期判定（默认 15 分钟，
+  `REPOWIKI_STALE_SECONDS` 可调）。
+- **队列自愈**：崩溃/被杀 worker 的过期认领由 `next` 自动回收重新入队（改名 `.stale-*` 留痕、
+  attempts+1，毒任务上限照常生效），无需人工 `release --force`；活认领靠 `touch` 心跳续期防误抢
+  （repowiki 是短命 CLI 进程，记录的 pid 无存活意义，心跳是唯一存活信号）。
+- **watch 不假活**：过期认领不计入「执行中」，worker 全部死亡时停滞可被及时报告而非干等超时。
 - **确定性优先**：锚点、行号区间、H1、路径分隔符由程序自动修复；
   只有语义缺陷（缺章节、引用不存在文件、mermaid 不闭合）才判失败。
 - **断点续跑**：每任务状态落盘（`state/index.json`），随时中断随时继续；产出语言持久化于 `state/locale`。
@@ -137,7 +145,7 @@ done
 - **自动瘦身**：finalize 成功后自动清除运行时产物（`state/claims/`、`state/tasks/`），
   保留 `index.json`/`catalog.json`/`knowledge.json` 供增量更新与幂等重跑；
   不需要增量更新可执行 `repowiki clean <repo>` 删除全部状态（wiki 产出不受影响）。
-- **测试**：120 个单测覆盖竞态、过期回收、校验规则正反例、增量映射、知识聚合、双语产出（zh/en）、损坏状态文件与非法输入的友好报错（`pytest`）。
+- **测试**：126 个单测覆盖竞态、孤儿认领自动回收、校验规则正反例、增量映射、知识聚合、双语产出（zh/en）、损坏状态文件与非法输入的友好报错（`pytest`）。
 
 ## 设计取舍
 

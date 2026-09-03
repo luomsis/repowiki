@@ -17,7 +17,7 @@ from pathlib import Path
 from .cli import ConflictError, StateError, UsageError
 from .paths import WikiPaths
 
-DEFAULT_STALE_SECONDS = 45 * 60
+DEFAULT_STALE_SECONDS = 15 * 60
 
 
 def max_attempts() -> int:
@@ -29,13 +29,6 @@ def max_attempts() -> int:
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _ts(iso: str) -> float:
-    try:
-        return datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).timestamp()
-    except (ValueError, TypeError):
-        return 0.0
 
 
 def new_task(task_id: str, kind: str, phase: int, title: str, output: str) -> dict:
@@ -166,7 +159,8 @@ class TaskStore:
         return min(phases) if phases else None
 
     def ready_tasks(self, limit: int = 1) -> list[dict]:
-        """Tasks claimable now: pending/failed in the current open phase.
+        """Tasks claimable now: pending/failed in the current open phase,
+        plus in_progress tasks whose claim has gone stale (dead worker).
 
         Failed tasks whose attempts reached the cap are excluded (exhausted);
         they need an explicit `release --force` reset before retrying."""
@@ -177,8 +171,14 @@ class TaskStore:
         cap = max_attempts()
         ready = [
             t for t in data["tasks"].values()
-            if t["phase"] == phase and t["status"] in ("pending", "failed")
-            and not (t["status"] == "failed" and t["attempts"] >= cap)
+            if t["phase"] == phase
+            and (
+                (
+                    t["status"] in ("pending", "failed")
+                    and not (t["status"] == "failed" and t["attempts"] >= cap)
+                )
+                or (t["status"] == "in_progress" and self._claim_stale(self._claim_dir(t["id"])))
+            )
         ]
         order = {tid: i for i, tid in enumerate(data["tasks"])}
         ready.sort(key=lambda t: (t["attempts"], t["phase"], order[t["id"]]))
@@ -198,6 +198,16 @@ class TaskStore:
         except OSError:
             return float("inf")
 
+    def _claim_stale(self, claim_dir: Path) -> bool:
+        """Single source of truth for "this claim is abandoned": the claim dir
+        is gone (orphaned in_progress entry mid-recovery), or its mtime age
+        reached the stale window. Workers keep it fresh via `touch`; the
+        window is the only liveness signal — repowiki runs as short-lived
+        CLI processes, so recorded pids are meaningless for liveness."""
+        if not claim_dir.exists():
+            return True
+        return self._claim_age(claim_dir) >= self.stale_seconds
+
     def _try_mkdir_claim(self, task_id: str, worker: str) -> bool:
         """Create claims/<id>/ atomically, stealing it first if stale."""
         self.paths.claims_dir.mkdir(parents=True, exist_ok=True)
@@ -206,7 +216,7 @@ class TaskStore:
             try:
                 os.mkdir(cd)
             except FileExistsError:
-                if self._claim_age(cd) < self.stale_seconds:
+                if not self._claim_stale(cd):
                     return False  # live claim held by someone else
                 # stale: rename it away (only one racer succeeds) and retry
                 zombie = cd.with_name(f".stale-{task_id}-{uuid.uuid4().hex[:6]}")
@@ -324,8 +334,7 @@ class TaskStore:
             {"id": t["id"], "worker": t["worker"], "heartbeat_at": t["heartbeat_at"]}
             for t in tasks
             if t["status"] == "in_progress"
-            and t.get("heartbeat_at")
-            and (time.time() - _ts(t["heartbeat_at"])) > self.stale_seconds
+            and self._claim_stale(self._claim_dir(t["id"]))
         ]
         failed = [
             {"id": t["id"], "title": t["title"]}

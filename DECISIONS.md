@@ -33,3 +33,15 @@
     串行化读改写（mtime 复查有 TOCTOU 窗口，6×12 压测丢 3 次更新）；finalize 校验页面存在
     （--max-pages 试跑不再产生幽灵条目）且首次运行退出码 3 表达进展；replan 有 in_progress
     时需 --force。
+12. **过期认领自动回收**：实战（40 页并发生成，一 worker 退出后遗留 15 个认领冻结队列 50 分钟）
+    暴露 `_try_mkdir_claim` 的抢占路径经 CLI 不可达——`ready_tasks` 完全排除 in_progress，
+    死 worker 的认领只能人工 `release --force`。修复：`ready_tasks` 纳入「in_progress 且
+    认领过期」的任务，`next --claim` 走既有抢占路径自动回收（`.stale-*` 留痕、attempts+1，
+    毒任务上限照常生效）；stale 判定统一为 claim 目录 mtime 单一来源（原 stats() 基于
+    index.heartbeat_at 的第二套判定废弃，避免 sweep 与 busy 统计打架）；watch 的 in_flight
+    同步排除过期认领（否则 worker 全死后停滞分支永远不可达，只能干等超时）。
+    默认 stale 窗口 45→15 分钟：冻结上限与误抢风险（worker 遵守 touch 纪律则无误抢）的平衡。
+13. **不做 pid 存活检测**：repowiki 是短命 CLI 进程，认领时记录的 pid 在命令退出后立即失效，
+    不能作为认领者存活信号；存活信号就是自愿的 `touch` 心跳，过期窗口是死进程的唯一回收延迟。
+    `next` 亦不加 `--task`：队列保持纯 FIFO 拉取，按 ID 操作由 `check --task`/`release --task`
+    承担——按 ID 认领会诱导主会话给 worker 指定任务清单，正是实战中认领混战的根源。

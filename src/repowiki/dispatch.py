@@ -156,9 +156,12 @@ def run_watch(paths: WikiPaths, interval: float, timeout: float, as_json: bool) 
         stats = store.stats()
         done = stats["by_status"].get("done", 0)
         total = stats["total"]
+        stale_ids = {s["id"] for s in stats["stale_claims"]}
+        # stale claims are not "in flight": their worker is gone, the queue
+        # will hand those tasks back out — counting them hides real stalls
         in_flight = [
             t for t in store.load()["tasks"].values()
-            if t["status"] == "in_progress"
+            if t["status"] == "in_progress" and t["id"] not in stale_ids
         ]
         ready = store.ready_tasks(limit=1)
 
@@ -166,7 +169,7 @@ def run_watch(paths: WikiPaths, interval: float, timeout: float, as_json: bool) 
             f"[{_time.strftime('%H:%M:%S')}] {done}/{total} done"
             f" · 阶段{stats['current_phase']}"
             f" · 进行中: {', '.join(t['id'] + '(' + (t['worker'] or '?') + ')' for t in in_flight) or '无'}"
-            f" · failed {len(stats['failed'])} · exhausted {len(stats['exhausted'])}"
+            f" · failed {len(stats['failed'])} · exhausted {len(stats['exhausted'])} · stale {len(stale_ids)}"
         )
         if line != last_line:
             if not as_json:

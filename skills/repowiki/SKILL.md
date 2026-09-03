@@ -43,17 +43,24 @@ repowiki finalize <repo>      # 6. 首次会创建 overview 任务→执行→�
 catalog 任务完成后所有页面任务相互独立，可安全并行：
 
 1. 主 agent 完成 `plan` + catalog 任务（串行，这是唯一前置）。
-2. 主 agent 派 N 个 subagent，每个 subagent 独立执行同一 worker 循环：
+2. 主 agent 派 N 个**等价** subagent 执行同一 worker 循环。
+   **禁止给 worker 指定任务 ID 或清单**：队列是全局 FIFO，分工完全由 `next` 决定；
+   主 agent 只决定 worker 数量与 `--worker` 命名。
+3. worker 循环（每个 subagent 独立执行）：
 
 ```
 loop:
   1. 运行 `repowiki next <repo> --claim --json --worker <名字>`
   2. 若 tasks 为空且 busy>0 → 等待 30 秒重试（其他 worker 正在写）
      若 tasks 为空且 busy=0 → 结束
-  3. 按 tasks[0].instructions 执行（只写 instructions 指定的 output 文件）；
-     撰写期间每隔几分钟运行 `repowiki touch <repo> --task <id> --worker <名字>` 续期认领
+  3. 按 tasks[0].instructions 执行（只写 instructions 指定的 output 文件）。
+     一次只持有一个认领：当前任务完成前不得再次 next --claim（禁止 --batch>1 预支）；
+     认领后立即 `repowiki touch <repo> --task <id> --worker <名字>` 一次，
+     撰写期间每约 3 分钟 touch 一次（认领超过 stale 窗口未续期会被自动回收转给他人）
   4. 运行 `repowiki check <repo> --task <id> --worker <名字> --json`
      - ok=true → 回到 1
+     - 报「由他人认领」冲突（exit 2）→ 该认领已被回收并被接手：
+       不争抢、不加 --force，回到 1
      - ok=false → 按 errors 修复同一文件后重新 check（最多 3 次，仍失败则
        `repowiki release <repo> --task <id> --force` 并结束本任务）
 ```
@@ -61,10 +68,21 @@ loop:
 注意：`check` 必须显式带 `--task`（或崩溃恢复用 `--all`）；done 是终态，重复 check 只读不改状态；
 `finalize` 第一次运行退出码为 3（表示已创建 overview 任务，属正常进展）。
 
-3. 主 agent 运行 `repowiki watch <repo> --interval 15 --json` 持续监控（可后台执行），
+4. 主 agent 运行 watch 监控。**必须真正后台运行并给足 `--timeout`**（按预期总时长 × 1.5 设置），
+   例如 `nohup repowiki watch <repo> --interval 15 --timeout 7200 --json > watch.log 2>&1 &`；
+   前台交给有超时限制的 bash 工具运行时，超时会杀掉 watch，**被杀进程的退出码不可信**
+   （exit 0 可能只是截断假象，存疑时先用 `repowiki status` 核实）。
    watch 自动退出：**exit 0** = 全部完成 → 执行 finalize（两步：创建 overview → 执行 → 再 finalize）；
-   **exit 1** = 停滞或超时 → 用 `repowiki status <repo>` 查看 exhausted/stale 任务并干预
-   （`release --task <id> --force` 重置毒任务，或补派 worker）。
+   **exit 1** = 停滞或超时 → 用 `repowiki status <repo>` 查看详情并干预：
+   exhausted 毒任务用 `release --task <id> --force` 重置；stale 认领会自动回队列
+   （默认 15 分钟），无需人工释放，确认 worker 是否存活、必要时补派即可。
+
+## 环境变量
+
+- `REPOWIKI_STALE_SECONDS`：认领过期窗口（默认 900 秒 = 15 分钟）。worker 死亡后其任务
+  最长冻结这么久即自动回队列；worker 遵守 touch 纪律时不会被误抢，一般无需调整。
+- `REPOWIKI_MAX_ATTEMPTS`：单任务最大尝试次数（默认 3），超过后 exhausted，
+  需 `release --task <id> --force` 重置。
 
 ## 硬性规则
 

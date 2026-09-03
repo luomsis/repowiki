@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import multiprocessing as mp
+import os
+import shutil
 import time
 
 import pytest
@@ -43,8 +45,6 @@ def test_release(store):
 
 
 def test_stale_claim_reclaimed(store, paths):
-    import os
-
     store.claim("t00", "w1")
     # simulate a dead worker: backdate the claim dir beyond the threshold
     cd = store._claim_dir("t00")
@@ -56,6 +56,32 @@ def test_stale_claim_reclaimed(store, paths):
     task = store2.claim("t00", "w2")  # should steal the stale claim
     assert task["worker"] == "w2"
     assert task["attempts"] == 2
+
+
+def test_ready_includes_stale_in_progress(store):
+    """A dead worker's claim re-enters the queue via ready_tasks — no manual
+    release needed (the 50-min freeze regression)."""
+    store.claim("t00", "w1")
+    cd = store._claim_dir("t00")
+    old = time.time() - 999
+    os.utime(cd, (old, old))
+    ready_ids = [t["id"] for t in store.ready_tasks(limit=20)]
+    assert "t00" in ready_ids
+    assert [s["id"] for s in store.stats()["stale_claims"]] == ["t00"]
+
+
+def test_fresh_claim_not_ready(store):
+    store.claim("t00", "w1")
+    assert "t00" not in [t["id"] for t in store.ready_tasks(limit=20)]
+    assert store.stats()["stale_claims"] == []
+
+
+def test_missing_claim_dir_is_stale(store):
+    """in_progress without a claim dir (crash mid-recovery) is orphaned."""
+    store.claim("t00", "w1")
+    shutil.rmtree(store._claim_dir("t00"))
+    assert "t00" in [t["id"] for t in store.ready_tasks(limit=20)]
+    assert [s["id"] for s in store.stats()["stale_claims"]] == ["t00"]
 
 
 def test_phase_gating(paths):

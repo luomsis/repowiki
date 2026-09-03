@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import multiprocessing as mp
+import os
 import subprocess
 import time
 
@@ -391,6 +392,57 @@ def _flip_done(args):
     root, tid = args
     s = TaskStore(WikiPaths(root))
     return s.update(tid, status="done") is not None
+
+
+class TestStaleRecovery:
+    """Regression for the orphaned-claim incident: a worker exits holding
+    claims; the queue must self-heal instead of freezing until a human
+    runs `release --force`."""
+
+    def test_next_reclaims_orphaned_claim(self, repo):
+        run("plan", str(repo))  # -> single catalog task
+        run("next", str(repo), "--claim", "--worker", "w1")
+        # w1 dies; its claim dir ages past the stale window
+        store = TaskStore(WikiPaths(repo), stale_seconds=1)
+        cd = store._claim_dir("catalog")
+        old = time.time() - 99999
+        os.utime(cd, (old, old))
+        # w2 just pulls the queue: the orphaned task comes back to it
+        assert run("next", str(repo), "--claim", "--worker", "w2") == 0
+        task = store.get("catalog")
+        assert task["status"] == "in_progress" and task["worker"] == "w2"
+        assert task["attempts"] == 2
+        assert list(WikiPaths(repo).claims_dir.glob(".stale-*"))  # audit trail
+
+    def test_busy_excludes_stale(self, repo, capsys):
+        run("plan", str(repo))  # -> single catalog task
+        run("next", str(repo), "--claim", "--worker", "w1")
+        store = TaskStore(WikiPaths(repo), stale_seconds=1)
+        old = time.time() - 99999
+        os.utime(store._claim_dir("catalog"), (old, old))
+        capsys.readouterr()  # flush earlier output
+        assert run("next", str(repo), "--json") == 0  # list only, no claim
+        out = json.loads(capsys.readouterr().out)
+        assert out["busy"] == 0
+
+    def test_watch_stale_claim_does_not_hide_stall(self, repo, capsys):
+        """A stale claim must not count as in-flight: exhausted phase-1 task
+        + stale phase-2 claim = real stall, reported instead of timing out."""
+        paths = WikiPaths(repo)
+        paths.ensure()
+        store = TaskStore(paths)
+        store.replace_all([
+            new_task("t0", "page", 1, "页0", "p0.md"),
+            new_task("t1", "page", 2, "页1", "p1.md"),
+        ])
+        store.update("t0", status="failed", attempts=3)  # exhausted, phase 1
+        store.claim("t1", "w1")
+        old = time.time() - 99999
+        os.utime(store._claim_dir("t1"), (old, old))
+        capsys.readouterr()  # flush earlier output
+        assert run("watch", str(repo), "--interval", "0.05", "--timeout", "1", "--json") == 1
+        reason = json.loads(capsys.readouterr().out)["reason"]
+        assert reason == "stalled"
 
 
 class TestP1Guards:
