@@ -316,7 +316,7 @@ class TestCleanup:
             p.write_text(valid_page(n.title), encoding="utf-8")
             TaskStore(WikiPaths(repo)).update(n.id, status="done")
         TaskStore(WikiPaths(repo)).update("catalog", status="done")
-        run("finalize", str(repo))  # creates overview task, exit 1
+        run("finalize", str(repo))  # creates overview task, exit 3
         assert (repo / ".repowiki/state/tasks/overview.md").exists()
 
 

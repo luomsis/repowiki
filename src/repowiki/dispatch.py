@@ -320,7 +320,12 @@ def _check_one(paths: WikiPaths, store: TaskStore, task: dict, inv) -> dict:
                     "errors": [f"输出文件不存在: {task['output']}（按任务规格写入该路径）"]}
         raw = out_file.read_text(encoding="utf-8")
         if kind == "overview":
-            repo_name = json.loads(paths.catalog_file.read_text(encoding="utf-8")).get("repo_name", "")
+            try:
+                repo_name = json.loads(paths.catalog_file.read_text(encoding="utf-8")).get("repo_name", "")
+            except (json.JSONDecodeError, OSError) as e:
+                store.update(tid, status="failed")
+                return {**base, "ok": False, "status": "failed",
+                        "errors": [f"state/catalog.json 无法读取（{e}），无法校验 overview"]}
             res = check_overview(raw, repo_name)
         elif kind == "knowledge_card":
             plan = _load_json(paths.knowledge_plan_file) or {}

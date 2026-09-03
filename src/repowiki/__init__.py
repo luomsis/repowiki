@@ -11,4 +11,9 @@ supplied by whatever agent drives the worker loop:
           repowiki check --task <id> --json       # auto-fix + status flip
 """
 
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError, version as _package_version
+
+try:
+    __version__ = _package_version("repowiki")
+except PackageNotFoundError:  # running from an uninstalled source tree
+    __version__ = "0.0.0"

@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .cli import ConflictError
+from .cli import ConflictError, StateError, UsageError
 from .paths import WikiPaths
 
 DEFAULT_STALE_SECONDS = 45 * 60
@@ -68,8 +68,14 @@ class TaskStore:
             return {"tasks": {}, "created_at": now_iso()}
         try:
             data = json.loads(f.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            return {"tasks": {}, "created_at": now_iso()}
+        except json.JSONDecodeError as e:
+            # A corrupt manifest must never masquerade as an empty one: the
+            # next read-modify-write transaction would rewrite the index with
+            # only the touched task and silently wipe the whole plan.
+            raise StateError(
+                f"state/index.json 损坏（{e}）。文件已原样保留；"
+                "可手工修复该文件恢复任务清单，或确认无需恢复后执行 `repowiki plan --replan --force` 重来"
+            ) from e
         data.setdefault("tasks", {})
         return data
 
@@ -83,7 +89,12 @@ class TaskStore:
     def _lock(self):
         """Process-level exclusive lock around index read-modify-write.
         flock is single-machine POSIX — matches the tool's deployment model."""
-        import fcntl
+        try:
+            import fcntl
+        except ImportError as e:  # e.g. Windows: declared non-goal, fail with guidance not a traceback
+            raise UsageError(
+                "repowiki 仅支持 POSIX 系统（macOS/Linux）：并发状态控制依赖 fcntl；Windows 请在 WSL 中使用"
+            ) from e
 
         self.paths.state_dir.mkdir(parents=True, exist_ok=True)
         fh = open(self.paths.state_dir / ".index.lock", "a+")
@@ -127,6 +138,12 @@ class TaskStore:
 
     def get(self, task_id: str) -> dict | None:
         return self.load()["tasks"].get(task_id)
+
+    def _require_task(self, task_id: str) -> dict:
+        task = self.get(task_id)
+        if task is None:
+            raise UsageError(f"任务不存在: {task_id}（`repowiki status` 可查看全部任务 id）")
+        return task
 
     def update(self, task_id: str, **fields) -> dict | None:
         result: list[dict | None] = [None]
@@ -207,9 +224,7 @@ class TaskStore:
         return False
 
     def claim(self, task_id: str, worker: str) -> dict:
-        task = self.get(task_id)
-        if task is None:
-            raise KeyError(task_id)
+        task = self._require_task(task_id)
         if task["status"] == "done":
             raise ConflictError(f"任务 {task_id} 已完成，无需认领")
         if not self._try_mkdir_claim(task_id, worker):
@@ -225,9 +240,7 @@ class TaskStore:
         return task
 
     def release(self, task_id: str, force: bool = False) -> dict:
-        task = self.get(task_id)
-        if task is None:
-            raise KeyError(task_id)
+        task = self._require_task(task_id)
         cap = max_attempts()
         if task["status"] == "failed" and task["attempts"] >= cap:
             # exhausted poison task: --force is the explicit human reset
@@ -272,9 +285,7 @@ class TaskStore:
     def touch(self, task_id: str, worker: str | None = None) -> dict:
         """Worker-side heartbeat: call periodically while executing a long task
         so the claim is not stolen as stale. Fails on tasks not in flight."""
-        task = self.get(task_id)
-        if task is None:
-            raise KeyError(task_id)
+        task = self._require_task(task_id)
         if task["status"] != "in_progress":
             raise ConflictError(f"任务 {task_id} 状态为 {task['status']}，无需续期")
         if worker:

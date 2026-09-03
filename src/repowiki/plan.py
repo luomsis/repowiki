@@ -28,6 +28,11 @@ def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = Non
              knowledge: bool = False, force: bool = False, as_json: bool = False) -> int:
     if replan and paths.root.exists():
         busy = _busy_tasks(paths)
+        if busy is None and not force:
+            raise UsageError(
+                "state/index.json 无法解析，无法确认是否有任务在执行；"
+                "replan 会删除现有状态与规格，确认放弃恢复请加 --force"
+            )
         if busy and not force:
             raise UsageError(
                 f"检测到 {len(busy)} 个 in_progress 任务（{', '.join(busy[:5])}），"
@@ -85,13 +90,14 @@ def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = Non
     return 0
 
 
-def _busy_tasks(paths: WikiPaths) -> list[str]:
+def _busy_tasks(paths: WikiPaths) -> list[str] | None:
+    """Ids of in_progress tasks; None when the index exists but is unreadable."""
     if not paths.index_file.exists():
         return []
     try:
         data = json.loads(paths.index_file.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
-        return []
+        return None
     return [tid for tid, t in data.get("tasks", {}).items() if t.get("status") == "in_progress"]
 
 

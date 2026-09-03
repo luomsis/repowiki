@@ -189,7 +189,12 @@ def _missing_pages(paths: WikiPaths, catalog: dict) -> list[str]:
 def _require_catalog(paths: WikiPaths) -> dict:
     if not paths.catalog_file.exists():
         raise UsageError("state/catalog.json 不存在：请先完成 catalog 任务")
-    return json.loads(paths.catalog_file.read_text(encoding="utf-8"))
+    try:
+        return json.loads(paths.catalog_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise UsageError(
+            f"state/catalog.json 损坏（{e}）：可手工修复该文件，或 `repowiki plan --replan` 重新规划"
+        ) from e
 
 
 def _aggregate_knowledge_if_present(paths: WikiPaths, store: TaskStore) -> str:

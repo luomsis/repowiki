@@ -1,7 +1,7 @@
 """Command-line interface.
 
-Exit codes: 0 = ok, 1 = validation failure / usage error, 2 = state conflict
-(e.g. task already claimed by a live worker).
+Exit codes: 0 = ok, 1 = validation failure / usage error / corrupted state,
+2 = state conflict (e.g. task already claimed by a live worker).
 """
 
 from __future__ import annotations
@@ -117,6 +117,12 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(f"conflict: {e}", file=sys.stderr)
         return 2
+    except StateError as e:
+        if getattr(args, "json", False):
+            _print_json({"ok": False, "error": "state_corrupt", "detail": str(e)})
+        else:
+            print(f"state error: {e}", file=sys.stderr)
+        return 1
     except UsageError as e:
         if getattr(args, "json", False):
             _print_json({"ok": False, "error": "usage", "detail": str(e)})
@@ -127,6 +133,10 @@ def main(argv: list[str] | None = None) -> int:
 
 class ConflictError(Exception):
     """State conflict, e.g. task already claimed by a live worker."""
+
+
+class StateError(Exception):
+    """Persisted state is unreadable (e.g. corrupt index.json); data-preserving abort."""
 
 
 class UsageError(Exception):

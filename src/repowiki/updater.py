@@ -65,7 +65,12 @@ def run_update(paths: WikiPaths, since: str | None, as_json: bool) -> int:
         print(json.dumps({"ok": True, "changed": 0, "created_tasks": []}, ensure_ascii=False) if as_json else "自上次生成以来无变更")
         return 0
 
-    catalog = json.loads(paths.catalog_file.read_text(encoding="utf-8"))
+    try:
+        catalog = json.loads(paths.catalog_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise UsageError(
+            f"state/catalog.json 损坏（{e}）：可手工修复该文件，或 `repowiki plan --replan` 重新规划"
+        ) from e
     nodes = flatten(catalog)
     inv = scan(paths.repo_root)
     affected = map_affected(nodes, changed_set)
