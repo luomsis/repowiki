@@ -12,4 +12,5 @@ venv/
 .DS_Store
 # local agent-session artifacts
 .z*/
+.repowiki
 
