@@ -38,6 +38,32 @@ pip install git+https://github.com/luomsis/repowiki.git   # 或 pipx install git
 
 skill 只是指引（告诉 agent 按什么流程调用 CLI），真正干活的是第 1 步装的 `repowiki` 命令。
 
+### 3. 离线安装（目标机无法访问 PyPI / GitHub 时）
+
+repowiki 的运行时依赖**只有 `pyyaml>=6`**，离线安装只需三样东西：仓库源码、pyyaml 的 wheel、目标机上的 Python ≥ 3.10。
+
+**在有网的机器上准备物料**：
+
+```bash
+pip download PyYAML==6.* -d wheels/        # 下载 pyyaml wheel（按目标机平台/Python 版本）
+pip wheel --no-deps -w wheels/ .           # 或直接用 Release 页附带的 repowiki-*.whl
+```
+
+把仓库目录（或 `repowiki-*.whl`）与 `wheels/` 一起拷到目标机，然后：
+
+```bash
+pip install --no-index wheels/PyYAML-*.whl        # 先装唯一依赖
+pip install --no-index repowiki-*.whl             # 再装 repowiki 本体（或 -e 源码目录）
+repowiki --version                                # 验证
+```
+
+用 pipx 的话：`pipx install --no-index repowiki-*.whl`。要跑测试套再额外离线装 `pytest`（`[test]` extra）。
+
+Agent Skill 同样离线可用——`skills/repowiki/` 是纯文本目录，直接整目录拷进客户端的
+skills 目录（`~/.claude/skills/repowiki/` 等）即可；skill 只调用本机已装好的 `repowiki` 命令，
+不需要任何在线服务。注意 repowiki 自身零网络，但 `update` 依赖目标仓库本地的 git CLI
+（`git diff` / `git rev-parse`），git 预装的机器无需额外配置。
+
 ## 快速开始
 
 ```bash
