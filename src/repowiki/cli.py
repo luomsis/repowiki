@@ -80,6 +80,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_finalize)
 
+    p = sub.add_parser("site", help="render the finished wiki into one offline HTML file (.repowiki/<locale>/wiki.html)")
+    p.add_argument("repo")
+    p.add_argument("--open", dest="open_browser", action="store_true",
+                   help="open the generated file in the default browser")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_site)
+
     p = sub.add_parser("update", help="map git changes to page_update tasks (incremental regeneration)")
     p.add_argument("repo")
     p.add_argument("--since", default=None, help="commit sha to diff from (default: last_commit_id in metadata)")
@@ -186,6 +193,12 @@ def cmd_finalize(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in 
     from .metadata import run_finalize
 
     return run_finalize(paths, as_json=args.json)
+
+
+def cmd_site(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in site.py
+    from .site import run_site
+
+    return run_site(paths, open_browser=args.open_browser, as_json=args.json)
 
 
 def cmd_update(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in updater.py

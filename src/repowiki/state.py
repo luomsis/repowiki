@@ -31,6 +31,30 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _exclusive_lock(fh) -> None:
+    """Exclusive blocking file lock: fcntl on POSIX, msvcrt on Windows (both stdlib)."""
+    try:
+        import fcntl
+    except ImportError:
+        try:
+            import msvcrt
+        except ImportError as e:  # broken/unusual interpreter build
+            raise UsageError(
+                "repowiki 需要 fcntl（POSIX）或 msvcrt（Windows）支持的文件锁；当前解释器两者均不可用"
+            ) from e
+        try:
+            fh.seek(0)
+            # LK_LOCK blocks ~10s (1 retry/s) before giving up with OSError.
+            msvcrt.locking(fh.fileno(), msvcrt.LK_LOCK, 1)
+        except OSError as e:
+            raise StateError(
+                "state/.index.lock 被其他进程长期占用（约 10 秒未获得锁）；请稍后重试，"
+                "或确认持有锁的 repowiki 进程已退出"
+            ) from e
+    else:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+
+
 def new_task(task_id: str, kind: str, phase: int, title: str, output: str) -> dict:
     return {
         "id": task_id,
@@ -80,18 +104,14 @@ class TaskStore:
         os.replace(tmp, f)
 
     def _lock(self):
-        """Process-level exclusive lock around index read-modify-write.
-        flock is single-machine POSIX — matches the tool's deployment model."""
-        try:
-            import fcntl
-        except ImportError as e:  # e.g. Windows: declared non-goal, fail with guidance not a traceback
-            raise UsageError(
-                "repowiki 仅支持 POSIX 系统（macOS/Linux）：并发状态控制依赖 fcntl；Windows 请在 WSL 中使用"
-            ) from e
-
+        """Process-level exclusive lock around index read-modify-write."""
         self.paths.state_dir.mkdir(parents=True, exist_ok=True)
         fh = open(self.paths.state_dir / ".index.lock", "a+")
-        fcntl.flock(fh, fcntl.LOCK_EX)
+        try:
+            _exclusive_lock(fh)
+        except BaseException:
+            fh.close()
+            raise
         return fh
 
     def _transaction(self, mutate) -> None:

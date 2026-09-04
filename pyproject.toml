@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "repowiki"
-version = "0.2.0"
+version = "0.3.0"
 description = "Deterministic repo wiki build system, driven by any coding agent. Output language follows the repository (zh/en). Zero LLM, zero network."
 requires-python = ">=3.10"
 license = "MIT"
@@ -16,6 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
 ]
 
 [project.optional-dependencies]
@@ -28,7 +29,7 @@ repowiki = "repowiki.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-repowiki = ["templates/*/*"]
+repowiki = ["templates/*/*", "templates/site.html", "templates/site/*", "vendor/*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

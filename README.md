@@ -20,12 +20,16 @@ Wiki 产出语言自动跟随目标仓库（中文仓库 → `zh/`，英文仓�
 
 ## 安装
 
-### 1. CLI（必需，Python ≥ 3.10，macOS/Linux）
+### 1. CLI（必需，Python ≥ 3.10，macOS / Linux / Windows）
 
 ```bash
 pip install git+https://github.com/luomsis/repowiki.git   # 或 pipx install git+同URL
 # 已克隆本仓库时：cd repowiki && pip install -e .
 ```
+
+Windows 原生支持（无需 WSL）：并发状态控制自动使用 `msvcrt` 文件锁（POSIX 用 `fcntl`），
+全部功能在 PowerShell / cmd / git-bash 下可用；后台运行 watch 的 PowerShell 等价命令见
+[skills/repowiki/SKILL.md](skills/repowiki/SKILL.md)。CI 在三大平台上回归。
 
 ### 2. Agent Skill（可选，让 agent 自动触发本工作流）
 
@@ -45,7 +49,7 @@ repowiki 的运行时依赖**只有 `pyyaml>=6`**，离线安装只需三样东�
 **在有网的机器上准备物料**：
 
 ```bash
-pip download PyYAML==6.* -d wheels/        # 下载 pyyaml wheel（按目标机平台/Python 版本）
+pip download PyYAML==6.* -d wheels/        # 下载 pyyaml wheel（按目标机平台/Python 版本：macOS/Linux 各架构、Windows 的 wheel 互不通用）
 pip wheel --no-deps -w wheels/ .           # 或直接用 Release 页附带的 repowiki-*.whl
 ```
 
@@ -72,6 +76,7 @@ repowiki next ~/code/myrepo --claim --json   # 领取任务，按 instructions �
 # ... 按任务规格撰写产出，然后：
 repowiki check ~/code/myrepo --task c01      # 校验+自动修复+状态流转
 repowiki finalize ~/code/myrepo      # 组装 metadata.json（两步：先创建 overview 任务）
+repowiki site ~/code/myrepo          # 生成单文件离线查看站点（--open 自动打开浏览器）
 ```
 
 输出结构（`<locale>` 由 plan 自动检测或 `--locale` 指定，当前支持 `zh` / `en`）：
@@ -82,10 +87,23 @@ myrepo/.repowiki/
 │   ├── content/            # 章节树：目录名=章节名，索引页+子页，固定模板
 │   │   ├── 快速开始.md      # 顶级独立页
 │   │   └── 项目概述/项目概述.md, 核心概念.md, ...
-│   └── meta/repowiki-metadata.json   # catalogs/items/source_files/snippets/relations
+│   ├── meta/repowiki-metadata.json   # catalogs/items/source_files/snippets/relations
+│   └── wiki.html           # 单文件离线查看站点（repowiki site 生成，双击即开）
 ├── knowledge/zh/           # 知识卡片：_index.yaml + 模块文档 + 机制卡片
 └── state/                  # 任务清单/规格/认领/locale（内部状态，可随时删除重规划）
 ```
+
+## 查看 Wiki（单文件离线站点）
+
+`repowiki site <repo> [--open]` 把整个 wiki 打包成**一个自包含的 HTML 文件**
+（`<repo>/.repowiki/<locale>/wiki.html`，约 4-5 MB）：
+
+- markdown + mermaid 全部渲染，引用的源码行区间直接内嵌，点击 `file://` 引用在页内
+  弹层查看带行号高亮的源码——无需 IDE、无需网络，发给同事一个文件即可浏览整个 wiki；
+- 内置侧边栏导航、全文搜索、暗色/浅色主题（跟随系统 + 手动切换）；
+- 完全离线：markdown/mermaid 渲染库（marked/mermaid，MIT）已内嵌进文件本身；
+- 幂等可重跑：finalize、update 或手动改了页面之后随时重新执行 `repowiki site` 重建；
+- 执行过 `repowiki clean` 也能重建（此时章节顺序退化为目录序，内容不受影响）。
 
 页面模板（校验器按语言强制）：H1 → `<cite>` 引用块 → 目录 → 简介 → 项目结构（mermaid
 graph TB）→ 核心组件 → 架构总览（sequenceDiagram）→ 详细组件分析 → 依赖关系分析（graph LR）
@@ -149,6 +167,7 @@ done
 | `check --task ID \| --all` | 校验产出；锚点/行号/H1 自动修复；catalog/knowledge-plan 通过后自动展开后续任务；done 为终态（只读报告）；他人认领的任务需 --force |
 | `release --task ID [--force]` | 释放认领（崩溃恢复） |
 | `finalize` | 组装 metadata.json；要求全部任务 done |
+| `site [--open]` | 把完成的 wiki 渲染成单文件离线 HTML（`<locale>/wiki.html`：导航+搜索+mermaid+源码弹层）；要求先 finalize；`--open` 生成后用默认浏览器打开 |
 | `update [--since <sha>]` | git diff → 受影响页面（含祖先链）→ 增量重写任务（附「更新摘要」）；仅识别**已提交**变更（since..HEAD），工作区未提交改动不可见 |
 | `knowledge` | 追加知识卡片任务集（六类机制卡片 + 模块文档） |
 | `status` | 进度 / 失败列表 / 过期认领 |
@@ -171,7 +190,7 @@ done
 - **自动瘦身**：finalize 成功后自动清除运行时产物（`state/claims/`、`state/tasks/`），
   保留 `index.json`/`catalog.json`/`knowledge.json` 供增量更新与幂等重跑；
   不需要增量更新可执行 `repowiki clean <repo>` 删除全部状态（wiki 产出不受影响）。
-- **测试**：126 个单测覆盖竞态、孤儿认领自动回收、校验规则正反例、增量映射、知识聚合、双语产出（zh/en）、损坏状态文件与非法输入的友好报错（`pytest`）。
+- **测试**：140 个单测覆盖竞态、孤儿认领自动回收、校验规则正反例、增量映射、知识聚合、双语产出（zh/en）、单文件站点生成、损坏状态文件与非法输入的友好报错（`pytest`；CI 矩阵覆盖 ubuntu/macos/windows × Python 3.10-3.13）。
 
 ## 设计取舍
 
@@ -189,4 +208,4 @@ done
 
 ## Non-Goals
 
-LLM API 后端 · 内置 agent CLI 检测/执行器 · MCP 封装 · HTML 预览服务 · Windows · zh/en 之外的产出语言。
+LLM API 后端 · 内置 agent CLI 检测/执行器 · MCP 封装 · 常驻预览服务器（`site` 产物是纯静态单文件，双击即看，无需起服务） · zh/en 之外的产出语言。

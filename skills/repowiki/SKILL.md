@@ -1,6 +1,6 @@
 ---
 name: repowiki
-description: 为任意代码仓库生成结构化的仓库 Wiki（mermaid 图、file:// 源码引用；产出语言自动跟随仓库 zh/en，可 --locale 指定）。Use when the user asks to generate a repo wiki, "生成/更新 repowiki", "给仓库生成 wiki 文档", or mentions repowiki / 仓库文档 / repo wiki. Works on any repo path; supports concurrent subagents.
+description: 为任意代码仓库生成结构化的仓库 Wiki（mermaid 图、file:// 源码引用；产出语言自动跟随仓库 zh/en，可 --locale 指定；finalize 后可用 site 命令生成单文件离线 HTML 查看站点，macOS/Linux/Windows 均可用）。Use when the user asks to generate a repo wiki, "生成/更新 repowiki", "给仓库生成 wiki 文档", or mentions repowiki / 仓库文档 / repo wiki. Works on any repo path; supports concurrent subagents.
 ---
 
 # repowiki：为仓库生成结构化的 Wiki
@@ -10,14 +10,15 @@ description: 为任意代码仓库生成结构化的仓库 Wiki（mermaid 图、
 
 ## 前置
 
-`repowiki` CLI 需一次性安装（Python ≥ 3.10，仅 macOS/Linux）：
+`repowiki` CLI 需一次性安装（Python ≥ 3.10，macOS/Linux/Windows 原生支持）：
 
 ```bash
 pip install git+https://github.com/luomsis/repowiki.git   # 或 pipx install git+同URL
 # 已克隆仓库时：cd repowiki && pip install -e .
 ```
 
-执行前先确认 `repowiki` 命令可用（`command -v repowiki`）；不存在则先安装。
+执行前先确认 `repowiki` 命令可用（bash: `command -v repowiki`；PowerShell: `Get-Command repowiki`）；不存在则先安装。
+本文档中的 shell 命令为 bash 语法；在 Windows PowerShell 下语义相同的命令会单独标注。
 
 ## 标准流程（串行）
 
@@ -30,9 +31,12 @@ repowiki next <repo> --claim --json   # 2. 领取一个任务（读返回的 ins
 repowiki check <repo> --task <id>     # 4. 校验；失败则按 errors 修复后重新 check
 #    5. 回到第 2 步，直到 next 返回空且 busy=0
 repowiki finalize <repo>      # 6. 首次会创建 overview 任务→执行→再 finalize 生成 metadata.json
+repowiki site <repo>          # 7. 生成单文件离线查看站点 .repowiki/<locale>/wiki.html（--open 自动打开浏览器）
 #    （finalize 成功后自动清理 state/claims 与 state/tasks；catalog/index 保留供 update）
 #    不需要增量更新时可执行 `repowiki clean <repo>` 删除全部任务状态
 ```
+
+增量更新或 finalize 后重跑了页面，都可随时重跑 `repowiki site <repo>` 重建站点（幂等）。
 
 任务类型：`catalog`（目录树规划，产出 state/catalog.json）→ `page`（逐页撰写）→ `overview`（总览）；
 可选：`repowiki knowledge <repo>`（知识卡片）、`repowiki update <repo>`（基于 git diff 的增量更新，重写受影响页并附「更新摘要/Update Summary」小节）。
@@ -68,9 +72,18 @@ loop:
 注意：`check` 必须显式带 `--task`（或崩溃恢复用 `--all`）；done 是终态，重复 check 只读不改状态；
 `finalize` 第一次运行退出码为 3（表示已创建 overview 任务，属正常进展）。
 
-4. 主 agent 运行 watch 监控。**必须真正后台运行并给足 `--timeout`**（按预期总时长 × 1.5 设置），
-   例如 `nohup repowiki watch <repo> --interval 15 --timeout 7200 --json > watch.log 2>&1 &`；
-   前台交给有超时限制的 bash 工具运行时，超时会杀掉 watch，**被杀进程的退出码不可信**
+4. 主 agent 运行 watch 监控。**必须真正后台运行并给足 `--timeout`**（按预期总时长 × 1.5 设置）：
+
+   ```bash
+   # bash / git-bash：
+   nohup repowiki watch <repo> --interval 15 --timeout 7200 --json > watch.log 2>&1 &
+   ```
+   ```powershell
+   # Windows PowerShell：
+   Start-Process -WindowStyle Hidden -FilePath repowiki -ArgumentList "watch","<repo>","--interval","15","--timeout","7200","--json" -RedirectStandardOutput watch.log
+   ```
+
+   前台交给有超时限制的 shell 工具运行时，超时会杀掉 watch，**被杀进程的退出码不可信**
    （exit 0 可能只是截断假象，存疑时先用 `repowiki status` 核实）。
    watch 自动退出：**exit 0** = 全部完成 → 执行 finalize（两步：创建 overview → 执行 → 再 finalize）；
    **exit 1** = 停滞或超时 → 用 `repowiki status <repo>` 查看详情并干预：
@@ -89,4 +102,4 @@ loop:
 - **只写任务规格指定的 output 文件**，绝不改动仓库源码。
 - 页面遵循规格内嵌的模板与 STYLE 规范：必备小节齐全、每节末尾「Section sources/章节来源」、每个 mermaid 图后「Diagram sources/图表来源」、`[path:Lx-Ly](file://path#Lx-Ly)` 格式、行号不越界、页间零链接、不用 emoji/表格。
 - `check` 的确定性缺陷（锚点/行号/H1）会被自动修复，无需手动处理；只需修复 `errors` 列出的语义问题。
-- 输出位于 `<repo>/.repowiki/`（`<locale>/content` 页面、`<locale>/meta` 元数据、`knowledge/<locale>/` 知识卡片；locale 已在 plan 时确定）。
+- 输出位于 `<repo>/.repowiki/`（`<locale>/content` 页面、`<locale>/meta` 元数据、`knowledge/<locale>/` 知识卡片、`<locale>/wiki.html` 单文件查看站点；locale 已在 plan 时确定）。

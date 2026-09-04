@@ -149,6 +149,10 @@ class WikiPaths:
         return self.meta_dir / "repowiki-metadata.json"
 
     @property
+    def site_file(self) -> Path:
+        return self.root / self.locale / "wiki.html"
+
+    @property
     def overview_file(self) -> Path:
         return self.meta_dir / "wiki-overview.md"
 

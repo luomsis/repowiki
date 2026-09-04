@@ -36,6 +36,16 @@ STRINGS: dict[str, dict] = {
         "overview_sections": ("章节导航", "如何使用本 Wiki"),
         "module_required_files": ["概述.md", "技术栈.md", "架构设计.md"],
         "card_sections": ["体系概览", "关键文件与包", "架构与设计约定", "开发者应遵循的规则"],
+        "site": {
+            "overview_label": "总览",
+            "search_placeholder": "搜索 Wiki…",
+            "no_results": "无匹配结果",
+            "snippet_missing": "源文件不存在或已删除，无法展示片段。",
+            "theme_label": "切换深色/浅色主题",
+            "menu_label": "打开/收起目录",
+            "close_label": "关闭 (Esc)",
+            "lines_label": "行",
+        },
     },
     "en": {
         "name": "English",
@@ -59,6 +69,16 @@ STRINGS: dict[str, dict] = {
             "System Overview", "Key Files and Packages",
             "Architecture and Design Conventions", "Rules for Developers",
         ],
+        "site": {
+            "overview_label": "Overview",
+            "search_placeholder": "Search wiki…",
+            "no_results": "No matches",
+            "snippet_missing": "Source file missing or deleted; snippet unavailable.",
+            "theme_label": "Toggle dark/light theme",
+            "menu_label": "Toggle table of contents",
+            "close_label": "Close (Esc)",
+            "lines_label": "lines",
+        },
     },
 }
 

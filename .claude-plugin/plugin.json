@@ -1,7 +1,7 @@
 {
   "name": "repowiki",
-  "version": "0.1.0",
-  "description": "Generate a structured wiki (mermaid diagrams, file:// source links) for any repository. Output language follows the repo (zh/en). Deterministic task orchestrator + any coding agent.",
+  "version": "0.3.0",
+  "description": "Generate a structured wiki (mermaid diagrams, file:// source links) for any repository. Output language follows the repo (zh/en). Deterministic task orchestrator + any coding agent. Windows/macOS/Linux native; single-file offline HTML viewer via `repowiki site`.",
   "author": "luomsis",
   "license": "MIT",
   "keywords": ["wiki", "documentation", "repo-wiki", "agent-skills", "mermaid"],

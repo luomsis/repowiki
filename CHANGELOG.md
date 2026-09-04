@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.3.0 — 2026-09-04
+
+### 新增
+
+- **Windows 原生支持**：并发状态控制改为 stdlib 双锁后端（POSIX `fcntl` / Windows `msvcrt.locking`），
+  删除"仅支持 POSIX，Windows 请用 WSL"的运行时门控；修复 `tasks.py` 两处在反斜杠路径下取错仓库名的
+  `split("/")`；CI 矩阵加入 `windows-latest`（3.10-3.13 全跑）；SKILL.md 补 PowerShell 等价命令
+  （`Get-Command`、`Start-Process` 后台 watch）。运行时依赖不变（仅 pyyaml）。
+- **`repowiki site <repo> [--open]`：单文件离线查看站点**。finalize 后执行，把全部页面渲染为一个
+  自包含 HTML（`<locale>/wiki.html`，约 4-5 MB）：marked + mermaid 渲染库内嵌（vendor 进仓库随
+  wheel 分发，MIT）、`file://` 源码引用点击弹层展示内嵌的行号源码片段、侧边栏导航、客户端全文搜索、
+  暗/亮主题。幂等可重跑；`repowiki clean` 之后仍可从磁盘页面重建（章节顺序退化为目录序）。
+  README Non-Goals 的「HTML 预览服务」相应改述为「常驻预览服务器」。
+
+### 修复
+
+- 插件清单 `.claude-plugin/plugin.json` 版本号滞后（0.1.0），与 pyproject 同步为 0.3.0。
+
+### 文档
+
+- 新增根级 `CONTEXT.md` 术语表（产出物/编排/执行三组域术语）。
+- 新增 `docs/adr/0001`（Windows 原生支持的 stdlib 双锁后端取舍）与 `docs/adr/0002`
+  （单文件离线站点：回撤 Non-Goal 的动机与备选方案）。
+- README：平台声明覆盖三平台、新增「查看 Wiki（单文件离线站点）」一节、命令表补 `site`、
+  离线安装注明 pyyaml wheel 按目标平台下载（含 Windows）。
+
+### 测试
+
+- 新增 14 个 `tests/test_site.py` 用例：payload 组装与导航树（含章节自身页）、源码片段行区间提取与
+  缺失标记、`</script>` 逃逸防护、幂等重建、locale 隔离、clean 后降级构建、`--open`/`--json` 行为；
+  锁后端缺失的用例改为验证"双后端均不可用"的友好报错。140 个测试全绿。
+
 ## 0.2.0 — 2026-09-04
 
 ### 变更

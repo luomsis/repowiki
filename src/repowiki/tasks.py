@@ -67,7 +67,7 @@ def build_catalog_task(paths: WikiPaths, inv: Inventory) -> dict:
     spec = templates.render_file(
         "catalog_task.md",
         locale=paths.locale,
-        REPO_NAME=inv.repo_root.rstrip("/").split("/")[-1],
+        REPO_NAME=Path(inv.repo_root).name,
         CODE_FILE_COUNT=inv.code_file_count,
         KEY_FILES=", ".join(inv.key_files) or "<未发现>",
         TREE_SUMMARY=inv.tree_summary or "<空仓库>",
@@ -185,7 +185,7 @@ def build_knowledge_plan_task(paths: WikiPaths, inv: Inventory) -> dict:
     spec = templates.render_file(
         "knowledge_task.md",
         locale=paths.locale,
-        REPO_NAME=inv.repo_root.rstrip("/").split("/")[-1],
+        REPO_NAME=Path(inv.repo_root).name,
         KEY_FILES=", ".join(inv.key_files) or "<未发现>",
         TREE_SUMMARY=inv.tree_summary or "<空仓库>",
     )
