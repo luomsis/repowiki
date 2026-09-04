@@ -13,6 +13,7 @@ import socket
 
 from .catalog import flatten, validate_catalog
 from .errors import ConflictError, UsageError
+from .output import emit
 from .paths import WikiPaths
 from . import tasks as task_builders
 from .scanner import scan
@@ -70,54 +71,55 @@ def run_next(paths: WikiPaths, claim: bool, worker: str | None, as_json: bool) -
         "busy": stats["busy"],
         "progress": {"total": stats["total"], "by_status": stats["by_status"], "current_phase": stats["current_phase"]},
     }
-    if as_json:
-        print(json.dumps(out, ensure_ascii=False, indent=2))
-    else:
-        if not payload:
-            hint = f"，{busy} 个任务执行中（稍后重试）" if busy else ""
-            print(f"当前无可领取任务{hint}（共 {stats['total']} 个任务，状态 {stats['by_status']}）")
-        for t in payload:
-            print(f"[{t['kind']}] {t['id']}  {t['title']}")
-            print(f"  规格: {t['spec_path']}")
-            print(f"  输出: {t['output']}")
+    emit(out, _next_human, as_json)
     return 0
+
+
+def _next_human(out: dict) -> str:
+    lines = []
+    if not out["tasks"]:
+        hint = f"，{out['busy']} 个任务执行中（稍后重试）" if out["busy"] else ""
+        lines.append(f"当前无可领取任务{hint}（共 {out['progress']['total']} 个任务，状态 {out['progress']['by_status']}）")
+    for t in out["tasks"]:
+        lines += [f"[{t['kind']}] {t['id']}  {t['title']}",
+                  f"  规格: {t['spec_path']}",
+                  f"  输出: {t['output']}"]
+    return "\n".join(lines)
 
 
 def run_release(paths: WikiPaths, task_id: str, force: bool, as_json: bool) -> int:
     store = TaskStore(paths)
     task = store.release(task_id, force=force)
-    if as_json:
-        print(json.dumps({"ok": True, "released": task_id, "status": task["status"]}, ensure_ascii=False))
-    else:
-        print(f"已释放任务 {task_id} → pending")
+    emit({"ok": True, "released": task_id, "status": task["status"]},
+         lambda r: f"已释放任务 {r['released']} → pending", as_json)
     return 0
 
 
 def run_status(paths: WikiPaths, as_json: bool) -> int:
     store = TaskStore(paths)
     stats = store.stats()
-    if as_json:
-        print(json.dumps({"ok": True, **stats}, ensure_ascii=False, indent=2))
-    else:
-        print(f"任务总数 {stats['total']}  当前阶段 {stats['current_phase']}")
-        for status, n in sorted(stats["by_status"].items()):
-            print(f"  {status}: {n}")
-        for f in stats["failed"]:
-            print(f"  ✗ failed: {f['id']} {f['title']}")
-        for e in stats["exhausted"]:
-            print(f"  ⛔ exhausted: {e['id']} {e['title']}（已试 {e['attempts']} 次，`release --task {e['id']} --force` 可重置）")
-        for s in stats["stale_claims"]:
-            print(f"  ⏰ stale: {s['id']}（worker {s['worker']}，心跳 {s['heartbeat_at']}）")
+    emit({"ok": True, **stats}, _status_human, as_json)
     return 0
+
+
+def _status_human(out: dict) -> str:
+    lines = [f"任务总数 {out['total']}  当前阶段 {out['current_phase']}"]
+    for status, n in sorted(out["by_status"].items()):
+        lines.append(f"  {status}: {n}")
+    for f in out["failed"]:
+        lines.append(f"  ✗ failed: {f['id']} {f['title']}")
+    for e in out["exhausted"]:
+        lines.append(f"  ⛔ exhausted: {e['id']} {e['title']}（已试 {e['attempts']} 次，`release --task {e['id']} --force` 可重置）")
+    for s in out["stale_claims"]:
+        lines.append(f"  ⏰ stale: {s['id']}（worker {s['worker']}，心跳 {s['heartbeat_at']}）")
+    return "\n".join(lines)
 
 
 def run_touch(paths: WikiPaths, task_id: str, worker: str | None, as_json: bool) -> int:
     store = TaskStore(paths)
     store.touch(task_id, worker=worker)
-    if as_json:
-        print(json.dumps({"ok": True, "touched": task_id}, ensure_ascii=False))
-    else:
-        print(f"✓ 已续期任务 {task_id} 的认领")
+    emit({"ok": True, "touched": task_id},
+         lambda r: f"✓ 已续期任务 {r['touched']} 的认领", as_json)
     return 0
 
 
@@ -165,10 +167,8 @@ def run_watch(paths: WikiPaths, interval: float, timeout: float, as_json: bool) 
 
         # terminal: everything done
         if total > 0 and done == total:
-            if as_json:
-                print(json.dumps({"reason": "completed", "stats": stats}, ensure_ascii=False, indent=2))
-            else:
-                print(f"✓ 全部 {total} 个任务完成")
+            emit({"reason": "completed", "stats": stats},
+                 lambda r: f"✓ 全部 {r['stats']['total']} 个任务完成", as_json)
             return 0
 
         # terminal: stalled — work remains but nothing is running or claimable
@@ -177,18 +177,14 @@ def run_watch(paths: WikiPaths, interval: float, timeout: float, as_json: bool) 
                 f"停滞：剩余 {total - done} 个任务未完成，但无执行中且无可领取任务"
                 "（通常是 exhausted 毒任务；`repowiki status` 查看详情，`release --force` 可重置）"
             )
-            if as_json:
-                print(json.dumps({"reason": "stalled", "detail": reason, "stats": stats}, ensure_ascii=False, indent=2))
-            else:
-                print(f"⏹ {reason}")
+            emit({"reason": "stalled", "detail": reason, "stats": stats},
+                 lambda r: f"⏹ {r['detail']}", as_json)
             return 1
 
         if _time.monotonic() - started >= timeout:
             reason = f"超时（{int(timeout)}s）：剩余 {total - done} 个任务未完成"
-            if as_json:
-                print(json.dumps({"reason": "timeout", "detail": reason, "stats": stats}, ensure_ascii=False, indent=2))
-            else:
-                print(f"⏰ {reason}")
+            emit({"reason": "timeout", "detail": reason, "stats": stats},
+                 lambda r: f"⏰ {r['detail']}", as_json)
             return 1
 
         _time.sleep(interval)
@@ -276,20 +272,18 @@ def _check_readonly(paths: WikiPaths, task: dict, inv) -> dict:
 
 
 def _emit_check(as_json: bool, ok: bool, results: list[dict], note: str = "") -> None:
-    if as_json:
-        print(json.dumps({"ok": ok, "results": results, "note": note}, ensure_ascii=False, indent=2))
-        return
-    if note:
-        print(note)
-    for r in results:
-        mark = "✓" if r["ok"] else "✗"
-        print(f"{mark} {r['id']} {r['title']} → {r['status']}")
-        for e in r.get("errors", []):
-            print(f"    错误: {e}")
-        for f in r.get("fixed", []):
-            print(f"    已修复: {f}")
-        for w in r.get("warnings", []):
-            print(f"    警告: {w}")
+    emit({"ok": ok, "results": results, "note": note}, _check_human, as_json)
+
+
+def _check_human(r: dict) -> str:
+    lines = [r["note"]] if r["note"] else []
+    for res in r["results"]:
+        mark = "✓" if res["ok"] else "✗"
+        lines.append(f"{mark} {res['id']} {res['title']} → {res['status']}")
+        lines += [f"    错误: {e}" for e in res.get("errors", [])]
+        lines += [f"    已修复: {f}" for f in res.get("fixed", [])]
+        lines += [f"    警告: {w}" for w in res.get("warnings", [])]
+    return "\n".join(lines)
 
 
 def _check_one(paths: WikiPaths, store: TaskStore, task: dict, inv) -> dict:

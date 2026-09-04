@@ -17,6 +17,7 @@ from . import templates
 from .catalog import FlatNode, flatten
 from .errors import UsageError
 from .i18n import strings
+from .output import emit
 from .paths import WikiPaths
 from .state import now_iso
 from .validate import extract_refs
@@ -67,15 +68,16 @@ def run_site(paths: WikiPaths, open_browser: bool, as_json: bool) -> int:
         "snippets": len(snippets),
         "size_mb": round(out.stat().st_size / 1024 / 1024, 2),
     }
-    if as_json:
-        print(json.dumps(summary, ensure_ascii=False, indent=2))
-    else:
-        print(
-            f"✓ 站点已生成: {out}\n"
-            f"  页面 {summary['pages']} · 源码片段 {summary['snippets']} · 体积 {summary['size_mb']} MB\n"
-            f"  单文件离线可用：浏览器直接打开即可（--open 自动打开）"
-        )
+    emit(summary, _site_human, as_json)
     return 0
+
+
+def _site_human(r: dict) -> str:
+    return (
+        f"✓ 站点已生成: {r['site']}\n"
+        f"  页面 {r['pages']} · 源码片段 {r['snippets']} · 体积 {r['size_mb']} MB\n"
+        f"  单文件离线可用：浏览器直接打开即可（--open 自动打开）"
+    )
 
 
 # --- content assembly ---

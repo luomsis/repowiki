@@ -4,12 +4,12 @@ knowledge outputs (_index.yaml / _module.yaml) at finalize time.
 
 from __future__ import annotations
 
-import json
 
 import yaml
 
 from .errors import UsageError
 from .gitutil import run_git
+from .output import emit
 from .paths import WikiPaths, sanitize_component
 from . import tasks as task_builders
 from .scanner import scan
@@ -27,11 +27,13 @@ def run_knowledge(paths: WikiPaths, as_json: bool) -> int:
         "added": added,
         "note": "knowledge-plan 任务已就绪，领取执行后 check 会自动展开模块/卡片任务",
     }
-    if as_json:
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-    else:
-        print("已添加 knowledge-plan 任务" if added else "knowledge 任务集已存在")
-        print(result["note"])
+    emit(result, _knowledge_human, as_json)
+    return 0
+
+
+def _knowledge_human(r: dict) -> str:
+    head = "已添加 knowledge-plan 任务" if r["added"] else "knowledge 任务集已存在"
+    return f"{head}\n{r['note']}"
     return 0
 
 

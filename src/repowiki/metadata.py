@@ -14,6 +14,7 @@ import os
 from .catalog import flatten
 from .errors import UsageError
 from .gitutil import run_git
+from .output import emit
 from .paths import WikiPaths
 from .state import TaskStore, now_iso
 from .tasks import build_overview_task
@@ -130,10 +131,7 @@ def run_finalize(paths: WikiPaths, as_json: bool) -> int:
     }
     removed = store.cleanup_runtime()
     summary["cleaned_runtime"] = removed
-    if as_json:
-        print(json.dumps(summary, ensure_ascii=False, indent=2))
-    else:
-        print(_fmt_summary(summary))
+    emit(summary, _fmt_summary, as_json)
     return 0
 
 
@@ -150,11 +148,9 @@ def _fmt_summary(s: dict) -> str:
 
 
 def _emit_progress(as_json: bool, msg: str) -> None:
-    if as_json:
-        print(json.dumps({"ok": True, "waiting": True, "detail": msg,
-                          "next_action": "执行 overview 任务后再次运行 finalize"}, ensure_ascii=False))
-    else:
-        print(msg)
+    emit({"ok": True, "waiting": True, "detail": msg,
+          "next_action": "执行 overview 任务后再次运行 finalize"},
+         lambda r: r["detail"], as_json)
 
 
 def _require_catalog(paths: WikiPaths) -> dict:

@@ -7,6 +7,7 @@ import shutil
 
 from .errors import UsageError
 from .i18n import SUPPORTED, detect_locale, strings
+from .output import emit
 from .paths import WikiPaths
 from . import tasks
 from .catalog import validate_catalog, flatten
@@ -65,7 +66,6 @@ def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = Non
     if not persisted or locale != "auto":
         paths.persist_locale(resolved)
     paths.ensure()
-    lang_name = strings(resolved)["name"]
 
     warnings: list[str] = []
     added: list[str] = []
@@ -99,15 +99,18 @@ def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = Non
         "warnings": warnings,
         "next": "执行 `repowiki next <repo> --claim` 领取任务",
     }
-    if as_json:
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-    else:
-        print(f"仓库：{result['repo']}（代码文件 {result['code_file_count']} 个，产出语言：{lang_name}）")
-        print(f"新增任务 {len(added)} 个，总任务 {result['tasks_total']} 个，当前阶段 {result['current_phase']}")
-        for w in warnings:
-            print(f"  ⚠ {w}")
-        print(result["next"])
+    emit(result, _plan_human, as_json)
     return 0
+
+
+def _plan_human(r: dict) -> str:
+    lines = [
+        f"仓库：{r['repo']}（代码文件 {r['code_file_count']} 个，产出语言：{strings(r['locale'])['name']}）",
+        f"新增任务 {len(r['tasks_added'])} 个，总任务 {r['tasks_total']} 个，当前阶段 {r['current_phase']}",
+        *[f"  ⚠ {w}" for w in r["warnings"]],
+        r["next"],
+    ]
+    return "\n".join(lines)
 
 
 def _busy_tasks(paths: WikiPaths) -> list[str] | None:

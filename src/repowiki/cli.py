@@ -7,7 +7,6 @@ Exit codes: 0 = ok, 1 = validation failure / usage error / corrupted state,
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 
 from . import __version__
@@ -15,15 +14,12 @@ from .dispatch import run_check, run_next, run_release, run_status, run_touch, r
 from .errors import ConflictError, StateError, UsageError  # noqa: F401 (re-exported)
 from .knowledge import run_knowledge
 from .metadata import run_finalize
+from .output import emit_error
 from .paths import WikiPaths
 from .plan import run_plan
 from .site import run_site
 from .state import run_clean
 from .updater import run_update
-
-
-def _print_json(obj: dict) -> None:
-    print(json.dumps(obj, ensure_ascii=False, indent=2))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -132,22 +128,13 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return args.func(args, paths)
     except ConflictError as e:
-        if args.json:
-            _print_json({"ok": False, "error": "conflict", "detail": str(e)})
-        else:
-            print(f"conflict: {e}", file=sys.stderr)
+        emit_error("conflict", str(e), args.json)
         return 2
     except StateError as e:
-        if args.json:
-            _print_json({"ok": False, "error": "state_corrupt", "detail": str(e)})
-        else:
-            print(f"state error: {e}", file=sys.stderr)
+        emit_error("state_corrupt", str(e), args.json)
         return 1
     except UsageError as e:
-        if args.json:
-            _print_json({"ok": False, "error": "usage", "detail": str(e)})
-        else:
-            print(f"error: {e}", file=sys.stderr)
+        emit_error("usage", str(e), args.json)
         return 1
 
 

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+from typing import Callable
 
 from .catalog import flatten
 from .errors import UsageError
 from .gitutil import run_git
+from .output import emit
 from .paths import WikiPaths
 from . import tasks as task_builders
 from .scanner import scan
@@ -56,7 +58,8 @@ def run_update(paths: WikiPaths, since: str | None, as_json: bool) -> int:
         raise UsageError(f"git diff {since}..HEAD 失败（起点 commit 是否存在？）")
     changed_set = set(changed)
     if not changed_set:
-        print(json.dumps({"ok": True, "changed": 0, "created_tasks": []}, ensure_ascii=False) if as_json else "自上次生成以来无变更")
+        emit({"ok": True, "changed": 0, "created_tasks": []},
+             lambda r: "自上次生成以来无变更", as_json)
         return 0
 
     try:
@@ -104,14 +107,17 @@ def run_update(paths: WikiPaths, since: str | None, as_json: bool) -> int:
         "created_tasks": added,
         "warnings": warnings,
     }
-    if as_json:
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-    else:
-        print(f"自 {since[:12]} 以来变更 {len(changed_set)} 个文件，命中 {len(affected)} 个页面")
-        for n in affected:
-            print(f"  → {n.id} {n.title}")
-        for w in warnings:
-            print(f"  ⚠ {w}")
-        if added:
-            print(f"已创建 {len(added)} 个增量更新任务，执行 `repowiki next <repo> --claim` 领取")
+    emit(result, _update_human(affected), as_json)
     return 0
+
+
+def _update_human(affected: list) -> Callable[[dict], str]:
+    # 页面标题只活在 FlatNode 里，不进 JSON 契约——以闭包带入
+    def human(r: dict) -> str:
+        lines = [f"自 {r['since'][:12]} 以来变更 {r['changed_files']} 个文件，命中 {len(affected)} 个页面"]
+        lines += [f"  → {n.id} {n.title}" for n in affected]
+        lines += [f"  ⚠ {w}" for w in r["warnings"]]
+        if r["created_tasks"]:
+            lines.append(f"已创建 {len(r['created_tasks'])} 个增量更新任务，执行 `repowiki next <repo> --claim` 领取")
+        return "\n".join(lines)
+    return human
