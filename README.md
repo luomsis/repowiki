@@ -95,6 +95,10 @@ myrepo/.repowiki/
 
 ## 查看 Wiki（单文件离线站点）
 
+![阅读视图：章节导航 + mermaid 渲染 + 源码引用](docs/site-preview-reading.png)
+
+![点击 file:// 源码引用，页内弹层查看带行号的源码片段](docs/site-preview-snippet.png)
+
 `repowiki site <repo> [--open]` 把整个 wiki 打包成**一个自包含的 HTML 文件**
 （`<repo>/.repowiki/<locale>/wiki.html`，约 4-5 MB）：
 
