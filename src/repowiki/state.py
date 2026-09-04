@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .cli import ConflictError, StateError, UsageError
+from .errors import ConflictError, StateError, UsageError
 from .paths import WikiPaths
 
 DEFAULT_STALE_SECONDS = 15 * 60

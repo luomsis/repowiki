@@ -8,7 +8,7 @@ import json
 
 import yaml
 
-from .cli import UsageError
+from .errors import UsageError
 from .gitutil import run_git
 from .paths import WikiPaths, sanitize_component
 from . import tasks as task_builders

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 
 from .catalog import flatten
-from .cli import UsageError
+from .errors import UsageError
 from .gitutil import run_git
 from .paths import WikiPaths
 from . import tasks as task_builders

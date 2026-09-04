@@ -15,7 +15,7 @@ from pathlib import Path
 
 from . import templates
 from .catalog import FlatNode, flatten
-from .cli import UsageError
+from .errors import UsageError
 from .i18n import strings
 from .paths import WikiPaths
 from .state import now_iso

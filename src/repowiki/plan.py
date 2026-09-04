@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 
-from .cli import UsageError
+from .errors import UsageError
 from .i18n import SUPPORTED, detect_locale, strings
 from .paths import WikiPaths
 from . import tasks

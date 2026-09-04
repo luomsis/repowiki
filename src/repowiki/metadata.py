@@ -12,7 +12,7 @@ import json
 import os
 
 from .catalog import flatten
-from .cli import UsageError
+from .errors import UsageError
 from .gitutil import run_git
 from .paths import WikiPaths
 from .state import TaskStore, now_iso

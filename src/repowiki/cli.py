@@ -11,7 +11,15 @@ import json
 import sys
 
 from . import __version__
+from .dispatch import run_check, run_next, run_release, run_status, run_touch, run_watch
+from .errors import ConflictError, StateError, UsageError  # noqa: F401 (re-exported)
+from .knowledge import run_knowledge
+from .metadata import run_finalize
 from .paths import WikiPaths
+from .plan import run_plan
+from .site import run_site
+from .state import run_clean
+from .updater import run_update
 
 
 def _print_json(obj: dict) -> None:
@@ -35,14 +43,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--locale", default="auto", choices=["auto", "zh", "en"],
                    help="output language: auto-detect from the repo (README-weighted) or force zh/en")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_plan)
+    p.set_defaults(func=lambda a, paths: run_plan(
+        paths, replan=a.replan, max_pages=a.max_pages, knowledge=a.knowledge,
+        force=a.force, as_json=a.json, locale=a.locale))
 
     p = sub.add_parser("next", help="list (and optionally claim) ready tasks")
     p.add_argument("repo")
     p.add_argument("--claim", action="store_true", help="atomically claim the returned tasks")
     p.add_argument("--worker", default=None, help="worker identifier recorded on claim")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_next)
+    p.set_defaults(func=lambda a, paths: run_next(paths, claim=a.claim, worker=a.worker, as_json=a.json))
 
     p = sub.add_parser("check", help="validate task output, auto-fix deterministic defects, update status")
     p.add_argument("repo")
@@ -52,61 +62,66 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--worker", default=None, help="caller identity; in_progress tasks held by others are refused")
     p.add_argument("--force", action="store_true", help="check even if claimed by another worker")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_check)
+    p.set_defaults(func=lambda a, paths: run_check(
+        paths, task_id=a.task, as_json=a.json, select_all=a.select_all,
+        worker=a.worker, force=a.force))
 
     p = sub.add_parser("touch", help="refresh a task's claim while executing (heartbeat)")
     p.add_argument("repo")
     p.add_argument("--task", required=True)
     p.add_argument("--worker", default=None)
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_touch)
+    p.set_defaults(func=lambda a, paths: run_touch(paths, task_id=a.task, worker=a.worker, as_json=a.json))
 
     p = sub.add_parser("watch", help="block until all tasks are done (or stalled/timeout); exit 0=completed, 1=stalled/timeout")
     p.add_argument("repo")
     p.add_argument("--interval", type=float, default=10.0, help="poll interval seconds (default 10)")
     p.add_argument("--timeout", type=float, default=3600.0, help="give up after this many seconds (default 3600)")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_watch)
+    p.set_defaults(func=lambda a, paths: run_watch(
+        paths, interval=a.interval, timeout=a.timeout, as_json=a.json))
 
     p = sub.add_parser("release", help="return an in_progress task to pending")
     p.add_argument("repo")
     p.add_argument("--task", required=True)
     p.add_argument("--force", action="store_true", help="release even if claimed by another worker")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_release)
+    p.set_defaults(func=lambda a, paths: run_release(
+        paths, task_id=a.task, force=a.force, as_json=a.json))
 
     p = sub.add_parser("finalize", help="assemble zh/meta/repowiki-metadata.json (requires all tasks done)")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_finalize)
+    p.set_defaults(func=lambda a, paths: run_finalize(paths, as_json=a.json))
 
     p = sub.add_parser("site", help="render the finished wiki into one offline HTML file (.repowiki/<locale>/wiki.html)")
     p.add_argument("repo")
     p.add_argument("--open", dest="open_browser", action="store_true",
                    help="open the generated file in the default browser")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_site)
+    p.set_defaults(func=lambda a, paths: run_site(
+        paths, open_browser=a.open_browser, as_json=a.json))
 
     p = sub.add_parser("update", help="map git changes to page_update tasks (incremental regeneration)")
     p.add_argument("repo")
     p.add_argument("--since", default=None, help="commit sha to diff from (default: last_commit_id in metadata)")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_update)
+    p.set_defaults(func=lambda a, paths: run_update(paths, since=a.since, as_json=a.json))
 
     p = sub.add_parser("knowledge", help="append the knowledge-card task set (planning + cards)")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_knowledge)
+    p.set_defaults(func=lambda a, paths: run_knowledge(paths, as_json=a.json))
 
     p = sub.add_parser("status", help="show task statistics, failures and stale claims")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_status)
+    p.set_defaults(func=lambda a, paths: run_status(paths, as_json=a.json))
 
     p = sub.add_parser("clean", help="remove .repowiki/state entirely (wiki output is kept)")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=cmd_clean)
+    p.set_defaults(func=lambda a, paths: run_clean(paths, as_json=a.json))
 
     return parser
 
@@ -134,95 +149,6 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(f"error: {e}", file=sys.stderr)
         return 1
-
-
-class ConflictError(Exception):
-    """State conflict, e.g. task already claimed by a live worker."""
-
-
-class StateError(Exception):
-    """Persisted state is unreadable (e.g. corrupt index.json); data-preserving abort."""
-
-
-class UsageError(Exception):
-    """User/input error reported with exit code 1."""
-
-
-# --- command implementations are filled in by their owning modules ---
-
-def cmd_plan(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in tasks.py
-    from .plan import run_plan
-
-    return run_plan(paths, replan=args.replan, max_pages=args.max_pages,
-                    knowledge=args.knowledge, force=args.force, as_json=args.json,
-                    locale=args.locale)
-
-
-def cmd_next(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in dispatch.py
-    from .dispatch import run_next
-
-    return run_next(paths, claim=args.claim, worker=args.worker, as_json=args.json)
-
-
-def cmd_check(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in validate.py
-    from .dispatch import run_check
-
-    return run_check(paths, task_id=args.task, as_json=args.json,
-                     select_all=args.select_all, worker=args.worker, force=args.force)
-
-
-def cmd_touch(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in state.py
-    from .dispatch import run_touch
-
-    return run_touch(paths, task_id=args.task, worker=args.worker, as_json=args.json)
-
-
-def cmd_watch(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in dispatch.py
-    from .dispatch import run_watch
-
-    return run_watch(paths, interval=args.interval, timeout=args.timeout, as_json=args.json)
-
-
-def cmd_release(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in state.py
-    from .dispatch import run_release
-
-    return run_release(paths, task_id=args.task, force=args.force, as_json=args.json)
-
-
-def cmd_finalize(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in metadata.py
-    from .metadata import run_finalize
-
-    return run_finalize(paths, as_json=args.json)
-
-
-def cmd_site(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in site.py
-    from .site import run_site
-
-    return run_site(paths, open_browser=args.open_browser, as_json=args.json)
-
-
-def cmd_update(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in updater.py
-    from .updater import run_update
-
-    return run_update(paths, since=args.since, as_json=args.json)
-
-
-def cmd_knowledge(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in knowledge.py
-    from .knowledge import run_knowledge
-
-    return run_knowledge(paths, as_json=args.json)
-
-
-def cmd_status(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in dispatch.py
-    from .dispatch import run_status
-
-    return run_status(paths, as_json=args.json)
-
-
-def cmd_clean(args, paths: WikiPaths) -> int:  # pragma: no cover - wired in state.py
-    from .state import run_clean
-
-    return run_clean(paths, as_json=args.json)
 
 
 if __name__ == "__main__":

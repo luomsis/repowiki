@@ -12,7 +12,7 @@ import os
 import socket
 
 from .catalog import flatten, validate_catalog
-from .cli import ConflictError, UsageError
+from .errors import ConflictError, UsageError
 from .paths import WikiPaths
 from . import tasks as task_builders
 from .scanner import scan
