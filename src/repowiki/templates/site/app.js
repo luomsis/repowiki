@@ -97,13 +97,14 @@
   function openPage(i, push) {
     var page = D.pages[i];
     if (!page) return;
+    current = i;
     var el = $('#content');
     el.innerHTML = marked.parse(page.md);
     enhanceCites(el);
     assignHeadingIds(el);
     document.title = page.title + ' · ' + D.repo;
     renderMermaid();
-    [].forEach.call($('#nav-tree a'), function (a) { a.classList.toggle('active', +a.getAttribute('data-page') === i); });
+    [].forEach.call(document.querySelectorAll('#nav-tree a'), function (a) { a.classList.toggle('active', +a.getAttribute('data-page') === i); });
     closeSidebar();
     window.scrollTo(0, 0);
     if (push !== false && location.hash !== '#/p/' + i) location.hash = '#/p/' + i;
@@ -168,11 +169,18 @@
   });
 
   // --- routing & responsive sidebar ---------------------------------------
-  function fromHash() {
+  var current = -1;
+  function fromHash(initial) {
+    // `#/p/N` selects a page. Any other hash (in-page TOC anchors like `#简介`)
+    // keeps the current page; only an initial load without a page route opens 0.
     var m = location.hash.match(/^#\/p\/(\d+)/);
-    openPage(m ? +m[1] : 0, false);
+    if (!m) {
+      if (initial) openPage(0, false);
+      return;
+    }
+    if (+m[1] !== current) openPage(+m[1], false);
   }
-  window.addEventListener('hashchange', fromHash);
+  window.addEventListener('hashchange', function () { fromHash(false); });
 
   $('#menu-btn').addEventListener('click', function () { document.body.classList.toggle('sidebar-open'); });
   $('#backdrop').addEventListener('click', closeSidebar);
@@ -185,5 +193,5 @@
   function closeSidebar() { document.body.classList.remove('sidebar-open'); }
 
   buildNav();
-  fromHash();
+  fromHash(true);
 })();
