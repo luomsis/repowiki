@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.2.0 — 2026-09-04
+
+### 变更
+
+- **移除 `next --batch`（破坏性）**：worker 契约本就禁止一次持有多个认领，该参数是无消费者的
+  投机接口。现在 `next` 每次只发放一个任务（`ready_tasks(limit=1)`），README / SKILL.md /
+  测试同步改为「每次 next 只发放一个任务」。旧脚本里的 `--batch N` 直接删掉即可。
+- CLI 分发简化：删除 `main` 中 13 行的 `handlers` 字典，改为各子 parser
+  `set_defaults(func=cmd_*)` + `main` 直接 `args.func(args, paths)`；
+  `getattr(args, "json", False)` 简化为 `args.json`。
+- 新增共享 git 子进程助手 `src/repowiki/gitutil.py`（`run_git(repo, *args, timeout)`），
+  scanner / metadata / knowledge / updater 四处各自为政的 subprocess 封装统一收敛到一处；
+  失败统一返回 `None`，空输出与失败可区分（保住 update「空 diff = 无变更」语义）。
+- `state.stats()` 直接输出 `busy`（复用 stale 判定），`next` / `watch` / `status` 三处繁忙
+  口径单源化；`run_next` 不再二次加载 index.json。
+- finalize 的 `state/catalog.json` 从单次运行最多解析 3 次减为 1 次；删除 `_emit` 的
+  dumps→loads→dumps 往返。
+
+### 清理（ponytail 全仓审计，净删约 76 行）
+
+- 删除仅声明未消费的死代码：`templates.placeholders`、`Inventory.to_dict`、`FileEntry.size`、
+  `WikiPaths.repo_rel`、`run_watch` 内的 `snapshot`、`i18n.module_optional_files`、
+  `FlatNode.dir`、`validate.check_catalog` 转发包装、metadata 的 `uuid`/`datetime`/`Path`
+  死导入等；`_expand_knowledge` 去掉未使用的 `inv` 参数。
+- dispatch 的规划任务展开分支从「`(plan_file, expand)` 元组」改为 `if tid == "catalog"` 显式
+  判断；`_check_readonly` 冗余的局部导入清理。
+- 除上述 `--batch` 外无行为变化；126 个测试全绿。
+
+### 文档
+
+- README 新增「离线安装」一节：运行时仅依赖 pyyaml，给出 `pip download` 备料 +
+  `pip install --no-index` 的完整离线路径，以及 skill 目录的手动拷贝方式。
+
 ## 0.1.0 — 2026-09-03
 
 首个公开版本。
