@@ -1,6 +1,6 @@
 {
   "name": "repowiki",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Generate a structured wiki (mermaid diagrams, file:// source links) for any repository. Output language follows the repo (zh/en). Deterministic task orchestrator + any coding agent. Windows/macOS/Linux native; single-file offline HTML viewer via `repowiki site`.",
   "author": "luomsis",
   "license": "MIT",
