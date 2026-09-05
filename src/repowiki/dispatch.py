@@ -171,13 +171,22 @@ def run_watch(paths: WikiPaths, interval: float, timeout: float, as_json: bool) 
                  lambda r: f"✓ 全部 {r['stats']['total']} 个任务完成", as_json)
             return 0
 
-        # terminal: stalled — work remains but nothing is running or claimable
+        # terminal: stalled — work remains but nothing is running or claimable.
+        # Re-check with fresh stats first: a task can complete between the
+        # top-of-loop snapshot and this branch, and a stale snapshot must not
+        # fake a stall.
         if not in_flight and not ready:
+            fresh = store.stats()
+            done = fresh["by_status"].get("done", 0)
+            if total > 0 and done == total:
+                emit({"reason": "completed", "stats": fresh},
+                     lambda r: f"✓ 全部 {r['stats']['total']} 个任务完成", as_json)
+                return 0
             reason = (
                 f"停滞：剩余 {total - done} 个任务未完成，但无执行中且无可领取任务"
                 "（通常是 exhausted 毒任务；`repowiki status` 查看详情，`release --force` 可重置）"
             )
-            emit({"reason": "stalled", "detail": reason, "stats": stats},
+            emit({"reason": "stalled", "detail": reason, "stats": fresh},
                  lambda r: f"⏹ {r['detail']}", as_json)
             return 1
 
