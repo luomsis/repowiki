@@ -119,6 +119,8 @@ class TaskStore:
         """Read the index WITHOUT the lock — only for callers already inside
         ``_transaction`` (nesting the lock would self-deadlock)."""
         f = self.paths.index_file
+        if not f.exists():
+            return {"tasks": {}, "created_at": now_iso()}
         try:
             data = json.loads(_retry_windows_fs(lambda: f.read_text(encoding="utf-8")))
         except json.JSONDecodeError as e:
