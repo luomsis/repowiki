@@ -6,9 +6,12 @@
 
 - **Windows CI 兼容**（预存问题，与上两条同窗修复）：测试夹具的 `read_text`/`write_text`
   未显式 `encoding="utf-8"`，Windows 默认 cp1252 下 10 个用例报 UnicodeDecodeError/
-  UnicodeEncodeError；`state.py` 原子替换 `index.json` 在 Windows 可因未加锁的读进程
-  仍持有旧文件而报 PermissionError，现短暂重试；锁后端缺失测试修正为同时屏蔽 `fcntl`
-  与 `msvcrt`（原只屏蔽 POSIX 侧，Windows 上测试形同虚设）。
+  UnicodeEncodeError；`state.py` 读 index.json 与 `os.replace` 原子换入在 Windows 存在
+  双向竞态（CPython 打开文件不带 FILE_SHARE_DELETE，读写任何一侧都会撞 PermissionError），
+  现在读者与写方统一走 `.index.lock` 并对换入做短暂重试；锁后端缺失测试修正为同时屏蔽
+  `fcntl` 与 `msvcrt`（原只屏蔽 POSIX 侧，Windows 上测试形同虚设）。
+- **watch 停滞误报**：某任务在循环顶部快照与停滞判定之间恰好完成时，`ready_tasks` 已空
+  导致误报「停滞」退出 1——宣布停滞前用新鲜 stats 复核。
 - **catalog 校验拒绝占位符标题**：节点 title 含 `{{...}}` 模板占位符形态时 `validate_catalog`
   报错。此前这类标题会一路穿透进任务规格与页面 H1（templates.render 按 key 替换、未知占位符
   原样保留，`{{TITLE}}` 被填回字面量），而产物校验又把 H1 里的该字面量判为「未替换占位符」
