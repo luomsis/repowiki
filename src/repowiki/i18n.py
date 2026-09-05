@@ -113,9 +113,13 @@ def detect_locale(repo_root: Path, code_files: list[str] | None = None) -> str:
     carries enough natural text (identifiers in code are always latin, so
     they must not dilute the docs-language signal); without a decisive README,
     any source file with substantial CJK text (comments/docstrings) picks zh.
-    Deterministic, no network."""
+    README.md is preferred when present — a translated sibling (README.en.md,
+    README.zh.md) must not outvote the primary one (sorted order would put
+    "README.en.md" first). Deterministic, no network."""
     root = Path(repo_root)
-    readme = next((p for p in sorted(root.glob("README*")) if p.is_file()), None)
+    primary = root / "README.md"
+    readme = primary if primary.is_file() else next(
+        (p for p in sorted(root.glob("README*")) if p.is_file()), None)
     if readme is not None:
         text = _read_head(readme)
         cjk = len(_CJK_RE.findall(text))

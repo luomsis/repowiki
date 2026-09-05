@@ -154,6 +154,16 @@ def test_detect_zh_from_chinese_readme(repo):
     assert detect_locale(repo) == "zh"
 
 
+def test_translated_readme_does_not_outvote_primary(repo):
+    (repo / "README.en.md").write_text(
+        "# demo\n\nA tiny demo service with an API, models and scripts.\n",
+        encoding="utf-8",
+    )
+    # README.md is the primary README; a translated sibling must not flip the
+    # decision even though sorted(glob("README*")) would pick it first
+    assert detect_locale(repo) == "zh"
+
+
 def test_detect_en_from_english_readme(tmp_path):
     repo = tmp_path / "en-demo"
     for rel, content in FILES.items():
