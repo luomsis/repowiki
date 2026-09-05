@@ -70,6 +70,12 @@ class TestCatalogValidate:
         errors, _ = validate_catalog(c, self._known())
         assert any("slug 非法" in e for e in errors)
 
+    def test_title_placeholder_rejected(self):
+        c = valid_catalog()
+        c["chapters"][0]["children"][0]["title"] = "模板加载与 {{TITLE}} 预渲染"
+        errors, _ = validate_catalog(c, self._known())
+        assert any("占位符" in e for e in errors)
+
     def test_page_with_children(self):
         c = valid_catalog()
         c["chapters"][0]["children"][0]["children"] = [c["chapters"][0]["children"][0]]

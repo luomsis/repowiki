@@ -20,7 +20,7 @@ MIN_SECTIONS = 6
 MIN_MERMAID = 2
 MAX_CITED_FILES = 15
 
-_PLACEHOLDER_RE = re.compile(r"\{\{[A-Z][A-Z0-9_]*\}\}")
+PLACEHOLDER_RE = re.compile(r"\{\{[A-Z][A-Z0-9_]*\}\}")
 _H1_RE = re.compile(r"^# (.+?)\s*$", re.M)
 _H2_RE = re.compile(r"^## (.+?)\s*$", re.M)
 _FILE_LINK_RE = re.compile(
@@ -60,6 +60,21 @@ def _headings(text: str, level: int = 2) -> list[str]:
     return [m.group(1).strip() for m in _H2_RE.finditer(text)]
 
 
+def _strip_code(text: str) -> str:
+    """Drop fenced code blocks and inline code spans; placeholder scans apply
+    to prose only — a page documenting the placeholder mechanism itself must
+    be able to show literal {{...}} inside code."""
+    out: list[str] = []
+    in_fence = False
+    for line in text.splitlines(keepends=True):
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            out.append("\n")
+            continue
+        out.append("\n" if in_fence else line)
+    return re.sub(r"`[^`\n]*`", " ", "".join(out))
+
+
 def _file_loc(repo_root: Path, rel: str) -> int | None:
     p = repo_root / rel
     try:
@@ -79,8 +94,9 @@ def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False,
     text = raw
     lang = strings(locale)
 
-    # leftover template placeholders are always an error
-    if _PLACEHOLDER_RE.search(text):
+    # leftover template placeholders are always an error (prose only — code
+    # blocks may legitimately document the placeholder syntax itself)
+    if PLACEHOLDER_RE.search(_strip_code(text)):
         res.fail("页面仍含未替换的模板占位符 {{...}}")
 
     # H1: exactly one, must equal the task title (auto-fix if mismatched)
@@ -275,7 +291,7 @@ def check_knowledge_card(raw: str, title: str, category: str, repo_root: Path,
                          locale: str = "zh") -> CheckResult:
     res = CheckResult(text=raw)
     lang = strings(locale)
-    if _PLACEHOLDER_RE.search(raw):
+    if PLACEHOLDER_RE.search(_strip_code(raw)):
         res.fail("卡片仍含未替换的模板占位符")
     fm = re.match(r"^---\s*\n(.*?)\n---\s*\n", raw, re.S)
     if not fm:
@@ -313,7 +329,7 @@ def check_knowledge_card(raw: str, title: str, category: str, repo_root: Path,
 def check_overview(raw: str, repo_name: str, locale: str = "zh") -> CheckResult:
     res = CheckResult(text=raw)
     lang = strings(locale)
-    if _PLACEHOLDER_RE.search(raw):
+    if PLACEHOLDER_RE.search(_strip_code(raw)):
         res.fail("总览仍含未替换的模板占位符")
     if raw.lstrip().startswith("---"):
         res.fail("总览不应包含 YAML front matter")

@@ -53,7 +53,7 @@ Write every human-readable field (`title`, `summary`, `page_brief`) in **English
 ## Planning rules (each is checked by the validator; violations fail the task)
 1. Root-level `kind: "chapter"` = a chapter directory (12~18 for large repos, 4~8 topic-based for small ones — prefer precision over volume); root-level `kind: "page"` = a standalone top-level page (e.g. "Quick Start", "Contributing"), only when the repo actually has such content.
 2. Tree depth ≤ 4 (root chapters are level 1). Only `kind: "chapter"` may have `children`; children are either `page` (leaf pages) or `chapter` (sub-directories, which must carry their own same-named index page).
-3. **All node titles are globally unique**; ids are globally unique and hierarchical (c01, c0101, c010102…).
+3. **All node titles are globally unique**, and must not contain `{{...}}`-shaped template placeholder literals (the title lands in the page H1 and trips the "leftover placeholder" check); ids are globally unique and hierarchical (c01, c0101, c010102…).
 4. `dependent_files` may only reference paths that really exist in the list above; 3~12 files per page is a good range. A chapter index page cites the chapter's most representative files.
 5. `page_brief` states the concrete points the page must cover — it becomes the prompt for the page-writing task, so be specific (which modules/classes/flows/configs).
 6. Coverage expectations (mirroring wikis of comparable projects): project overview, quick start, core concepts, main features/SDK usage, configuration, deployment/operations, API reference, examples/contributing — trim to what this repository actually contains; do not force sections that do not apply.

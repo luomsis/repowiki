@@ -12,6 +12,7 @@ import re
 from dataclasses import dataclass, field
 
 from .paths import sanitize_component, unique_name, nfc
+from .validate import PLACEHOLDER_RE
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 MAX_DEPTH = 4  # root chapters are depth 1
@@ -85,6 +86,11 @@ def validate_catalog(data, known_paths: set[str]) -> tuple[list[str], list[str]]
                 errors.append(f"{where}: 缺少 title")
             elif title in seen_titles:
                 errors.append(f"{where}: title 重复 `{title}`（首次出现于 {seen_titles[title]}）")
+            elif PLACEHOLDER_RE.search(title):
+                errors.append(
+                    f"{where}: title 含模板占位符形态 `{title}`"
+                    "（标题会写进页面 H1 并触发「未替换占位符」误判，请改用普通措辞）"
+                )
             else:
                 seen_titles[title] = where
             if not isinstance(slug, str) or not SLUG_RE.match(slug or ""):

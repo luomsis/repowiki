@@ -101,6 +101,17 @@ class TestPageRules:
         res = check_page(text, "项目概述", repo)
         assert not res.ok and any("占位符" in e for e in res.errors)
 
+    def test_placeholder_inside_code_passes(self, repo):
+        # a page documenting the placeholder mechanism itself: literals
+        # inside fenced blocks / inline code are legitimate content
+        text = valid_page().replace(
+            "## 简介",
+            "## 简介\n\n用 `{{TITLE}}` 表示标题占位符：\n\n```text\nrender(\"{{TITLE}}\")\n```\n",
+            1,
+        )
+        res = check_page(text, "项目概述", repo)
+        assert res.ok, res.errors
+
     def test_wiki_to_wiki_link_warns(self, repo):
         text = valid_page().replace(
             "demo 是一个微型示例服务。", "见 [其他页](../快速开始.md)。"
