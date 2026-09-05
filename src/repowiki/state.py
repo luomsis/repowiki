@@ -32,6 +32,23 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _retry_windows_fs(fn, tries: int = 20, delay: float = 0.05):
+    """Run a file operation, retrying briefly on PermissionError.
+
+    Windows-only race: while os.replace atomically swaps a path in one
+    process, open()/replace of that same path in another process can fail
+    with PermissionError. The window is sub-millisecond; readers and the
+    index writer just retry.
+    """
+    for attempt in range(tries):
+        try:
+            return fn()
+        except PermissionError:
+            if attempt == tries - 1:
+                raise
+            time.sleep(delay)
+
+
 def _exclusive_lock(fh) -> None:
     """Exclusive blocking file lock: fcntl on POSIX, msvcrt on Windows (both stdlib)."""
     try:
@@ -85,7 +102,7 @@ class TaskStore:
         if not f.exists():
             return {"tasks": {}, "created_at": now_iso()}
         try:
-            data = json.loads(f.read_text(encoding="utf-8"))
+            data = json.loads(_retry_windows_fs(lambda: f.read_text(encoding="utf-8")))
         except json.JSONDecodeError as e:
             # A corrupt manifest must never masquerade as an empty one: the
             # next read-modify-write transaction would rewrite the index with
@@ -102,17 +119,7 @@ class TaskStore:
         f.parent.mkdir(parents=True, exist_ok=True)
         tmp = f.with_name(f".{f.name}.{uuid.uuid4().hex[:8]}.tmp")
         tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        # Windows: os.replace fails with PermissionError while an unlocked
-        # reader (ready_tasks/load run without the lock) still holds the old
-        # file open. Readers finish in milliseconds, so retry briefly.
-        for attempt in range(20):
-            try:
-                os.replace(tmp, f)
-                return
-            except PermissionError:
-                if attempt == 19:
-                    raise
-                time.sleep(0.05)
+        _retry_windows_fs(lambda: os.replace(tmp, f))
 
     def _lock(self):
         """Process-level exclusive lock around index read-modify-write."""
