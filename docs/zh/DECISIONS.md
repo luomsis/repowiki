@@ -1,5 +1,7 @@
 # DECISIONS.md — 实现过程中的规格空白处的最小合理决策记录
 
+**中文** | [English](../en/DECISIONS.md)
+
 （计划 Agent Execution Rule #6：遇规格空白不得臆造，记录于此。）
 
 1. **模块拆分**：计划只列了 `tasks.py`，实现时把 plan 命令编排独立为 `plan.py`、

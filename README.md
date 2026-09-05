@@ -1,5 +1,12 @@
 # repowiki
 
+[中文](README.md) | **English**
+
+[![CI](https://github.com/luomsis/repowiki/actions/workflows/ci.yml/badge.svg)](https://github.com/luomsis/repowiki/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python ≥ 3.10](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](#可靠性设计)
+
 为任意仓库生成结构化 Wiki 的构建系统——但**不含任何 LLM**。
 
 `repowiki` 是一个确定性的构建系统：负责任务规划、原子认领、产出校验、自动修复、元数据组装；
@@ -17,6 +24,45 @@ Wiki 产出语言自动跟随目标仓库（中文仓库 → `zh/`，英文仓�
                          │ knowledge/zh/**  (模块+机制卡片)         │
                          └─────────────────────────────────────────┘
 ```
+
+## 为什么是 repowiki
+
+给仓库生成 wiki 的现成方案主要有两条路：云端 AI wiki 服务（代码要上传、按量付费、产出是黑盒），
+或者让一个 agent 直接通读仓库现写（大仓库上下文装不下、中断即前功尽弃、难以并行）。
+repowiki 走第三条路：**读代码、写 wiki 的智能留给任意 agent，其余一切——任务规划、原子认领、
+产出校验、自动修复、断点续跑——做成确定性构建系统。**
+
+| | 云端 AI wiki 服务 | 让 agent 直接读仓库 | repowiki |
+|---|---|---|---|
+| 智能来源 | 内置 LLM（不可换） | 你的 agent（任选） | 你的 agent（任选） |
+| 代码出域 | 是 | 否 | 否 |
+| API Key / 网络 | 需要 | 视 agent 而定 | repowiki 本身零依赖 |
+| 大仓库 | 受服务方配额限制 | 上下文装不下 | 任务切分，逐页生成 |
+| 中断 / 崩溃 | — | 从头再来 | 状态落盘，断点续跑 |
+| 并行加速 | — | 难协调 | 多 worker 原子认领，天然并行 |
+| 产出质量 | 黑盒 | 靠 agent 自觉 | 模板强制 + 程序化校验 + 自动修复 |
+
+一句话：**agent 负责聪明，repowiki 负责靠谱。**
+
+## 特性（Features）
+
+- **零 LLM 依赖**：plan / claim / check / 自动修复全是确定性代码，不绑定任何 agent CLI，无需 API Key、零网络调用；
+- **并发安全**：原子任务认领 + 心跳续期 + 过期自动回收，多个 agent / 进程 / 人可同时参与同一个仓库；
+- **断点续跑**：每任务状态落盘，随时中断随时继续，崩溃不留孤儿认领；
+- **增量更新**：`update` 基于 git diff 只重写受影响页面（含祖先链）；
+- **单文件离线站点**：`site` 产出约 4-5 MB 自包含 HTML——导航、搜索、mermaid、源码弹层，双击即看；
+- **双语产出**：zh / en 自动跟随目标仓库语言，表驱动设计可扩展；
+- **跨平台**：macOS / Linux / Windows 原生支持（无需 WSL），CI 三平台 × Python 3.10-3.13 矩阵回归；
+- **强校验**：锚点 / 行号 / H1 / 路径分隔符程序化自动修复，只有语义缺陷才判失败。
+
+## 目录
+
+- [为什么是 repowiki](#为什么是-repowiki) · [特性](#特性features)
+- [安装](#安装) · [快速开始](#快速开始)
+- [用法](#用法usage)（Worker 循环契约 / 并发配方）· [命令一览](#命令一览)
+- [查看 Wiki：单文件离线站点](#查看-wiki单文件离线站点)
+- [可靠性设计](#可靠性设计) · [设计取舍](#设计取舍) · [已知边界](#已知边界) · [Non-Goals](#non-goals)
+- [Roadmap](#roadmap) · [贡献](#贡献contributing) · [社区](#社区) · [文档](#文档) · [License](#license)
 
 ## 安装
 
@@ -95,9 +141,9 @@ myrepo/.repowiki/
 
 ## 查看 Wiki（单文件离线站点）
 
-![阅读视图：章节导航 + mermaid 渲染 + 源码引用](docs/site-preview-reading.png)
+![阅读视图：章节导航 + mermaid 渲染 + 源码引用](docs/assets/site-preview-reading.png)
 
-![点击 file:// 源码引用，页内弹层查看带行号的源码片段](docs/site-preview-snippet.png)
+![点击 file:// 源码引用，页内弹层查看带行号的源码片段](docs/assets/site-preview-snippet.png)
 
 `repowiki site <repo> [--open]` 把整个 wiki 打包成**一个自包含的 HTML 文件**
 （`<repo>/.repowiki/<locale>/wiki.html`，约 4-5 MB）：
@@ -116,7 +162,9 @@ graph TB）→ 核心组件 → 架构总览（sequenceDiagram）→ 详细组�
 「Diagram sources/图表来源」，链接格式 `[path:Lx-Ly](file://path#Lx-Ly)`；页间零链接
 （正因如此所有页面任务可完全并行）。
 
-## Worker 循环契约
+## 用法（Usage）
+
+### Worker 循环契约
 
 任何执行者（subagent / 进程 / 人）按此循环参与，多个循环可同时运行：
 
@@ -214,3 +262,43 @@ done
 ## Non-Goals
 
 LLM API 后端 · 内置 agent CLI 检测/执行器 · MCP 封装 · 常驻预览服务器（`site` 产物是纯静态单文件，双击即看，无需起服务） · zh/en 之外的产出语言。
+
+## Roadmap
+
+- [ ] `overview` 总览页纳入增量更新（当前结构性重构后需 `plan --replan` 全量重建）
+- [ ] 发布到 PyPI，`pip install repowiki` 直装（当前从 git 地址安装）
+- [ ] 更多产出语言：表驱动设计，新增一门语言 = 一张字符串表 + 一套模板（欢迎 PR）
+- [ ] CLI 交互消息中英双语（当前为中文，面向驱动它的 agent）
+
+## 贡献（Contributing）
+
+欢迎 issue 与 PR！本地开发：
+
+```bash
+git clone https://github.com/luomsis/repowiki.git && cd repowiki
+pip install -e '.[test]'
+pytest
+```
+
+- 行为变更请先开 issue 或去 Discussions 对齐方向，再动手；
+- 新增一门产出语言 = 一张字符串表 + 一套模板（见「设计取舍」），是很好的入门贡献点。
+
+## 社区
+
+- 问题、想法，或想晒一晒你生成的 wiki → [GitHub Discussions](https://github.com/luomsis/repowiki/discussions)
+- bug 与功能请求 → [Issues](https://github.com/luomsis/repowiki/issues)
+
+## 文档
+
+全部文档集中于 `docs/`（`zh/` 与 `en/` 镜像目录，同名文件一一对应）：
+
+- [版本日志](CHANGELOG.md)（[English](CHANGELOG.en.md)，位于仓库根部）
+- [领域词汇表](docs/zh/CONTEXT.md)（产出物 / 编排 / 执行三组术语与 Avoid 对照）
+- [决策记录](docs/zh/DECISIONS.md)（规格空白处的 14 条最小合理决策）
+- 架构决策记录（ADR）：[Windows 原生支持的双锁后端](docs/zh/adr/0001-windows-native-support.md) ·
+  [单文件离线站点](docs/zh/adr/0002-single-file-offline-site.md)
+- Agent Skill 指引：[中文](skills/repowiki/SKILL.md) · [English](skills/repowiki/SKILL.en.md)
+
+## License
+
+[MIT](LICENSE) © luomsis

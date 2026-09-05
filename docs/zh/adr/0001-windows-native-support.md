@@ -1,5 +1,7 @@
 # Windows 原生支持：stdlib 双文件锁后端
 
+**中文** | [English](../../en/adr/0001-windows-native-support.md)
+
 v0.2.0 及之前 Windows 是明确 Non-Goal（README/SKILL.md 声明"请在 WSL 中使用"），因为并发状态控制依赖
 POSIX `fcntl.flock`。用户要求原生支持后，我们选择按平台选择 stdlib 锁后端——POSIX 保持 `fcntl`，
 Windows 用 `msvcrt.locking`（约 20 行，零新增依赖），语义同样是"单机阻塞独占锁"，与工具的单机部署模型一致。

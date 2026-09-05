@@ -1,5 +1,7 @@
 # Wiki 查看器：单文件离线 HTML，渲染库内嵌
 
+**中文** | [English](../../en/adr/0002-single-file-offline-site.md)
+
 v0.2.0 的 Non-Goals 明确排除"HTML 预览服务"。用户要求"给生成的文档加一个 web 页面方便查看"后，
 我们选择在 `finalize` 之后用独立命令 `repowiki site` 生成**一个自包含 HTML 文件**
 （`<locale>/wiki.html`）：全部页面、被引用的源码行区间、markdown 渲染库（marked）与

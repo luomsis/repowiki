@@ -1,5 +1,7 @@
 # repowiki
 
+**中文** | [English](../en/CONTEXT.md)
+
 为任意代码仓库生成结构化 Wiki 的确定性构建系统：编排与校验由 CLI 完成，智能工作（读码、写作）由驱动它的 agent 完成。
 
 ## Language

@@ -3,6 +3,8 @@ name: repowiki
 description: 为任意代码仓库生成结构化的仓库 Wiki（mermaid 图、file:// 源码引用；产出语言自动跟随仓库 zh/en，可 --locale 指定；finalize 后可用 site 命令生成单文件离线 HTML 查看站点，macOS/Linux/Windows 均可用）。Use when the user asks to generate a repo wiki, "生成/更新 repowiki", "给仓库生成 wiki 文档", or mentions repowiki / 仓库文档 / repo wiki. Works on any repo path; supports concurrent subagents.
 ---
 
+**中文** | [English](SKILL.en.md)
+
 # repowiki：为仓库生成结构化的 Wiki
 
 `repowiki` 是一个确定性的任务编排器（无 LLM）：它规划任务、校验产出、组装元数据。

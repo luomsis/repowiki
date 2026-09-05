@@ -1,5 +1,24 @@
 # Changelog
 
+**中文** | [English](CHANGELOG.en.md)
+
+## 未发布
+
+### 新增
+
+- 文档集中双语化：`docs/` 改为 `zh/`+`en/` 镜像结构（CONTEXT、DECISIONS、ADR 迁入
+  `docs/zh/`），新增全量英文版 `CHANGELOG.en.md` 与 `docs/en/**`；README、CHANGELOG
+  留在仓库根部（GitHub 主页与 Releases 页渲染依赖根目录）。
+- README 英文版 `README.en.md`；README launch 打磨：badges、「为什么是 repowiki」对比表、
+  Features、用法（Usage）、Roadmap、Contributing、社区入口、目录。
+- 新增 `skills/repowiki/SKILL.en.md`（SKILL.md 的英文姊妹版）。
+
+### 修复
+
+- **语言自动检测优先 README.md**：`detect_locale` 原取 `sorted(glob("README*"))` 的
+  第一个——`README.en.md` 排序在 `README.md` 之前，双语仓库的 `plan --replan` 会把
+  产出语言误判为 en；现在 README.md 存在时以其为准，缺失才回退其余 README*。
+
 ## 0.3.1 — 2026-09-05
 
 ### 修复
