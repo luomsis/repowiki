@@ -1,6 +1,6 @@
 # Changelog
 
-**中文** | [English](CHANGELOG.en.md)
+[中文](CHANGELOG.md) | **English**
 
 ## 0.3.2 — 2026-09-05
 

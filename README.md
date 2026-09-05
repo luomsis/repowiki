@@ -1,6 +1,6 @@
 # repowiki
 
-[中文](README.md) | **English**
+**中文** | [English](README.en.md)
 
 [![CI](https://github.com/luomsis/repowiki/actions/workflows/ci.yml/badge.svg)](https://github.com/luomsis/repowiki/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)

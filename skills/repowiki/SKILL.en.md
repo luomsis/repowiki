@@ -3,7 +3,7 @@ name: repowiki
 description: Generate a structured repo wiki for any code repository (mermaid diagrams, file:// source references; output language follows the repo zh/en, overridable with --locale; after finalize, the site command builds a single-file offline HTML viewer; works on macOS/Linux/Windows). Use when the user asks to generate a repo wiki, "生成/更新 repowiki", "给仓库生成 wiki 文档", or mentions repowiki / repo wiki / 仓库文档. Works on any repo path; supports concurrent subagents.
 ---
 
-**中文** | [English](SKILL.en.md)
+[中文](SKILL.md) | **English**
 
 # repowiki: generate a structured wiki for a repository
 
