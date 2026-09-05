@@ -104,7 +104,8 @@ myrepo/.repowiki/
 
 - markdown + mermaid 全部渲染，引用的源码行区间直接内嵌，点击 `file://` 引用在页内
   弹层查看带行号高亮的源码——无需 IDE、无需网络，发给同事一个文件即可浏览整个 wiki；
-- 内置侧边栏导航、全文搜索、暗色/浅色主题（跟随系统 + 手动切换）；
+- 侧边栏章节导航（可折叠）+ 当前页目录（scroll-spy 跟随高亮）、全文搜索（命中词高亮）、
+  代码块一键复制、prev/next 翻页、阅读进度条、暗色/浅色主题（跟随系统 + 手动切换）；
 - 完全离线：markdown/mermaid 渲染库（marked/mermaid，MIT）已内嵌进文件本身；
 - 幂等可重跑：finalize、update 或手动改了页面之后随时重新执行 `repowiki site` 重建；
 - 执行过 `repowiki clean` 也能重建（此时章节顺序退化为目录序，内容不受影响）。
