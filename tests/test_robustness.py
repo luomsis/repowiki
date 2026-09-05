@@ -82,12 +82,14 @@ def test_unknown_task_id_touch_and_release_fail_cleanly(repo, paths, capsys):
         assert "任务不存在: nope" in capsys.readouterr().err
 
 
-# --- lock backend: with fcntl gone on POSIX, msvcrt is also unavailable there;
-# --- both missing must surface as a friendly usage error, never a traceback
+# --- lock backend: with both backends blocked (on POSIX msvcrt does not exist,
+# --- on Windows fcntl does not), a missing lock layer must surface as a
+# --- friendly usage error, never a traceback
 
 def test_missing_lock_backends_reports_usage_error(paths, monkeypatch):
     paths.ensure()
     monkeypatch.setitem(sys.modules, "fcntl", None)
+    monkeypatch.setitem(sys.modules, "msvcrt", None)
     store = TaskStore(paths)
     with pytest.raises(UsageError, match="文件锁"):
         store._lock()

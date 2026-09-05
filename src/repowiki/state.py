@@ -102,7 +102,17 @@ class TaskStore:
         f.parent.mkdir(parents=True, exist_ok=True)
         tmp = f.with_name(f".{f.name}.{uuid.uuid4().hex[:8]}.tmp")
         tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        os.replace(tmp, f)
+        # Windows: os.replace fails with PermissionError while an unlocked
+        # reader (ready_tasks/load run without the lock) still holds the old
+        # file open. Readers finish in milliseconds, so retry briefly.
+        for attempt in range(20):
+            try:
+                os.replace(tmp, f)
+                return
+            except PermissionError:
+                if attempt == 19:
+                    raise
+                time.sleep(0.05)
 
     def _lock(self):
         """Process-level exclusive lock around index read-modify-write."""

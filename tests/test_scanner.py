@@ -29,9 +29,9 @@ def test_scan_git_matches_walk(repo, tmp_path):
 
 def test_scan_ignores_build_dirs(repo):
     (repo / "node_modules" / "pkg").mkdir(parents=True)
-    (repo / "node_modules" / "pkg" / "index.js").write_text("x\n")
+    (repo / "node_modules" / "pkg" / "index.js").write_text("x\n", encoding="utf-8")
     (repo / ".repowiki" / "state").mkdir(parents=True)
-    (repo / ".repowiki" / "x.md").write_text("x\n")
+    (repo / ".repowiki" / "x.md").write_text("x\n", encoding="utf-8")
     inv = scan(repo)
     assert not any("node_modules" in f.path for f in inv.files)
     assert not any(".repowiki" in f.path for f in inv.files)
@@ -55,7 +55,7 @@ def test_tree_summary_truncates_per_dir(repo):
     big = repo / "many"
     big.mkdir()
     for i in range(30):
-        (big / f"f{i}.py").write_text("x = 1\n")
+        (big / f"f{i}.py").write_text("x = 1\n", encoding="utf-8")
     tree = scan(repo).tree_summary
     assert "… (+10 more)" in tree
 

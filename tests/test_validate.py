@@ -213,13 +213,13 @@ class TestKnowledgeModule:
         d = tmp_path / "模块"
         d.mkdir()
         for n in ("概述.md", "技术栈.md", "架构设计.md"):
-            (d / n).write_text("内容\n")
+            (d / n).write_text("内容\n", encoding="utf-8")
         assert check_knowledge_module(d).ok
 
     def test_missing_required(self, tmp_path):
         d = tmp_path / "模块"
         d.mkdir()
-        (d / "概述.md").write_text("内容\n")
+        (d / "概述.md").write_text("内容\n", encoding="utf-8")
         res = check_knowledge_module(d)
         assert not res.ok and any("技术栈" in e for e in res.errors)
 

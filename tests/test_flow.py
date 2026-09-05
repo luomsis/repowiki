@@ -25,30 +25,30 @@ def run(*argv):
 class TestPlan:
     def test_plan_creates_catalog_task(self, repo):
         assert run("plan", str(repo)) == 0
-        index = json.loads((repo / ".repowiki/state/index.json").read_text())
+        index = json.loads((repo / ".repowiki/state/index.json").read_text(encoding="utf-8"))
         assert "catalog" in index["tasks"]
-        spec = (repo / ".repowiki/state/tasks/catalog.md").read_text()
+        spec = (repo / ".repowiki/state/tasks/catalog.md").read_text(encoding="utf-8")
         assert "state/catalog.json" in spec and "src/demo/main.py" in spec
 
     def test_plan_rejects_tiny_repo(self, tmp_path):
         tiny = tmp_path / "tiny"
         tiny.mkdir()
-        (tiny / "a.py").write_text("x = 1\n")
+        (tiny / "a.py").write_text("x = 1\n", encoding="utf-8")
         assert run("plan", str(tiny)) == 1
 
     def test_plan_with_existing_catalog_expands_pages(self, repo):
         write_catalog(WikiPaths(repo))
         assert run("plan", str(repo)) == 0
-        index = json.loads((repo / ".repowiki/state/index.json").read_text())
+        index = json.loads((repo / ".repowiki/state/index.json").read_text(encoding="utf-8"))
         assert {"c01", "c0101", "c02"} <= set(index["tasks"])
-        spec = (repo / ".repowiki/state/tasks/c0101.md").read_text()
+        spec = (repo / ".repowiki/state/tasks/c0101.md").read_text(encoding="utf-8")
         assert "核心概念" in spec and "src/demo/models.py" in spec
         assert "## 架构总览" in spec  # full template embedded
 
     def test_plan_max_pages(self, repo):
         write_catalog(WikiPaths(repo))
         run("plan", str(repo), "--max-pages", "1")
-        index = json.loads((repo / ".repowiki/state/index.json").read_text())
+        index = json.loads((repo / ".repowiki/state/index.json").read_text(encoding="utf-8"))
         assert set(index["tasks"]) == {"c01"}
 
 
@@ -74,10 +74,10 @@ class TestCheckLoop:
         write_catalog(WikiPaths(repo))
         code = run("check", str(repo), "--task", "catalog", "--json")
         assert code == 0
-        index = json.loads((repo / ".repowiki/state/index.json").read_text())
+        index = json.loads((repo / ".repowiki/state/index.json").read_text(encoding="utf-8"))
         assert index["tasks"]["catalog"]["status"] == "done"
         assert {"c01", "c0101", "c02"} <= set(index["tasks"])
-        spec = (repo / ".repowiki/state/tasks/c02.md").read_text()
+        spec = (repo / ".repowiki/state/tasks/c02.md").read_text(encoding="utf-8")
         assert "快速开始" in spec
 
     def test_check_bad_catalog_fails_with_errors(self, repo):
@@ -86,7 +86,7 @@ class TestCheckLoop:
         run("next", str(repo), "--claim")
         code = run("check", str(repo), "--task", "catalog")
         assert code == 1
-        index = json.loads((repo / ".repowiki/state/index.json").read_text())
+        index = json.loads((repo / ".repowiki/state/index.json").read_text(encoding="utf-8"))
         assert index["tasks"]["catalog"]["status"] == "failed"
 
     def test_page_passes_check_and_done(self, repo):
@@ -96,14 +96,14 @@ class TestCheckLoop:
         p.write_text(valid_page("项目概述"), encoding="utf-8")
         code = run("check", str(repo), "--task", "c01")
         assert code == 0
-        index = json.loads((repo / ".repowiki/state/index.json").read_text())
+        index = json.loads((repo / ".repowiki/state/index.json").read_text(encoding="utf-8"))
         assert index["tasks"]["c01"]["status"] == "done"
 
     def test_missing_output_fails(self, repo):
         self._prepare(repo)
         code = run("check", str(repo), "--task", "c01")
         assert code == 1
-        index = json.loads((repo / ".repowiki/state/index.json").read_text())
+        index = json.loads((repo / ".repowiki/state/index.json").read_text(encoding="utf-8"))
         assert index["tasks"]["c01"]["status"] == "failed"
 
 
@@ -124,7 +124,7 @@ class TestFinalize:
         # first finalize creates the overview task
         code = run("finalize", str(repo))
         assert code == 3
-        index = json.loads((repo / ".repowiki/state/index.json").read_text())
+        index = json.loads((repo / ".repowiki/state/index.json").read_text(encoding="utf-8"))
         assert "overview" in index["tasks"]
         # simulate agent writing overview
         ov = repo / ".repowiki/zh/meta/wiki-overview.md"
@@ -133,7 +133,7 @@ class TestFinalize:
         # done tasks must pass check first
         run("check", str(repo), "--task", "overview")
         assert run("finalize", str(repo)) == 0
-        meta = json.loads((repo / ".repowiki/zh/meta/repowiki-metadata.json").read_text())
+        meta = json.loads((repo / ".repowiki/zh/meta/repowiki-metadata.json").read_text(encoding="utf-8"))
         assert meta["wiki_repo"]["progress_status"] == "completed"
         assert len(meta["wiki_catalogs"]) == 3
         assert meta["wiki_overview"].startswith("# demo Wiki 总览")
@@ -174,23 +174,24 @@ class TestUpdate:
         p.write_text(valid_page("项目概述"), encoding="utf-8")
         # make a change touching models.py (c0101 depends on it) → c0101 + ancestor c01
         (git_repo / "src/demo/models.py").write_text(
-            "from dataclasses import dataclass\n\n\n@dataclass\nclass Item:\n    id: int\n    name: str\n    tag: str = ''\n"
+            "from dataclasses import dataclass\n\n\n@dataclass\nclass Item:\n    id: int\n    name: str\n    tag: str = ''\n",
+            encoding="utf-8",
         )
         subprocess.run(["git", "add", "-A"], cwd=str(git_repo), check=True, capture_output=True)
         subprocess.run(["git", "commit", "-qm", "change"], cwd=str(git_repo), check=True, capture_output=True)
 
         code = run("update", str(git_repo))
         assert code == 0
-        index = json.loads(paths.index_file.read_text())
+        index = json.loads(paths.index_file.read_text(encoding="utf-8"))
         assert "c0101-update" in index["tasks"]
         assert "c01-update" in index["tasks"]
         assert "c02-update" not in index["tasks"]
         # c01 has an old page on disk -> real page_update spec with 更新摘要
-        spec = (paths.tasks_dir / "c01-update.md").read_text()
+        spec = (paths.tasks_dir / "c01-update.md").read_text(encoding="utf-8")
         assert "更新摘要" in spec
         # c0101 never generated a page -> falls back to a fresh page task
         assert index["tasks"]["c0101-update"]["kind"] == "page"
-        spec2 = (paths.tasks_dir / "c0101-update.md").read_text()
+        spec2 = (paths.tasks_dir / "c0101-update.md").read_text(encoding="utf-8")
         assert "更新摘要" not in spec2 and "models.py" in spec2
 
     def test_update_requires_git(self, repo):
@@ -217,7 +218,7 @@ class TestKnowledge:
         kp = repo / ".repowiki/state/knowledge.json"
         kp.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
         run("check", str(repo), "--task", "knowledge-plan")
-        index = json.loads((repo / ".repowiki/state/index.json").read_text())
+        index = json.loads((repo / ".repowiki/state/index.json").read_text(encoding="utf-8"))
         assert index["tasks"]["knowledge-plan"]["status"] == "done"
         assert "m01" in index["tasks"] and "k01" in index["tasks"]
 
@@ -243,7 +244,7 @@ class TestKnowledge:
 
         summary = aggregate_knowledge(WikiPaths(repo), plan, TaskStore(WikiPaths(repo)).load()["tasks"])
         assert "_index.yaml" in summary
-        idx = (repo / ".repowiki/knowledge/zh/_index.yaml").read_text()
+        idx = (repo / ".repowiki/knowledge/zh/_index.yaml").read_text(encoding="utf-8")
         assert "核心模块" in idx and "schema_version: 1" in idx
         assert (repo / ".repowiki/knowledge/zh/核心模块/_module.yaml").exists()
 
@@ -289,7 +290,7 @@ class TestCleanup:
         p = paths.root / "zh/content/项目概述/项目概述.md"
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(valid_page("项目概述"), encoding="utf-8")
-        (git_repo / "src/demo/models.py").write_text("# changed\n")
+        (git_repo / "src/demo/models.py").write_text("# changed\n", encoding="utf-8")
         subprocess.run(["git", "add", "-A"], cwd=str(git_repo), check=True, capture_output=True)
         subprocess.run(["git", "commit", "-qm", "c2"], cwd=str(git_repo), check=True, capture_output=True)
         run("update", str(git_repo))
@@ -333,7 +334,7 @@ class TestLifecycleGuards:
         # source file gone → validation would fail, but status must stay done
         (repo / "README.md").unlink()
         code = run("check", str(repo), "--task", "c01", "--json")
-        index = json.loads((repo / ".repowiki/state/index.json").read_text())
+        index = json.loads((repo / ".repowiki/state/index.json").read_text(encoding="utf-8"))
         assert index["tasks"]["c01"]["status"] == "done"  # unchanged
         assert code in (0, 1)
 
