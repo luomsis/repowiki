@@ -98,9 +98,27 @@ class TaskStore:
     # --- persistence ---
 
     def load(self) -> dict:
+        """Read the index under the store lock.
+
+        Readers join the same lock as writers: on Windows, os.replace of the
+        index fails while any reader holds the file open (CPython does not
+        open with FILE_SHARE_DELETE), so a lock-free read can break a
+        concurrent writer. Lock holds are sub-millisecond; the hot read path
+        is a poll loop, not a tight spin.
+        """
         f = self.paths.index_file
         if not f.exists():
             return {"tasks": {}, "created_at": now_iso()}
+        fh = self._lock()
+        try:
+            return self._load_unlocked()
+        finally:
+            fh.close()
+
+    def _load_unlocked(self) -> dict:
+        """Read the index WITHOUT the lock — only for callers already inside
+        ``_transaction`` (nesting the lock would self-deadlock)."""
+        f = self.paths.index_file
         try:
             data = json.loads(_retry_windows_fs(lambda: f.read_text(encoding="utf-8")))
         except json.JSONDecodeError as e:
@@ -136,7 +154,7 @@ class TaskStore:
         """Serialize index.json read-modify-write across processes."""
         fh = self._lock()
         try:
-            data = self.load()
+            data = self._load_unlocked()
             mutate(data)
             self._save_atomic(data)
         finally:
