@@ -1,0 +1,106 @@
+# repowiki 官方维护工作流（wiki-as-code 模式）。
+#
+# 前提：仓库跟踪 .repowiki/（至少 state/catalog.json、<locale>/content、
+# <locale>/meta；state/claims、state/tasks 与可重建的 wiki.html 可忽略）。
+#
+# - pull_request：只读 stale 门禁 —— 代码改了、wiki 过期则评论受影响页面并拦截合并
+#   （对标"文档不过期"工作流；完全确定性，CI 内不跑任何 agent）；
+# - push main / 手动：repowiki site 重建（wiki.html + llms.txt / llms-full.txt）
+#   并发布到 GitHub Pages。
+#
+# 仓库未跟踪 .repowiki/ 时：stale-check 会因缺 catalog 失败（先提交 wiki 或禁用本
+# 工作流）；publish-pages 会因缺 metadata 失败。两个 job 相互独立，可按需禁用其一。
+
+name: wiki
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stale-check:
+    name: wiki staleness gate
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install .
+      - name: repowiki stale (read-only diff → affected pages)
+        id: stale
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          git fetch origin "${{ github.base_ref }}"
+          repowiki stale . --since "origin/${{ github.base_ref }}" --fail-if-stale --json | tee stale.json
+      - name: comment affected pages
+        if: steps.stale.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          {
+            echo "📖 本 PR 变更了 wiki 覆盖的源码，以下 wiki 内容已过期（\`repowiki stale\`，只读检测）："
+            echo ''
+            echo '```json'
+            jq '{pages: .affected_pages, cards: .affected_cards, modules: .affected_modules}' stale.json
+            echo '```'
+            echo ''
+            echo '刷新方式：合并后在 main 执行 `repowiki update .` 并让 agent 完成增量任务，再 `finalize` + `site`。'
+          } > comment.md
+          gh pr comment "$PR_NUMBER" --body-file comment.md
+      - name: fail when stale
+        if: steps.stale.outcome == 'failure'
+        run: |
+          echo "wiki 已过期：请刷新 wiki 后合并，或显式豁免（跳过本 workflow）。"
+          exit 1
+
+  publish-pages:
+    name: publish wiki to GitHub Pages
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install .
+      - run: repowiki site .
+      - name: assemble pages artifact
+        run: |
+          mkdir -p _site
+          find .repowiki \( -name 'wiki.html' -o -name 'llms.txt' -o -name 'llms-full.txt' \) | while read -r f; do
+            dest="_site/${f#.repowiki/}"
+            mkdir -p "$(dirname "$dest")"
+            cp "$f" "$dest"
+          done
+          for loc in zh en; do
+            if [ -f "_site/$loc/wiki.html" ]; then
+              printf '<meta http-equiv="refresh" content="0; url=%s/wiki.html">' "$loc" > _site/index.html
+              break
+            fi
+          done
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

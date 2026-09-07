@@ -12,5 +12,11 @@ venv/
 .DS_Store
 # local agent-session artifacts
 .z*/
-.repowiki
+# repowiki（wiki-as-code）：wiki 内容/元数据/知识库/llms 索引入库；
+# 运行时任务状态与可重建的站点产物（site 可随时从 content+meta 重建）不入库
+.repowiki/state/claims/
+.repowiki/state/tasks/
+.repowiki/*/wiki.html
 
+
+.repowiki/state/*.lock
