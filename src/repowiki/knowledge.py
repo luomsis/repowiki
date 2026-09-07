@@ -34,7 +34,35 @@ def run_knowledge(paths: WikiPaths, as_json: bool) -> int:
 def _knowledge_human(r: dict) -> str:
     head = "已添加 knowledge-plan 任务" if r["added"] else "knowledge 任务集已存在"
     return f"{head}\n{r['note']}"
-    return 0
+
+
+def scope_covers(scope_entry: str, path: str) -> bool:
+    """True when ``path`` falls under a plan scope entry like ``src/core/``,
+    ``src/core/**`` or ``**``."""
+    if scope_entry in ("**", "", "*"):
+        return True
+    prefix = scope_entry
+    for suffix in ("/**", "/*", "/"):
+        if prefix.endswith(suffix):
+            prefix = prefix[: -len(suffix)]
+            break
+    if not prefix:
+        return True
+    return path == prefix or path.startswith(prefix + "/")
+
+
+def _module_source_files(plan: dict, mod: dict) -> list[str]:
+    """Card-declared source files that fall under this module's scope — the
+    module docs describe structure, so their key files come from the cards."""
+    scopes = [s for s in (mod.get("scope") or []) if isinstance(s, str)]
+    files: set[str] = set()
+    for c in plan.get("cards", []):
+        if not isinstance(c, dict):
+            continue
+        for p in c.get("source_files") or []:
+            if any(scope_covers(s, p) for s in scopes):
+                files.add(p)
+    return sorted(files)
 
 
 def aggregate_knowledge(paths: WikiPaths, plan: dict, task_records: dict) -> str:
@@ -71,7 +99,7 @@ def aggregate_knowledge(paths: WikiPaths, plan: dict, task_records: dict) -> str
             "module_path": mod_path if mod_path != "**" else "",
             "title": mod.get("title", ""),
             "scope": mod.get("scope") or [],
-            "source_files": [],
+            "source_files": _module_source_files(plan, mod),
             "depends_on": [dir_of(x) for x in (mod.get("depends_on") or []) if dir_of(x)],
             "related_to": [dir_of(x) for x in (mod.get("related_to") or []) if dir_of(x)],
         }
@@ -94,7 +122,7 @@ def aggregate_knowledge(paths: WikiPaths, plan: dict, task_records: dict) -> str
             "dir_name": d,
             "title": mod.get("title", ""),
             "scope": mod.get("scope") or [],
-            "source_files": [],
+            "source_files": _module_source_files(plan, mod),
             "children": [
                 (modules_by_id[c].get("scope") or [""])[0] or ""
                 for c in (mod.get("children") or []) if c in modules_by_id

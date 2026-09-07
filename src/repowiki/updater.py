@@ -8,6 +8,7 @@ from typing import Callable
 from .catalog import flatten
 from .errors import UsageError
 from .gitutil import run_git
+from .knowledge import scope_covers
 from .output import emit
 from .paths import WikiPaths
 from . import tasks as task_builders
@@ -44,6 +45,49 @@ def map_affected(nodes, changed: set[str]) -> list:
     return [by_id[tid] for tid in affected]
 
 
+def _load_knowledge_plan(paths: WikiPaths) -> dict | None:
+    if not paths.knowledge_plan_file.exists():
+        return None
+    try:
+        return json.loads(paths.knowledge_plan_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+
+def _map_knowledge(plan: dict, existing: dict, changed_set: set[str]) -> tuple[list[dict], list[dict], list[dict]]:
+    """Cards whose source_files changed + modules whose scope was touched.
+
+    Returns (cards, modules, skipped) where each entry is (plan_item,
+    original_task, hit_files); skipped lists plan items without an original
+    task record (plan written but never expanded).
+    """
+    cards: list = []
+    modules: list = []
+    skipped: list = []
+    for card in plan.get("cards", []):
+        if not isinstance(card, dict):
+            continue
+        orig = existing.get(card.get("id"))
+        if not isinstance(orig, dict):
+            skipped.append(card)
+            continue
+        hits = sorted(set(card.get("source_files") or []) & changed_set)
+        if hits:
+            cards.append((card, orig, hits))
+    for mod in plan.get("modules", []):
+        if not isinstance(mod, dict):
+            continue
+        orig = existing.get(mod.get("id"))
+        if not isinstance(orig, dict):
+            skipped.append(mod)
+            continue
+        scopes = [s for s in (mod.get("scope") or []) if isinstance(s, str)]
+        hits = sorted(p for p in changed_set if any(scope_covers(s, p) for s in scopes))
+        if hits:
+            modules.append((mod, orig, hits))
+    return cards, modules, skipped
+
+
 def run_update(paths: WikiPaths, since: str | None, as_json: bool) -> int:
     if not (paths.repo_root / ".git").exists():
         raise UsageError("增量更新需要 git 仓库（未发现 .git）")
@@ -78,15 +122,63 @@ def run_update(paths: WikiPaths, since: str | None, as_json: bool) -> int:
         tid for tid, t in existing.items()
         if tid.endswith("-update") and t["status"] in ("pending", "failed", "in_progress")
     ]
-    records = []
+
+    def queue_or_rearm(tid: str, build) -> None:
+        """Fresh id → new task; done id from an earlier finalize epoch →
+        regenerate its spec and re-arm it (otherwise the second update round
+        would silently do nothing); still in flight → leave it alone."""
+        prev = existing.get(tid)
+        if prev is not None and prev["status"] in ("pending", "failed", "in_progress"):
+            return
+        spec_task = build()
+        if prev is None:
+            records.append(spec_task)
+        else:
+            store.update(tid, status="pending", attempts=0,
+                         worker=None, claimed_at=None, heartbeat_at=None)
+            rearmed.append(tid)
+
+    records: list[dict] = []
+    rearmed: list[str] = []
     for n in affected:
-        tid = f"{n.id}-update"
-        if tid in existing:
-            continue
-        records.append(task_builders.build_update_task(paths, n, sorted(changed_set & set(n.dependent_files)), inv))
+        queue_or_rearm(
+            f"{n.id}-update",
+            lambda n=n: task_builders.build_update_task(
+                paths, n, sorted(changed_set & set(n.dependent_files)), inv),
+        )
+
+    # knowledge cards / modules: map changed files against the knowledge plan
+    knowledge_plan = _load_knowledge_plan(paths)
+    knowledge_warnings: list[str] = []
+    affected_cards: list[dict] = []
+    affected_modules: list[dict] = []
+    if knowledge_plan is None:
+        pass  # no knowledge set on this repo — nothing to refresh
+    elif not isinstance(knowledge_plan, dict):
+        knowledge_warnings.append("state/knowledge.json 解析失败，跳过知识卡片联动")
+    else:
+        cards, modules, skipped = _map_knowledge(knowledge_plan, existing, changed_set)
+        for card, orig, hits in cards:
+            affected_cards.append(card)
+            queue_or_rearm(
+                f"{card['id']}-update",
+                lambda c=card, o=orig, h=hits: task_builders.build_knowledge_card_update_task(
+                    paths, o, c, h, inv),
+            )
+        for mod, orig, hits in modules:
+            affected_modules.append(mod)
+            queue_or_rearm(
+                f"{mod['id']}-update",
+                lambda m=mod, o=orig, h=hits: task_builders.build_knowledge_module_update_task(
+                    paths, o, m, h),
+            )
+        if skipped:
+            knowledge_warnings.append(
+                f"{len(skipped)} 个知识规划项尚无对应任务记录（knowledge-plan 未展开），已跳过联动"
+            )
     added = store.add_tasks(records)
 
-    warnings = []
+    warnings = knowledge_warnings
     if stale_pending:
         warnings.append(
             f"已存在 {len(stale_pending)} 个未完成的增量任务（{', '.join(sorted(stale_pending)[:5])}），"
@@ -104,19 +196,30 @@ def run_update(paths: WikiPaths, since: str | None, as_json: bool) -> int:
         "since": since,
         "changed_files": len(changed_set),
         "affected_pages": [n.id for n in affected],
+        "affected_cards": [c.get("id", "") for c in affected_cards],
+        "affected_modules": [m.get("id", "") for m in affected_modules],
         "created_tasks": added,
+        "rearmed_tasks": rearmed,
         "warnings": warnings,
     }
-    emit(result, _update_human(affected), as_json)
+    emit(result, _update_human(affected, affected_cards, affected_modules), as_json)
     return 0
 
 
-def _update_human(affected: list) -> Callable[[dict], str]:
+def _update_human(affected: list, affected_cards: list, affected_modules: list) -> Callable[[dict], str]:
     # 页面标题只活在 FlatNode 里，不进 JSON 契约——以闭包带入
     def human(r: dict) -> str:
         lines = [f"自 {r['since'][:12]} 以来变更 {r['changed_files']} 个文件，命中 {len(affected)} 个页面"]
         lines += [f"  → {n.id} {n.title}" for n in affected]
+        if affected_cards:
+            lines.append(f"命中 {len(affected_cards)} 张知识卡片")
+            lines += [f"  → 卡片 {c.get('id')} {c.get('title', '')}" for c in affected_cards]
+        if affected_modules:
+            lines.append(f"命中 {len(affected_modules)} 个知识模块")
+            lines += [f"  → 模块 {m.get('id')} {m.get('title', '')}" for m in affected_modules]
         lines += [f"  ⚠ {w}" for w in r["warnings"]]
+        if r.get("rearmed_tasks"):
+            lines.append(f"已重新武装 {len(r['rearmed_tasks'])} 个上一轮的更新任务（规格按最新变更重写）")
         if r["created_tasks"]:
             lines.append(f"已创建 {len(r['created_tasks'])} 个增量更新任务，执行 `repowiki next <repo> --claim` 领取")
         return "\n".join(lines)

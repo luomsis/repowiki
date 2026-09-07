@@ -236,3 +236,66 @@ def build_knowledge_tasks(paths: WikiPaths, plan: dict) -> list[dict]:
         write_spec(paths, task_id, spec)
         records.append(new_task(task_id, "knowledge_card", 2, f"知识卡片：{card['title']}", out))
     return records
+
+
+# --- knowledge incremental updates (appended by `repowiki update`) ---
+
+def build_knowledge_card_update_task(paths, card_task: dict, card: dict,
+                                     changed_files: list[str], inv: Inventory) -> dict:
+    """Refresh task for one knowledge card whose source_files changed.
+
+    ``card_task`` is the original (done) task record — its output path is the
+    only reliable source for the on-disk card location (directory names come
+    from a unique_name() pass at expansion time).
+    """
+    task_id = f"{card_task['id']}-update"
+    out = card_task["output"]
+    output_abs = str(Path(".repowiki") / out)
+    old = paths.root / out
+    if old.exists():
+        spec = templates.render_file(
+            "knowledge_card_update_task.md",
+            locale=paths.locale,
+            TASK_ID=task_id,
+            TITLE=card.get("title", card_task["title"]),
+            OUTPUT=out,
+            OUTPUT_ABS=output_abs,
+            CHANGED_FILES=_hint_list(changed_files, inv),
+            SOURCE_FILES=_hint_list(card.get("source_files") or [], inv),
+            OLD_CARD=old.read_text(encoding="utf-8"),
+        )
+    else:
+        # nothing to update against — fresh card spec under the update id
+        spec = templates.render_file(
+            "knowledge_card_task.md",
+            locale=paths.locale,
+            TASK_ID=task_id,
+            TITLE=card.get("title", card_task["title"]),
+            CATEGORY=card.get("category", ""),
+            OUTPUT=out,
+            OUTPUT_ABS=output_abs,
+            SCOPE_YAML=_yaml_list(card.get("scope") or ["**"]),
+            SOURCE_FILES_YAML=_yaml_list(card.get("source_files") or []),
+            SOURCE_FILES=_hint_list(card.get("source_files") or [], inv),
+        )
+    write_spec(paths, task_id, spec)
+    return new_task(task_id, "knowledge_card", 2, f"知识卡片：{card.get('title', '')}（增量更新）", out)
+
+
+def build_knowledge_module_update_task(paths, module_task: dict, mod: dict,
+                                       changed_files: list[str]) -> dict:
+    """Refresh task for one knowledge module whose scope files changed."""
+    task_id = f"{module_task['id']}-update"
+    out_dir = module_task["output"]
+    spec = templates.render_file(
+        "knowledge_module_update_task.md",
+        locale=paths.locale,
+        TASK_ID=task_id,
+        TITLE=mod.get("title", ""),
+        OUTPUT_DIR=out_dir,
+        OUTPUT_DIR_ABS=f".repowiki/{out_dir}",
+        SCOPE=", ".join(mod.get("scope") or []) or "<整个仓库>",
+        CHANGED_FILES="\n".join(f"- {p}" for p in changed_files) or "- <无>",
+    )
+    write_spec(paths, task_id, spec)
+    return new_task(task_id, "knowledge_module", 2, f"知识模块：{mod.get('title', '')}（增量更新）", out_dir)

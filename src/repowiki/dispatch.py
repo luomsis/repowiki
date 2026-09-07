@@ -320,10 +320,13 @@ def _check_one(paths: WikiPaths, store: TaskStore, task: dict, inv) -> dict:
             res = check_overview(raw, repo_name, locale=paths.locale)
         elif kind == "knowledge_card":
             plan = _load_json(paths.knowledge_plan_file) or {}
+            card_id = tid[:-len("-update")] if tid.endswith("-update") else tid
             card = next(
-                (c for c in plan.get("cards", []) if c.get("id") == tid), {}
+                (c for c in plan.get("cards", []) if c.get("id") == card_id), {}
             )
-            res = check_knowledge_card(raw, card.get("title", task["title"]), card.get("category", ""), paths.repo_root, locale=paths.locale)
+            res = check_knowledge_card(raw, card.get("title", task["title"]), card.get("category", ""),
+                                       paths.repo_root, locale=paths.locale,
+                                       is_update=tid.endswith("-update"))
         else:
             res = check_page(raw, task["title"].replace("（增量更新）", ""), paths.repo_root,
                              is_update=(kind == "page_update"), locale=paths.locale)

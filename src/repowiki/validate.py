@@ -288,7 +288,7 @@ def check_knowledge_module(out_dir: Path, locale: str = "zh") -> CheckResult:
 
 
 def check_knowledge_card(raw: str, title: str, category: str, repo_root: Path,
-                         locale: str = "zh") -> CheckResult:
+                         locale: str = "zh", is_update: bool = False) -> CheckResult:
     res = CheckResult(text=raw)
     lang = strings(locale)
     if PLACEHOLDER_RE.search(_strip_code(raw)):
@@ -316,6 +316,10 @@ def check_knowledge_card(raw: str, title: str, category: str, repo_root: Path,
     for i, sec in enumerate(lang["card_sections"], start=1):
         if f"## {i}. {sec}" not in body:
             res.fail(f"缺少小节「## {i}. {sec}」")
+    if is_update:
+        extra = lang["card_update_extra"]
+        if f"## {len(lang['card_sections']) + 1}. {extra}" not in body:
+            res.fail(f"增量更新卡片缺少小节「## {len(lang['card_sections']) + 1}. {extra}」")
     h1s = _headings(body, 1)
     if not h1s:
         res.fail("卡片正文缺少一级标题")

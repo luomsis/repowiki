@@ -2,6 +2,8 @@
 
 Reads every generated page plus the overview, embeds the source lines behind
 each ``file://`` reference, and inlines the vendored markdown/mermaid JS.
+Knowledge module docs and cards (``knowledge/<locale>/``) are included as
+regular pages under a dedicated nav chapter.
 The result (``<locale>/wiki.html``) opens in any browser with zero network
 and zero server — double-click, or share the single file.
 """
@@ -10,15 +12,18 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import webbrowser
 from pathlib import Path
+
+import yaml
 
 from . import templates
 from .catalog import FlatNode, flatten
 from .errors import UsageError
 from .i18n import strings
 from .output import emit
-from .paths import WikiPaths
+from .paths import WikiPaths, sanitize_component
 from .state import now_iso
 from .validate import extract_refs
 
@@ -39,7 +44,11 @@ def run_site(paths: WikiPaths, open_browser: bool, as_json: bool) -> int:
     pages = _collect_pages(paths, metadata, nodes)
     if not pages:
         raise UsageError(f"未找到任何已生成的 wiki 页面（{paths.content_dir} 为空）")
+    knowledge_pages, knowledge_nav = _collect_knowledge(paths, base=len(pages))
+    pages.extend(knowledge_pages)
     nav = _build_nav(paths, pages, nodes)
+    if knowledge_nav:
+        nav.append(knowledge_nav)
     snippets = _collect_snippets(paths.repo_root, pages)
 
     payload = {
@@ -65,6 +74,7 @@ def run_site(paths: WikiPaths, open_browser: bool, as_json: bool) -> int:
         "ok": True,
         "site": str(out),
         "pages": len(pages),
+        "knowledge_pages": len(knowledge_pages),
         "snippets": len(snippets),
         "size_mb": round(out.stat().st_size / 1024 / 1024, 2),
     }
@@ -75,7 +85,7 @@ def run_site(paths: WikiPaths, open_browser: bool, as_json: bool) -> int:
 def _site_human(r: dict) -> str:
     return (
         f"✓ 站点已生成: {r['site']}\n"
-        f"  页面 {r['pages']} · 源码片段 {r['snippets']} · 体积 {r['size_mb']} MB\n"
+        f"  页面 {r['pages']}（含知识页 {r['knowledge_pages']}）· 源码片段 {r['snippets']} · 体积 {r['size_mb']} MB\n"
         f"  单文件离线可用：浏览器直接打开即可（--open 自动打开）"
     )
 
@@ -188,6 +198,120 @@ def _build_nav(paths: WikiPaths, pages: list[dict], nodes: list[FlatNode]) -> li
             continue
         entries.append({"title": top.title, "children": own + kids})
     return entries
+
+
+# --- knowledge pages ---
+
+_FM_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.S)
+_H1_RE = re.compile(r"^#\s+(.+)$", re.M)
+
+
+def _collect_knowledge(paths: WikiPaths, base: int) -> tuple[list[dict], dict | None]:
+    """Module docs + cards under knowledge/<locale>/ as site pages.
+
+    Returns (pages, nav_entry); nav children reference absolute page indexes
+    starting at ``base``. Order follows state/knowledge.json (modules then
+    cards, by sanitized title) and degrades to on-disk sorting.
+    """
+    site = strings(paths.locale)["site"]
+    kdir = paths.knowledge_dir
+    if not kdir.is_dir():
+        return [], None
+    dirs = sorted(d for d in kdir.iterdir() if d.is_dir())
+    if not dirs:
+        return [], None
+
+    module_files = set(strings(paths.locale)["module_required_files"])
+    rank = _knowledge_plan_order(paths)
+
+    def sort_key(d: Path) -> tuple:
+        return (rank.get(d.name, len(rank)), d.name)
+    dirs.sort(key=sort_key)
+
+    module_title_of: dict[str, str] = {}
+    pages: list[dict] = []
+    children: list[dict] = []
+    for d in dirs:
+        docs = sorted(f for f in d.glob("*.md") if f.name in module_files)
+        if docs:
+            title = _module_title(paths, d)
+            module_title_of[d.name] = title
+            for f in docs:
+                pages.append({
+                    "id": f"kb:{d.name}/{f.name}",
+                    "title": f"{title} · {f.stem}",
+                    "path": f.relative_to(paths.root).as_posix(),
+                    "md": f.read_text(encoding="utf-8"),
+                })
+                children.append({"title": f"{title} · {f.stem}", "page": base + len(pages) - 1})
+            continue
+        card = d / f"{d.name}.md"
+        if card.is_file():
+            md, title = _card_body(card.read_text(encoding="utf-8"), d.name)
+            pages.append({
+                "id": f"kb:{d.name}/{d.name}.md",
+                "title": title,
+                "path": card.relative_to(paths.root).as_posix(),
+                "md": md,
+            })
+            children.append({"title": title, "page": base + len(pages) - 1})
+    if not pages:
+        return [], None
+    return pages, {"title": site["knowledge_label"], "children": children}
+
+
+def _knowledge_plan_order(paths: WikiPaths) -> dict[str, int]:
+    """Directory-name -> plan rank, from state/knowledge.json item titles."""
+    f = paths.knowledge_plan_file
+    if not f.is_file():
+        return {}
+    try:
+        plan = json.loads(f.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    rank: dict[str, int] = {}
+    if not isinstance(plan, dict):
+        return rank
+    i = 0
+    for kind in ("modules", "cards"):
+        for item in plan.get(kind) or []:
+            if isinstance(item, dict) and item.get("title"):
+                rank.setdefault(sanitize_component(item["title"]), i)
+                i += 1
+    return rank
+
+
+def _module_title(paths: WikiPaths, d: Path) -> str:
+    f = d / "_module.yaml"
+    if f.is_file():
+        try:
+            meta = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+            if isinstance(meta, dict) and meta.get("title"):
+                return str(meta["title"])
+        except yaml.YAMLError:
+            pass
+    return d.name
+
+
+def _card_body(raw: str, dirname: str) -> tuple[str, str]:
+    """Strip YAML front matter for display; title = fm name / first H1 / dir."""
+    title = dirname
+    body = raw
+    fm = _FM_RE.match(raw)
+    meta = {}
+    if fm:
+        body = raw[fm.end():]
+        try:
+            meta = yaml.safe_load(fm.group(1)) or {}
+        except yaml.YAMLError:
+            meta = {}
+        if isinstance(meta, dict) and meta.get("name"):
+            title = str(meta["name"])
+    if title == dirname:
+        h1 = _H1_RE.search(body)
+        if h1:
+            title = h1.group(1).strip()
+    return body, title
 
 
 # --- source snippet extraction ---

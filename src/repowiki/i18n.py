@@ -36,8 +36,10 @@ STRINGS: dict[str, dict] = {
         "overview_sections": ("章节导航", "如何使用本 Wiki"),
         "module_required_files": ["概述.md", "技术栈.md", "架构设计.md"],
         "card_sections": ["体系概览", "关键文件与包", "架构与设计约定", "开发者应遵循的规则"],
+        "card_update_extra": "更新摘要",
         "site": {
             "overview_label": "总览",
+            "knowledge_label": "知识库",
             "search_placeholder": "搜索 Wiki…",
             "no_results": "无匹配结果",
             "snippet_missing": "源文件不存在或已删除，无法展示片段。",
@@ -69,8 +71,10 @@ STRINGS: dict[str, dict] = {
             "System Overview", "Key Files and Packages",
             "Architecture and Design Conventions", "Rules for Developers",
         ],
+        "card_update_extra": "Update Summary",
         "site": {
             "overview_label": "Overview",
+            "knowledge_label": "Knowledge Base",
             "search_placeholder": "Search wiki…",
             "no_results": "No matches",
             "snippet_missing": "Source file missing or deleted; snippet unavailable.",

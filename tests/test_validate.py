@@ -207,6 +207,18 @@ class TestKnowledgeCard:
         res = check_knowledge_card(card, "配置系统", "configuration_system", repo)
         assert not res.ok and any("H1" in e for e in res.errors)
 
+    def test_update_requires_summary(self, repo):
+        res = check_knowledge_card(self._card(), "配置系统", "configuration_system",
+                                   repo, is_update=True)
+        assert not res.ok and any("更新摘要" in e for e in res.errors)
+        res = check_knowledge_card(self._card() + "\n## 5. 更新摘要\n内容\n",
+                                   "配置系统", "configuration_system", repo, is_update=True)
+        assert res.ok, res.errors
+
+    def test_fresh_card_needs_no_summary(self, repo):
+        res = check_knowledge_card(self._card(), "配置系统", "configuration_system", repo)
+        assert res.ok  # is_update defaults to False
+
 
 class TestKnowledgeModule:
     def test_valid(self, tmp_path):

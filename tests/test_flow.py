@@ -199,14 +199,52 @@ class TestUpdate:
         run("plan", str(repo))
         assert run("update", str(repo)) == 1
 
+    def test_update_rearms_done_tasks_next_epoch(self, git_repo):
+        paths = WikiPaths(git_repo)
+        write_catalog(paths)
+        run("plan", str(paths.repo_root))
+        TaskStore(paths).update("catalog", status="done")
+        meta = {"wiki_repo": {"last_commit_id": _head(git_repo)}}
+        paths.meta_dir.mkdir(parents=True, exist_ok=True)
+        paths.metadata_file.write_text(json.dumps(meta), encoding="utf-8")
+        p = paths.root / "zh/content/项目概述/项目概述.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(valid_page("项目概述"), encoding="utf-8")
+        # round 1: models.py → c0101-update + ancestor c01-update
+        (git_repo / "src/demo/models.py").write_text(
+            "from dataclasses import dataclass\n\n\n@dataclass\nclass Item:\n    id: int\n    name: str\n    tag: str = ''\n",
+            encoding="utf-8",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=str(git_repo), check=True, capture_output=True)
+        subprocess.run(["git", "commit", "-qm", "round1"], cwd=str(git_repo), check=True, capture_output=True)
+        run("update", str(git_repo))
+        TaskStore(paths).update("c0101-update", status="done")
+        TaskStore(paths).update("c01-update", status="done")
+        # epoch 2: advance the origin, change api.py (also a c0101 dependent)
+        meta["wiki_repo"]["last_commit_id"] = _head(git_repo)
+        paths.metadata_file.write_text(json.dumps(meta), encoding="utf-8")
+        (git_repo / "src/demo/api.py").write_text(
+            "from demo.models import Item\n\nITEMS = []\n\n\ndef serve():\n    print('serving v2')\n",
+            encoding="utf-8",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=str(git_repo), check=True, capture_output=True)
+        subprocess.run(["git", "commit", "-qm", "round2"], cwd=str(git_repo), check=True, capture_output=True)
+
+        code = run("update", str(git_repo), "--json")
+        assert code == 0
+        index = json.loads(paths.index_file.read_text(encoding="utf-8"))
+        # done tasks from the previous epoch are re-armed with fresh specs
+        t = index["tasks"]["c0101-update"]
+        assert t["status"] == "pending" and t["attempts"] == 0
+        spec = (paths.tasks_dir / "c0101-update.md").read_text(encoding="utf-8")
+        assert "api.py" in spec  # regenerated against the new change set
+        assert index["tasks"]["c01-update"]["status"] == "pending"  # ancestor
+
 
 class TestKnowledge:
-    def test_knowledge_command_and_expansion(self, repo):
-        write_catalog(WikiPaths(repo))
-        run("plan", str(repo))
-        assert run("knowledge", str(repo)) == 0
-        # write a knowledge plan as the agent would
-        plan = {
+    @staticmethod
+    def _plan():
+        return {
             "modules": [
                 {"id": "m01", "title": "核心模块", "scope": ["src/demo/"], "children": [], "depends_on": [], "related_to": []}
             ],
@@ -215,6 +253,33 @@ class TestKnowledge:
                  "scope": ["**"], "source_files": ["src/demo/config.py"]}
             ],
         }
+
+    @staticmethod
+    def _card(title: str = "配置系统", summary: bool = False) -> str:
+        tail = "\n## 5. 更新摘要\n内容\n" if summary else ""
+        return (
+            f"---\nkind: configuration_system\nname: {title}\ncategory: configuration_system\n"
+            f"scope:\n  - '**'\nsource_files:\n  - src/demo/config.py\n---\n\n"
+            f"# {title}\n\n## 1. 体系概览\nx\n\n## 2. 关键文件与包\nx\n\n"
+            f"## 3. 架构与设计约定\nx\n\n## 4. 开发者应遵循的规则\nx\n{tail}"
+        )
+
+    @staticmethod
+    def _write_outputs(repo, card: str | None = None):
+        mdir = repo / ".repowiki/knowledge/zh/核心模块"
+        mdir.mkdir(parents=True, exist_ok=True)
+        for n in ("概述.md", "技术栈.md", "架构设计.md"):
+            (mdir / n).write_text("内容\n", encoding="utf-8")
+        cdir = repo / ".repowiki/knowledge/zh/配置系统"
+        cdir.mkdir(parents=True, exist_ok=True)
+        (cdir / "配置系统.md").write_text(card or TestKnowledge._card(), encoding="utf-8")
+
+    def test_knowledge_command_and_expansion(self, repo):
+        write_catalog(WikiPaths(repo))
+        run("plan", str(repo))
+        assert run("knowledge", str(repo)) == 0
+        # write a knowledge plan as the agent would
+        plan = self._plan()
         kp = repo / ".repowiki/state/knowledge.json"
         kp.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
         run("check", str(repo), "--task", "knowledge-plan")
@@ -223,19 +288,7 @@ class TestKnowledge:
         assert "m01" in index["tasks"] and "k01" in index["tasks"]
 
         # simulate agent outputs
-        mdir = repo / ".repowiki/knowledge/zh/核心模块"
-        mdir.mkdir(parents=True, exist_ok=True)
-        for n in ("概述.md", "技术栈.md", "架构设计.md"):
-            (mdir / n).write_text("内容\n", encoding="utf-8")
-        cdir = repo / ".repowiki/knowledge/zh/配置系统"
-        cdir.mkdir(parents=True, exist_ok=True)
-        (cdir / "配置系统.md").write_text(
-            "---\nkind: configuration_system\nname: 配置系统\ncategory: configuration_system\n"
-            "scope:\n  - '**'\nsource_files:\n  - src/demo/config.py\n---\n\n"
-            "# 配置系统\n\n## 1. 体系概览\nx\n\n## 2. 关键文件与包\nx\n\n"
-            "## 3. 架构与设计约定\nx\n\n## 4. 开发者应遵循的规则\nx\n",
-            encoding="utf-8",
-        )
+        self._write_outputs(repo)
         assert run("check", str(repo), "--task", "m01") == 0
         assert run("check", str(repo), "--task", "k01") == 0
 
@@ -247,6 +300,72 @@ class TestKnowledge:
         idx = (repo / ".repowiki/knowledge/zh/_index.yaml").read_text(encoding="utf-8")
         assert "核心模块" in idx and "schema_version: 1" in idx
         assert (repo / ".repowiki/knowledge/zh/核心模块/_module.yaml").exists()
+        # module source_files are filled from card source_files under the scope
+        assert "- src/demo/config.py" in idx
+
+    def test_update_refreshes_cards_and_modules(self, git_repo):
+        paths = WikiPaths(git_repo)
+        write_catalog(paths)
+        run("plan", str(paths.repo_root))
+        TaskStore(paths).update("catalog", status="done")
+        run("knowledge", str(git_repo))
+        plan = self._plan()
+        (git_repo / ".repowiki/state/knowledge.json").write_text(
+            json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+        run("check", str(git_repo), "--task", "knowledge-plan")
+        self._write_outputs(git_repo, card=self._card(summary=True))
+        assert run("check", str(git_repo), "--task", "m01") == 0
+        assert run("check", str(git_repo), "--task", "k01") == 0
+
+        meta = {"wiki_repo": {"last_commit_id": _head(git_repo)}}
+        paths.meta_dir.mkdir(parents=True, exist_ok=True)
+        paths.metadata_file.write_text(json.dumps(meta), encoding="utf-8")
+        # a change inside both the module scope and the card source_files
+        (git_repo / "src/demo/config.py").write_text("DEBUG = True\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=str(git_repo), check=True, capture_output=True)
+        subprocess.run(["git", "commit", "-qm", "change config"], cwd=str(git_repo), check=True, capture_output=True)
+
+        code = run("update", str(git_repo), "--json")
+        assert code == 0
+        index = json.loads(paths.index_file.read_text(encoding="utf-8"))
+        assert index["tasks"]["k01-update"]["kind"] == "knowledge_card"
+        assert index["tasks"]["m01-update"]["kind"] == "knowledge_module"
+        spec = (paths.tasks_dir / "k01-update.md").read_text(encoding="utf-8")
+        assert "更新摘要" in spec and "config.py" in spec
+
+        # updated card (with summary section) passes the update-aware check
+        (git_repo / ".repowiki/knowledge/zh/配置系统/配置系统.md").write_text(
+            self._card(summary=True), encoding="utf-8")
+        assert run("check", str(git_repo), "--task", "k01-update") == 0
+        # module refresh only needs the three docs present
+        assert run("check", str(git_repo), "--task", "m01-update") == 0
+
+
+class TestSite:
+    def test_site_includes_knowledge(self, repo):
+        paths = WikiPaths(repo)
+        write_catalog(paths)
+        run("plan", str(repo))
+        TaskStore(paths).update("catalog", status="done")
+        paths.meta_dir.mkdir(parents=True, exist_ok=True)
+        paths.metadata_file.write_text('{"wiki_repo": {"name": "demo"}}', encoding="utf-8")
+        p = paths.root / "zh/content/项目概述/项目概述.md"
+        p.parent.mkdir(parents=True)
+        p.write_text(valid_page("项目概述"), encoding="utf-8")
+
+        plan = TestKnowledge._plan()
+        (repo / ".repowiki/state/knowledge.json").write_text(
+            json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+        TestKnowledge._write_outputs(repo)
+        from repowiki.knowledge import aggregate_knowledge
+        aggregate_knowledge(paths, plan, TaskStore(paths).load()["tasks"])
+
+        code = run("site", str(repo), "--json")
+        assert code == 0
+        html = (repo / ".repowiki/zh/wiki.html").read_text(encoding="utf-8")
+        assert "知识库" in html and "配置系统" in html and "核心模块" in html
+        # card front matter is stripped from the rendered payload
+        assert "kind: configuration_system" not in html
 
 
 def _head(repo) -> str:
