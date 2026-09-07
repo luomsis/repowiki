@@ -153,6 +153,14 @@ class WikiPaths:
         return self.root / self.locale / "wiki.html"
 
     @property
+    def llms_file(self) -> Path:
+        return self.root / self.locale / "llms.txt"
+
+    @property
+    def llms_full_file(self) -> Path:
+        return self.root / self.locale / "llms-full.txt"
+
+    @property
     def overview_file(self) -> Path:
         return self.meta_dir / "wiki-overview.md"
 

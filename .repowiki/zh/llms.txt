@@ -1,0 +1,61 @@
+# repowiki Wiki
+
+> repowiki 为仓库 repowiki 生成的结构化 Wiki：以下链接按章节索引全部 markdown 页面，llms-full.txt 为全文合并版。
+
+## 总览
+
+- [总览](meta/wiki-overview.md)
+
+## 项目概述
+
+- [项目概述](content/项目概述/项目概述.md)
+- [快速开始](content/项目概述/快速开始.md)
+- [领域词汇与设计哲学](content/项目概述/领域词汇与设计哲学.md)
+
+## 架构与数据流
+
+- [架构与数据流](content/架构与数据流/架构与数据流.md)
+- [CLI 入口与命令分发](content/架构与数据流/CLI 入口与命令分发.md)
+- [任务状态机与目录布局](content/架构与数据流/任务状态机与目录布局.md)
+- [路径与输出布局](content/架构与数据流/路径与输出布局.md)
+
+## 编排流水线
+
+- [编排流水线](content/编排流水线/编排流水线.md)
+- [plan：扫描仓库并生成任务清单](content/编排流水线/plan：扫描仓库并生成任务清单.md)
+- [next/check/release/touch：认领与回收](content/编排流水线/next／check／release／touch：认领与回收.md)
+- [finalize：阶段收尾与元数据](content/编排流水线/finalize：阶段收尾与元数据.md)
+- [update：基于 git diff 的增量更新](content/编排流水线/update：基于 git diff 的增量更新.md)
+
+## 页面模板与校验
+
+- [页面模板与校验](content/页面模板与校验/页面模板与校验.md)
+- [模板加载与占位符预渲染](content/页面模板与校验/模板加载与占位符预渲染.md)
+- [validate：必检项与自动修复](content/页面模板与校验/validate：必检项与自动修复.md)
+- [知识卡片任务族](content/页面模板与校验/知识卡片任务族.md)
+
+## 离线查看站点
+
+- [离线查看站点](content/离线查看站点/离线查看站点.md)
+- [单文件站点的组装流程](content/离线查看站点/单文件站点的组装流程.md)
+- [前端渲染与交互](content/离线查看站点/前端渲染与交互.md)
+
+## 测试与跨平台支持
+
+- [测试与跨平台支持](content/测试与跨平台支持/测试与跨平台支持.md)
+- [并发安全与生命周期测试](content/测试与跨平台支持/并发安全与生命周期测试.md)
+- [Windows 原生支持](content/测试与跨平台支持/Windows 原生支持.md)
+
+## 开发与扩展
+
+- [开发与扩展](content/开发与扩展/开发与扩展.md)
+- [如何新增一个命令](content/开发与扩展/如何新增一个命令.md)
+- [贡献流程与 CI](content/开发与扩展/贡献流程与 CI.md)
+
+## 知识库
+
+- [编排内核 · 技术栈](../knowledge/zh/编排内核/技术栈.md)
+- [编排内核 · 架构设计](../knowledge/zh/编排内核/架构设计.md)
+- [编排内核 · 概述](../knowledge/zh/编排内核/概述.md)
+- [错误处理与退出码契约](../knowledge/zh/错误处理与退出码契约/错误处理与退出码契约.md)
+- [离线站点 UI 约束](../knowledge/zh/离线站点 UI 约束/离线站点 UI 约束.md)

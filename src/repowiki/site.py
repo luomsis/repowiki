@@ -6,6 +6,8 @@ Knowledge module docs and cards (``knowledge/<locale>/``) are included as
 regular pages under a dedicated nav chapter.
 The result (``<locale>/wiki.html``) opens in any browser with zero network
 and zero server — double-click, or share the single file.
+The same page collection is also exported as ``llms.txt`` /
+``llms-full.txt`` (llmstxt.org convention) for direct agent consumption.
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ from . import templates
 from .catalog import FlatNode, flatten
 from .errors import UsageError
 from .i18n import strings
+from .llms import write_llms
 from .output import emit
 from .paths import WikiPaths, sanitize_component
 from .state import now_iso
@@ -67,6 +70,7 @@ def run_site(paths: WikiPaths, open_browser: bool, as_json: bool) -> int:
     tmp = out.with_name(f".{out.name}.{os.getpid()}.tmp")
     tmp.write_text(html, encoding="utf-8")
     os.replace(tmp, out)
+    write_llms(paths, payload["repo"], pages, nav)
     if open_browser:
         webbrowser.open(out.as_uri())
 
@@ -77,6 +81,8 @@ def run_site(paths: WikiPaths, open_browser: bool, as_json: bool) -> int:
         "knowledge_pages": len(knowledge_pages),
         "snippets": len(snippets),
         "size_mb": round(out.stat().st_size / 1024 / 1024, 2),
+        "llms": str(paths.llms_file),
+        "llms_full": str(paths.llms_full_file),
     }
     emit(summary, _site_human, as_json)
     return 0
@@ -86,6 +92,7 @@ def _site_human(r: dict) -> str:
     return (
         f"✓ 站点已生成: {r['site']}\n"
         f"  页面 {r['pages']}（含知识页 {r['knowledge_pages']}）· 源码片段 {r['snippets']} · 体积 {r['size_mb']} MB\n"
+        f"  agent 索引：{r['llms']} 与 {r['llms_full']}\n"
         f"  单文件离线可用：浏览器直接打开即可（--open 自动打开）"
     )
 

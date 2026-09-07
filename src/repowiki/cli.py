@@ -19,7 +19,7 @@ from .paths import WikiPaths
 from .plan import run_plan
 from .site import run_site
 from .state import run_clean
-from .updater import run_update
+from .updater import run_stale, run_update
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -90,7 +90,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_finalize(paths, as_json=a.json))
 
-    p = sub.add_parser("site", help="render the finished wiki into one offline HTML file (.repowiki/<locale>/wiki.html)")
+    p = sub.add_parser("site", help="render the finished wiki into one offline HTML file (.repowiki/<locale>/wiki.html) plus llms.txt / llms-full.txt agent indexes")
     p.add_argument("repo")
     p.add_argument("--open", dest="open_browser", action="store_true",
                    help="open the generated file in the default browser")
@@ -103,6 +103,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--since", default=None, help="commit sha to diff from (default: last_commit_id in metadata)")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_update(paths, since=a.since, as_json=a.json))
+
+    p = sub.add_parser("stale", help="read-only: report which pages `update` would affect for since..HEAD (CI staleness gate)")
+    p.add_argument("repo")
+    p.add_argument("--since", default=None, help="git ref to diff from (default: last_commit_id in metadata)")
+    p.add_argument("--fail-if-stale", dest="fail_if_stale", action="store_true",
+                   help="exit 1 when any page/card/module is affected (for CI gates)")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=lambda a, paths: run_stale(
+        paths, since=a.since, fail_if_stale=a.fail_if_stale, as_json=a.json))
 
     p = sub.add_parser("knowledge", help="append the knowledge-card task set (planning + cards)")
     p.add_argument("repo")

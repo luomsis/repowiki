@@ -1,0 +1,39 @@
+{
+  "modules": [
+    {
+      "id": "m01",
+      "title": "编排内核",
+      "scope": ["src/repowiki/"],
+      "children": [],
+      "depends_on": [],
+      "related_to": []
+    }
+  ],
+  "cards": [
+    {
+      "id": "k01",
+      "title": "错误处理与退出码契约",
+      "category": "error_handling",
+      "scope": ["src/repowiki/"],
+      "source_files": [
+        "src/repowiki/errors.py",
+        "src/repowiki/cli.py",
+        "src/repowiki/output.py",
+        "src/repowiki/dispatch.py",
+        "src/repowiki/state.py"
+      ]
+    },
+    {
+      "id": "k02",
+      "title": "离线站点 UI 约束",
+      "category": "frontend_style",
+      "scope": ["src/repowiki/"],
+      "source_files": [
+        "src/repowiki/templates/site.html",
+        "src/repowiki/templates/site/app.js",
+        "src/repowiki/site.py",
+        "src/repowiki/templates.py"
+      ]
+    }
+  ]
+}

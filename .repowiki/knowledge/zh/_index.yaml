@@ -1,0 +1,25 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: main
+nodes_managed: true
+exported_at: '2026-09-07T09:32:15Z'
+modules:
+  src/repowiki/:
+    dir_name: 编排内核
+    title: 编排内核
+    scope:
+    - src/repowiki/
+    source_files:
+    - src/repowiki/cli.py
+    - src/repowiki/dispatch.py
+    - src/repowiki/errors.py
+    - src/repowiki/output.py
+    - src/repowiki/site.py
+    - src/repowiki/state.py
+    - src/repowiki/templates.py
+    - src/repowiki/templates/site.html
+    - src/repowiki/templates/site/app.js
+    children: []
+    depends_on: []
+    related_to: []
