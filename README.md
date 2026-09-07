@@ -213,9 +213,9 @@ done
 | `check --task ID \| --all` | 校验产出；锚点/行号/H1 自动修复；catalog/knowledge-plan 通过后自动展开后续任务；done 为终态（只读报告）；他人认领的任务需 --force |
 | `release --task ID [--force]` | 释放认领（崩溃恢复） |
 | `finalize` | 组装 metadata.json；要求全部任务 done |
-| `site [--open]` | 把完成的 wiki 渲染成单文件离线 HTML（`<locale>/wiki.html`：导航+搜索+mermaid+源码弹层）；要求先 finalize；`--open` 生成后用默认浏览器打开 |
-| `update [--since <sha>]` | git diff → 受影响页面（含祖先链）→ 增量重写任务（附「更新摘要」）；仅识别**已提交**变更（since..HEAD），工作区未提交改动不可见 |
-| `knowledge` | 追加知识卡片任务集（六类机制卡片 + 模块文档） |
+| `site [--open]` | 把完成的 wiki 渲染成单文件离线 HTML（`<locale>/wiki.html`：导航+搜索+mermaid+源码弹层，知识模块文档与卡片纳入「知识库」章）；要求先 finalize；`--open` 生成后用默认浏览器打开 |
+| `update [--since <sha>]` | git diff → 受影响页面（含祖先链）→ 增量重写任务（附「更新摘要」）；同时联动知识库：`source_files` 命中变更的卡片与 scope 命中的模块各建刷新任务；仅识别**已提交**变更（since..HEAD），工作区未提交改动不可见 |
+| `knowledge` | 追加知识卡片任务集（六类机制卡片 + 模块文档）；finalize 时聚合导出 `_index.yaml` / `_module.yaml` |
 | `status` | 进度 / 失败列表 / 过期认领 |
 | `clean` | 删除整个 `state/`（wiki 产出保留；失去 update/续跑/幂等 plan） |
 

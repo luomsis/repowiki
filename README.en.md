@@ -211,9 +211,9 @@ done
 | `check --task ID \| --all` | Validate outputs; anchors/line ranges/H1 auto-repaired; passing catalog/knowledge-plan automatically expands downstream tasks; done is terminal (read-only report); others' claims need `--force` |
 | `release --task ID [--force]` | Release a claim (crash recovery) |
 | `finalize` | Assemble metadata.json; requires all tasks done |
-| `site [--open]` | Render the finished wiki into a single-file offline HTML (`<locale>/wiki.html`: nav + search + mermaid + source popups); requires finalize first; `--open` opens it in the default browser |
-| `update [--since <sha>]` | git diff → affected pages (incl. ancestor chains) → incremental rewrite tasks (with change summaries); recognizes only **committed** changes (since..HEAD); uncommitted working-tree changes are invisible |
-| `knowledge` | Append the knowledge-card task set (six mechanism-card types + module docs) |
+| `site [--open]` | Render the finished wiki into a single-file offline HTML (`<locale>/wiki.html`: nav + search + mermaid + source popups; knowledge module docs and cards appear under a "Knowledge Base" chapter); requires finalize first; `--open` opens it in the default browser |
+| `update [--since <sha>]` | git diff → affected pages (incl. ancestor chains) → incremental rewrite tasks (with change summaries); also refreshes knowledge: cards whose `source_files` changed and modules whose scope was touched each get a refresh task; recognizes only **committed** changes (since..HEAD); uncommitted working-tree changes are invisible |
+| `knowledge` | Append the knowledge-card task set (six mechanism-card types + module docs); finalize aggregates them into `_index.yaml` / `_module.yaml` |
 | `status` | Progress / failure list / expired claims |
 | `clean` | Delete the entire `state/` (wiki outputs are kept; loses update/resume/idempotent plan) |
 
