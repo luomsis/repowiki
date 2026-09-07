@@ -7,23 +7,16 @@
 [![Python ≥ 3.10](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](#可靠性设计)
 
-为任意仓库生成结构化 Wiki 的构建系统——但**不含任何 LLM**。
+为任意仓库生成结构化 Wiki 的构建系统。
 
 `repowiki` 是一个确定性的构建系统：负责任务规划、原子认领、产出校验、自动修复、元数据组装；
 智能工作（读代码、写 wiki）由驱动它的 agent（Claude Code / Codex / OpenCode 等 agent CLI，或人）完成。
 零 API Key、零网络调用、零 agent CLI 依赖——任何「能跑 shell + 读写文件」的执行者都能参与，包括并发。
 Wiki 产出语言自动跟随目标仓库（中文仓库 → `zh/`，英文仓库 → `en/`；`plan --locale` 可显式指定）。
 
-```
-┌────────────┐  plan     ┌─────────────────────────────────────────┐
-│  驱动 agent │ ────────▶ │ .repowiki/state/  任务清单+规格    │
-│ (串行/并发) │ ◀──────── │  catalog → pages → overview 三阶段      │
-│            │  next     │  原子认领 · 断点续跑 · 过期回收           │
-│  写页面/JSON │ ────────▶ │ zh/content/**.md  (校验+自动修复)       │
-└────────────┘  check    │ zh/meta/repowiki-metadata.json          │
-                         │ knowledge/zh/**  (模块+机制卡片)         │
-                         └─────────────────────────────────────────┘
-```
+![repowiki 系统架构图](docs/assets/repowiki-architecture.png)
+
+*交互版架构图：[docs/repowiki-architecture.html](docs/repowiki-architecture.html)（明暗主题 · 路径高亮 · 节点搜索，下载后在浏览器打开）*
 
 ## 为什么是 repowiki
 
@@ -46,7 +39,7 @@ repowiki 走第三条路：**读代码、写 wiki 的智能留给任意 agent，
 
 ## 特性（Features）
 
-- **零 LLM 依赖**：plan / claim / check / 自动修复全是确定性代码，不绑定任何 agent CLI，无需 API Key、零网络调用；
+- **确定性构建**：plan / claim / check / 自动修复全是确定性代码，不绑定任何 agent CLI，无需 API Key、零网络调用；
 - **并发安全**：原子任务认领 + 心跳续期 + 过期自动回收，多个 agent / 进程 / 人可同时参与同一个仓库；
 - **断点续跑**：每任务状态落盘，随时中断随时继续，崩溃不留孤儿认领；
 - **增量更新**：`update` 基于 git diff 只重写受影响页面（含祖先链）；

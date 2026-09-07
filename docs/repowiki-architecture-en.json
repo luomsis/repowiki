@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "repowiki System Architecture",
+    "locale": "en",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "agent",
+      "type": "external",
+      "label": "Driving agent",
+      "sublabel": "Claude Code / Codex / any agent CLI",
+      "tag": "serial / concurrent",
+      "pos": [
+        20,
+        280
+      ],
+      "size": [
+        170,
+        84
+      ]
+    },
+    {
+      "id": "cli",
+      "type": "backend",
+      "label": "repowiki CLI",
+      "sublabel": "deterministic task orchestration",
+      "tag": "plan · next · check",
+      "pos": [
+        350,
+        276
+      ],
+      "size": [
+        190,
+        92
+      ]
+    },
+    {
+      "id": "state",
+      "type": "database",
+      "label": ".repowiki/state/",
+      "sublabel": "task list + task specs",
+      "tag": "catalog → pages → overview",
+      "pos": [
+        410,
+        100
+      ],
+      "size": [
+        230,
+        78
+      ]
+    },
+    {
+      "id": "content",
+      "type": "database",
+      "label": "zh/content/**.md",
+      "sublabel": "wiki pages",
+      "tag": "validated + auto-repaired",
+      "pos": [
+        680,
+        186
+      ],
+      "size": [
+        240,
+        88
+      ]
+    },
+    {
+      "id": "knowledge",
+      "type": "database",
+      "label": "knowledge/zh/**",
+      "sublabel": "module + mechanism cards",
+      "pos": [
+        680,
+        322
+      ],
+      "size": [
+        240,
+        78
+      ]
+    },
+    {
+      "id": "meta",
+      "type": "database",
+      "label": "zh/meta/repowiki-metadata.json",
+      "sublabel": "metadata",
+      "pos": [
+        660,
+        448
+      ],
+      "size": [
+        280,
+        78
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "agent-to-cli",
+      "from": "agent",
+      "to": "cli",
+      "label": "plan · next --claim · check",
+      "variant": "emphasis"
+    },
+    {
+      "id": "cli-to-state",
+      "from": "cli",
+      "to": "state",
+      "label": "plan · atomic claim · stale reclaim",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "cli-to-content",
+      "from": "cli",
+      "to": "content",
+      "label": "validate + auto-repair"
+    },
+    {
+      "id": "agent-to-content",
+      "from": "agent",
+      "to": "content",
+      "label": "read source · write pages per spec",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          105,
+          55
+        ],
+        [
+          800,
+          55
+        ]
+      ]
+    },
+    {
+      "id": "cli-to-knowledge",
+      "from": "cli",
+      "to": "knowledge",
+      "label": "knowledge cards"
+    },
+    {
+      "id": "cli-to-meta",
+      "from": "cli",
+      "to": "meta",
+      "label": "finalize · assemble",
+      "fromSide": "bottom",
+      "toSide": "left"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Orchestration loop",
+      "items": [
+        "plan generates the task list; next --claim claims one atomically",
+        "check validates and auto-repairs anchors / line numbers / H1"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Outputs",
+      "items": [
+        "zh/content/**.md per-page wiki + knowledge cards",
+        "finalize assembles metadata; site builds the single-file site"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Division of labor",
+      "items": [
+        "reading code and writing pages stay with the driving agent",
+        "planning / claiming / validation / repair is deterministic code"
+      ]
+    }
+  ]
+}

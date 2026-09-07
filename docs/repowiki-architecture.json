@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "repowiki 系统架构",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "agent", "type": "external", "label": "驱动 agent", "sublabel": "Claude Code / Codex / 任意 agent CLI", "tag": "串行 / 并发", "pos": [20, 280], "size": [170, 84] },
+    { "id": "cli", "type": "backend", "label": "repowiki CLI", "sublabel": "确定性任务编排", "tag": "plan · next · check", "pos": [350, 276], "size": [190, 92] },
+    { "id": "state", "type": "database", "label": ".repowiki/state/", "sublabel": "任务清单 + 任务规格", "tag": "catalog → pages → overview", "pos": [410, 100], "size": [230, 78] },
+    { "id": "content", "type": "database", "label": "zh/content/**.md", "sublabel": "Wiki 页面", "tag": "校验 + 自动修复", "pos": [640, 186], "size": [240, 88] },
+    { "id": "knowledge", "type": "database", "label": "knowledge/zh/**", "sublabel": "模块 + 机制卡片", "pos": [640, 322], "size": [240, 78] },
+    { "id": "meta", "type": "database", "label": "zh/meta/repowiki-metadata.json", "sublabel": "元数据", "pos": [620, 448], "size": [280, 78] }
+  ],
+  "connections": [
+    { "id": "agent-to-cli", "from": "agent", "to": "cli", "label": "plan · next --claim · check", "variant": "emphasis" },
+    { "id": "cli-to-state", "from": "cli", "to": "state", "label": "规划 · 原子认领 · 过期回收", "fromSide": "top", "toSide": "bottom" },
+    { "id": "cli-to-content", "from": "cli", "to": "content", "label": "校验 + 自动修复" },
+    { "id": "agent-to-content", "from": "agent", "to": "content", "label": "读仓库源码 · 按规格写页面", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[105, 55], [760, 55]] },
+    { "id": "cli-to-knowledge", "from": "cli", "to": "knowledge", "label": "knowledge 卡片" },
+    { "id": "cli-to-meta", "from": "cli", "to": "meta", "label": "finalize 组装", "fromSide": "bottom", "toSide": "left" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "编排闭环", "items": ["plan 生成任务清单，next --claim 原子认领", "check 校验并自动修复锚点 / 行号 / H1"] },
+    { "dot": "emerald", "title": "产出", "items": ["zh/content/**.md 逐页 Wiki + 知识卡片", "finalize 组装 metadata，site 生成单文件站点"] },
+    { "dot": "rose", "title": "职责分工", "items": ["读源码、写页面的智能工作由驱动 agent 完成", "规划 / 认领 / 校验 / 修复是确定性代码"] }
+  ]
+}

@@ -7,7 +7,7 @@
 [![Python ≥ 3.10](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](#reliability)
 
-A build system that generates a structured wiki for any repository — with **no LLM inside**.
+A build system that generates a structured wiki for any repository.
 
 `repowiki` is a deterministic build system: it handles task planning, atomic claiming,
 output validation, auto-repair, and metadata assembly. The intelligent work — reading
@@ -18,16 +18,9 @@ participate — concurrently, too. The wiki's output language follows the target
 repository automatically (Chinese repo → `zh/`, English repo → `en/`; `plan --locale`
 overrides explicitly).
 
-```
-┌────────────┐  plan     ┌─────────────────────────────────────────┐
-│ driven agent│ ────────▶ │ .repowiki/state/  task list + specs     │
-│ (serial/   │ ◀──────── │  catalog → pages → overview, 3 phases   │
-│ concurrent)│  next     │  atomic claim · resume · stale reclaim  │
-│            │  check    │ zh/content/**.md  (validated + repaired)│
-│ write pages│ ────────▶ │ zh/meta/repowiki-metadata.json          │
-└────────────┘           │ knowledge/zh/**  (module + mech cards)  │
-                         └─────────────────────────────────────────┘
-```
+![repowiki system architecture](docs/assets/repowiki-architecture-en.png)
+
+*Interactive version: [docs/repowiki-architecture-en.html](docs/repowiki-architecture-en.html) (light/dark themes · path highlighting · node search — download and open in a browser)*
 
 ## Why repowiki
 
@@ -54,7 +47,7 @@ reliability.**
 
 ## Features
 
-- **Zero LLM dependency**: plan / claim / check / auto-repair are all deterministic code — bound to no agent CLI, no API keys, no network calls;
+- **Deterministic build**: plan / claim / check / auto-repair are all deterministic code — bound to no agent CLI, no API keys, no network calls;
 - **Concurrency-safe**: atomic task claiming + heartbeat renewal + automatic stale-claim reclamation — multiple agents / processes / humans can work on the same repo at once;
 - **Resumable**: per-task state is persisted to disk; interrupt anytime and pick up where you left off, with no orphaned claims after a crash;
 - **Incremental updates**: `update` uses git diff to rewrite only affected pages (including ancestor chains);

@@ -25,7 +25,7 @@ from .updater import run_update
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="repowiki",
-        description="Deterministic repo-wiki build system driven by coding agents (zero LLM, zero network).",
+        description="Deterministic repo-wiki build system driven by coding agents.",
     )
     parser.add_argument("--version", action="version", version=f"repowiki {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
