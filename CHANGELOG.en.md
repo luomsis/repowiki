@@ -2,6 +2,20 @@
 
 [中文](CHANGELOG.md) | **English**
 
+## 0.4.0 — 2026-09-07
+
+### Added
+
+- Knowledge cards now cover the full lifecycle:
+  - **update ↔ knowledge linkage**: `update` maps changed files against the knowledge plan — cards whose `source_files` changed and modules whose scope was touched each get an incremental refresh task (card updates carry a "## 5. Update Summary" section, enforced by `check` via `is_update`);
+  - **site Knowledge Base chapter**: knowledge module docs and cards join `wiki.html` as regular pages under a dedicated nav chapter — searchable, with source popups and mermaid; card front matter is stripped for display;
+  - **cross-epoch re-arm**: `update` regenerates specs of done `*-update` tasks from the previous round and resets them to pending — fixing the second update round silently doing nothing after a finalize.
+- Knowledge YAML exports fill `source_files`: `_index.yaml` / `_module.yaml` collect the union of card source files falling under each module's scope (previously always empty).
+
+### Fixed
+
+- Removed unreachable dead code in `knowledge.py`.
+
 ## 0.3.3 — 2026-09-07
 
 ### Fixed
