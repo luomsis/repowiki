@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "repowiki"
-version = "0.3.2"
-description = "Deterministic repo wiki build system, driven by any coding agent. Output language follows the repository (zh/en). Zero LLM, zero network."
+version = "0.3.3"
+description = "Deterministic repo wiki build system, driven by any coding agent. Output language follows the repository (zh/en)."
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]

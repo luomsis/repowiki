@@ -2,6 +2,24 @@
 
 [中文](CHANGELOG.md) | **English**
 
+## 0.3.3 — 2026-09-07
+
+### Fixed
+
+- **Site drawer menu button**: the topbar `#menu-btn` is a dead control on desktop,
+  where the sidebar is always visible; it now only shows on narrow screens (≤900px).
+
+### Documentation
+
+- Replaced the ASCII architecture diagram on both README landing pages with drawn
+  diagrams (Chinese diagram for the Chinese README, English one for the English
+  README); added the interactive architecture HTML and specs
+  (`docs/repowiki-architecture*.html`/`.json`, with light/dark themes, path
+  highlighting, and node search).
+- Softened the "no LLM" self-description: the README lead and features now say
+  "deterministic build"; the package description, CLI `--help`, and module docstring
+  follow suit.
+
 ## 0.3.2 — 2026-09-05
 
 ### Added
