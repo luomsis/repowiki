@@ -129,6 +129,10 @@ class WikiPaths:
         return self.state_dir / "knowledge.json"
 
     @property
+    def knowledge_categories_file(self) -> Path:
+        return self.state_dir / "knowledge_categories.json"
+
+    @property
     def index_file(self) -> Path:
         return self.state_dir / "index.json"
 

@@ -80,6 +80,10 @@ def build_catalog_task(paths: WikiPaths, inv: Inventory) -> dict:
 
 # --- phase 2: pages ---
 
+def _page_template_name(node: FlatNode) -> str:
+    return "flow_template.md" if node.archetype == "flow" else "page_template.md"
+
+
 def build_page_tasks(paths: WikiPaths, nodes: list[FlatNode], inv: Inventory, max_pages: int | None = None) -> list[dict]:
     by_id = {n.id: n for n in nodes}
     records: list[dict] = []
@@ -103,7 +107,7 @@ def build_page_tasks(paths: WikiPaths, nodes: list[FlatNode], inv: Inventory, ma
             SUMMARY=node.summary or "<catalog 未提供>",
             PAGE_BRIEF=_brief_bullets(node.page_brief),
             SIBLINGS="\n".join(f"- {s}" for s in siblings) or "<无姊妹页面>",
-            PAGE_TEMPLATE=templates.render(templates.load("page_template.md", paths.locale), TITLE=node.title),
+            PAGE_TEMPLATE=templates.render(templates.load(_page_template_name(node), paths.locale), TITLE=node.title),
             STYLE=templates.load("STYLE.md", paths.locale),
         )
         write_spec(paths, node.id, spec)
@@ -129,6 +133,33 @@ def build_overview_task(paths: WikiPaths, repo_name: str, nodes: list[FlatNode])
     return new_task("overview", "overview", 3, "Wiki 总览（wiki_overview）", overview_rel)
 
 
+def build_overview_update_task(paths: WikiPaths, repo_name: str, nodes: list[FlatNode],
+                               changed_files: list[str], inv: Inventory) -> dict:
+    """Refresh task for the overview page (`repowiki update`).
+
+    The overview describes the repo as a whole, so it is queued whenever any
+    page was affected. Validated by ``check_overview`` (same shape as a fresh
+    overview; no update-summary section).
+    """
+    task_id = "overview-update"
+    overview_rel = f"{paths.locale}/meta/wiki-overview.md"
+    old = paths.overview_file
+    spec = templates.render_file(
+        "overview_update_task.md",
+        locale=paths.locale,
+        TASK_ID=task_id,
+        OUTPUT=overview_rel,
+        OUTPUT_ABS=f".repowiki/{overview_rel}",
+        REPO_NAME=repo_name,
+        CHANGED_FILES=_hint_list(changed_files, inv),
+        CATALOG_TREE=catalog_tree_text(nodes),
+        OLD_OVERVIEW=old.read_text(encoding="utf-8") if old.is_file() else "<不存在，将全新撰写>",
+        STYLE=templates.load("STYLE.md", paths.locale),
+    )
+    write_spec(paths, task_id, spec)
+    return new_task(task_id, "overview_update", 3, "Wiki 总览（增量更新）", overview_rel)
+
+
 # --- incremental updates (phase 2 tasks appended post-finalize) ---
 
 def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str], inv: Inventory) -> dict:
@@ -151,7 +182,7 @@ def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str]
             SUMMARY=node.summary or "<catalog 未提供>",
             PAGE_BRIEF=_brief_bullets(node.page_brief),
             SIBLINGS="<无姊妹页面>",
-            PAGE_TEMPLATE=templates.render(templates.load("page_template.md", paths.locale), TITLE=node.title),
+            PAGE_TEMPLATE=templates.render(templates.load(_page_template_name(node), paths.locale), TITLE=node.title),
             STYLE=templates.load("STYLE.md", paths.locale),
         )
         write_spec(paths, task_id, spec)
@@ -175,19 +206,41 @@ def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str]
 
 # --- knowledge (phase 2) ---
 
-KNOWLEDGE_CATEGORIES = [
-    "configuration_system", "logging_system", "error_handling",
-    "build_system", "dependency_management", "frontend_style",
+# Built-in mechanism-card categories (id, one-line guidance). A repo can
+# replace this list wholesale via `repowiki knowledge --categories <file>`;
+# the effective list is persisted in state/knowledge_categories.json.
+DEFAULT_KNOWLEDGE_CATEGORIES = [
+    ("configuration_system", "Configuration: loading, validation, layering (env / files / defaults)"),
+    ("logging_system", "Logging: setup, levels, formats, trace correlation"),
+    ("error_handling", "Errors: exception taxonomy, propagation, recovery strategies"),
+    ("build_system", "Build / package / release pipeline and scripts"),
+    ("dependency_management", "Dependency declaration, locking, upgrade policy"),
+    ("frontend_style", "Frontend styling: themes, component conventions, design tokens"),
 ]
 
 
-def build_knowledge_plan_task(paths: WikiPaths, inv: Inventory) -> dict:
+def category_block(categories: list[dict]) -> str:
+    """Render the effective category list for the knowledge-plan task spec."""
+    lines = []
+    for c in categories:
+        guide = c.get("guidance") or c.get("name") or ""
+        lines.append(f"- `{c['id']}`{' — ' + guide if guide else ''}")
+    return "\n".join(lines)
+
+
+def build_knowledge_plan_task(paths: WikiPaths, inv: Inventory,
+                              categories: list[dict] | None = None) -> dict:
+    cats = categories or [
+        {"id": cid, "name": guide} for cid, guide in DEFAULT_KNOWLEDGE_CATEGORIES
+    ]
     spec = templates.render_file(
         "knowledge_task.md",
         locale=paths.locale,
         REPO_NAME=Path(inv.repo_root).name,
         KEY_FILES=", ".join(inv.key_files) or "<未发现>",
         TREE_SUMMARY=inv.tree_summary or "<空仓库>",
+        CATEGORY_COUNT=len(cats),
+        CATEGORY_BLOCK=category_block(cats),
     )
     write_spec(paths, "knowledge-plan", spec)
     return new_task("knowledge-plan", "knowledge_plan", 2, "知识库规划（modules + cards）", "state/knowledge.json")

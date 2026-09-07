@@ -251,3 +251,37 @@ class TestOverview:
         text = "# 总览\n\n## 章节导航\nx\n\n## 如何使用本 Wiki\ny\n"
         res = check_overview(text, "demo")
         assert res.ok and "# demo Wiki 总览" in res.text
+
+
+class TestPageArchetype:
+    def test_flow_page_passes_with_flow_archetype(self, repo):
+        from conftest import flow_page
+
+        res = check_page(flow_page(), "请求生命周期", repo, archetype="flow")
+        assert res.ok, res.errors
+
+    def test_flow_page_fails_under_module_rules(self, repo):
+        from conftest import flow_page
+
+        res = check_page(flow_page(), "请求生命周期", repo)  # default: module
+        assert not res.ok
+        assert any("项目结构" in e for e in res.errors)
+
+    def test_module_page_fails_under_flow_rules(self, repo):
+        res = check_page(valid_page(), "项目概述", repo, archetype="flow")
+        assert not res.ok
+        assert any("流程总览" in e for e in res.errors)
+
+    def test_flow_page_missing_section_fails(self, repo):
+        from conftest import flow_page
+
+        text = flow_page().replace("## 数据与状态变化\n", "", 1)
+        res = check_page(text, "请求生命周期", repo, archetype="flow")
+        assert not res.ok and any("数据与状态变化" in e for e in res.errors)
+
+    def test_en_flow_page_passes(self, repo):
+        from conftest import flow_page
+
+        res = check_page(flow_page("Request Lifecycle", locale="en"),
+                         "Request Lifecycle", repo, locale="en", archetype="flow")
+        assert res.ok, res.errors

@@ -9,7 +9,7 @@ import subprocess
 import time
 
 import pytest
-from conftest import valid_catalog, valid_page, write_catalog
+from conftest import flow_page, valid_catalog, valid_page, write_catalog
 
 from repowiki.catalog import flatten
 from repowiki.cli import main
@@ -194,6 +194,45 @@ class TestUpdate:
         spec2 = (paths.tasks_dir / "c0101-update.md").read_text(encoding="utf-8")
         assert "更新摘要" not in spec2 and "models.py" in spec2
 
+    def test_update_dirty_and_overview_refresh(self, git_repo, capsys):
+        paths = WikiPaths(git_repo)
+        write_catalog(paths)
+        run("plan", str(paths.repo_root))
+        TaskStore(paths).update("catalog", status="done")
+        meta = {"wiki_repo": {"last_commit_id": _head(git_repo)}}
+        paths.meta_dir.mkdir(parents=True, exist_ok=True)
+        paths.metadata_file.write_text(json.dumps(meta), encoding="utf-8")
+        p = paths.root / "zh/content/项目概述/项目概述.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(valid_page("项目概述"), encoding="utf-8")
+        # uncommitted modification + untracked new file — nothing committed
+        (git_repo / "src/demo/models.py").write_text("CHANGED = 1\n", encoding="utf-8")
+        (git_repo / "src/extra").mkdir()
+        (git_repo / "src/extra/util.py").write_text("X = 1\n", encoding="utf-8")
+
+        # committed-only view sees nothing
+        capsys.readouterr()  # flush plan/task output before parsing CLI JSON
+        assert run("update", str(git_repo), "--json") == 0
+        assert json.loads(capsys.readouterr().out)["changed"] == 0
+        index = json.loads(paths.index_file.read_text(encoding="utf-8"))
+        assert "c0101-update" not in index["tasks"]
+
+        # --dirty sees both the uncommitted edit and the untracked file
+        assert run("update", str(git_repo), "--json", "--dirty") == 0
+        data = json.loads(capsys.readouterr().out)
+        assert data["dirty"] is True and data["overview_queued"] is True
+        assert set(data["affected_pages"]) == {"c0101", "c01"}
+        index = json.loads(paths.index_file.read_text(encoding="utf-8"))
+        assert index["tasks"]["overview-update"]["kind"] == "overview_update"
+        spec = (paths.tasks_dir / "overview-update.md").read_text(encoding="utf-8")
+        assert "章节导航" in spec and "models.py" in spec
+
+        # the overview refresh task validates with the same shape as a fresh overview
+        ov = paths.overview_file
+        ov.parent.mkdir(parents=True, exist_ok=True)
+        ov.write_text("# demo Wiki 总览\n\n## 章节导航\n- 项目概述\n\n## 如何使用本 Wiki\nx\n", encoding="utf-8")
+        assert run("check", str(git_repo), "--task", "overview-update") == 0
+
     def test_update_requires_git(self, repo):
         write_catalog(WikiPaths(repo))
         run("plan", str(repo))
@@ -302,6 +341,56 @@ class TestKnowledge:
         assert (repo / ".repowiki/knowledge/zh/核心模块/_module.yaml").exists()
         # module source_files are filled from card source_files under the scope
         assert "- src/demo/config.py" in idx
+
+    def test_knowledge_custom_categories(self, repo, capsys):
+        paths = WikiPaths(repo)
+        write_catalog(paths)
+        run("plan", str(repo))
+        capsys.readouterr()
+        cats = repo / "categories.yaml"
+        cats.write_text(
+            "- id: state_management\n  name: 状态管理\n  guidance: store 结构与数据流\n"
+            "- scheduling\n", encoding="utf-8")
+        assert run("knowledge", str(repo), "--categories", str(cats), "--json") == 0
+        out = json.loads(capsys.readouterr().out)
+        assert out["categories"] == ["state_management", "scheduling"]
+        persisted = json.loads(paths.knowledge_categories_file.read_text(encoding="utf-8"))
+        assert persisted["categories"][0] == {
+            "id": "state_management", "name": "状态管理", "guidance": "store 结构与数据流"}
+        # the plan spec now advertises the custom list instead of the built-in six
+        spec = (paths.tasks_dir / "knowledge-plan.md").read_text(encoding="utf-8")
+        assert "state_management" in spec and "scheduling" in spec
+        assert "configuration_system" not in spec
+
+        # a plan using the custom category passes check (and expands tasks)
+        plan = {
+            "modules": [{"id": "m01", "title": "核心模块", "scope": ["src/demo/"],
+                         "children": [], "depends_on": [], "related_to": []}],
+            "cards": [{"id": "k01", "title": "状态管理", "category": "state_management",
+                       "scope": ["**"], "source_files": ["src/demo/config.py"]}],
+        }
+        paths.knowledge_plan_file.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+        assert run("check", str(repo), "--task", "knowledge-plan") == 0
+        assert "k01" in json.loads(paths.index_file.read_text(encoding="utf-8"))["tasks"]
+        # card outputs validate against the custom set too
+        card = ("---\nkind: state_management\nname: 状态管理\ncategory: state_management\n"
+                "scope:\n  - '**'\nsource_files:\n  - src/demo/config.py\n---\n\n"
+                "# 状态管理\n\n## 1. 体系概览\nx\n\n## 2. 关键文件与包\nx\n\n"
+                "## 3. 架构与设计约定\nx\n\n## 4. 开发者应遵循的规则\nx\n")
+        cdir = repo / ".repowiki/knowledge/zh/状态管理"
+        cdir.mkdir(parents=True, exist_ok=True)
+        (cdir / "状态管理.md").write_text(card, encoding="utf-8")
+        assert run("check", str(repo), "--task", "k01") == 0
+
+    def test_knowledge_categories_file_validation(self, repo, capsys):
+        write_catalog(WikiPaths(repo))
+        run("plan", str(repo))
+        bad = repo / "bad.yaml"
+        bad.write_text("- Bad-Id\n", encoding="utf-8")
+        assert run("knowledge", str(repo), "--categories", str(bad)) == 1
+        assert "id 非法" in capsys.readouterr().err
+        missing = run("knowledge", str(repo), "--categories", str(repo / "nope.yaml"))
+        assert missing == 1 and "不存在" in capsys.readouterr().err
 
     def test_update_refreshes_cards_and_modules(self, git_repo):
         paths = WikiPaths(git_repo)
@@ -647,3 +736,26 @@ class TestWatch:
     def test_watch_empty_manifest(self, repo):
         WikiPaths(repo).ensure()
         assert run("watch", str(repo), "--interval", "0.05", "--timeout", "1") == 1
+
+
+class TestArchetype:
+    def test_flow_page_end_to_end(self, repo):
+        """archetype=flow node: spec embeds the flow template; the flow-shaped
+        page passes check via the catalog-backed archetype lookup."""
+        paths = WikiPaths(repo)
+        catalog = valid_catalog()
+        catalog["chapters"][0]["children"][0]["archetype"] = "flow"
+        write_catalog(paths, catalog)
+        run("plan", str(repo))
+        spec = (paths.tasks_dir / "c0101.md").read_text(encoding="utf-8")
+        assert "流程总览" in spec and "## 项目结构" not in spec  # flow, not module
+        spec2 = (paths.tasks_dir / "c02.md").read_text(encoding="utf-8")
+        assert "项目结构" in spec2  # module template unchanged for others
+        TaskStore(paths).update("catalog", status="done")
+
+        out = paths.root / "zh/content/项目概述/核心概念.md"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(flow_page("核心概念"), encoding="utf-8")
+        assert run("check", str(repo), "--task", "c0101") == 0
+        index = json.loads(paths.index_file.read_text(encoding="utf-8"))
+        assert index["tasks"]["c0101"]["status"] == "done"

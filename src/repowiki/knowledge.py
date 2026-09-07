@@ -1,9 +1,16 @@
 """``repowiki knowledge``: append the knowledge-card task set, and aggregate
 knowledge outputs (_index.yaml / _module.yaml) at finalize time.
+
+Card categories default to the built-in six; ``--categories <file>`` replaces
+them wholesale with a repo-specific list (YAML/JSON), persisted in
+``state/knowledge_categories.json`` so later ``check``/``update`` rounds
+validate against the same set.
 """
 
 from __future__ import annotations
 
+import json
+import re
 
 import yaml
 
@@ -15,16 +22,29 @@ from . import tasks as task_builders
 from .scanner import scan
 from .state import TaskStore, now_iso
 
+_CATEGORY_ID_RE = re.compile(r"^[a-z][a-z0-9_]{1,39}$")
+MAX_CATEGORIES = 12
 
-def run_knowledge(paths: WikiPaths, as_json: bool) -> int:
+
+def run_knowledge(paths: WikiPaths, as_json: bool, categories: str | None = None) -> int:
+    if categories:
+        custom = _load_category_file(paths.repo_root / categories)
+        paths.knowledge_categories_file.write_text(
+            json.dumps({"categories": custom}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
     store = TaskStore(paths)
     data = store.load()
     if not data["tasks"]:
         raise UsageError("请先运行 `repowiki plan <repo>`")
-    added = store.add_tasks([task_builders.build_knowledge_plan_task(paths, scan(paths.repo_root))])
+    effective = effective_categories(paths)
+    added = store.add_tasks([
+        task_builders.build_knowledge_plan_task(paths, scan(paths.repo_root), effective)
+    ])
     result = {
         "ok": True,
         "added": added,
+        "categories": [c["id"] for c in effective],
         "note": "knowledge-plan 任务已就绪，领取执行后 check 会自动展开模块/卡片任务",
     }
     emit(result, _knowledge_human, as_json)
@@ -33,7 +53,66 @@ def run_knowledge(paths: WikiPaths, as_json: bool) -> int:
 
 def _knowledge_human(r: dict) -> str:
     head = "已添加 knowledge-plan 任务" if r["added"] else "knowledge 任务集已存在"
-    return f"{head}\n{r['note']}"
+    cats = "、".join(r["categories"])
+    return f"{head}（类别清单：{cats}）\n{r['note']}"
+
+
+def _load_category_file(path) -> list[dict]:
+    """Parse + validate a user-supplied category list (YAML or JSON).
+
+    Entries are ``id`` strings or objects with ``id`` and optional
+    ``name``/``guidance``. The list replaces the built-in categories.
+    """
+    if not path.is_file():
+        raise UsageError(f"类别文件不存在: {path}")
+    raw = path.read_text(encoding="utf-8")
+    try:
+        data = (yaml.safe_load(raw) if path.suffix in (".yaml", ".yml")
+                else json.loads(raw))
+    except (yaml.YAMLError, json.JSONDecodeError) as e:
+        raise UsageError(f"类别文件解析失败（{path.name}）: {e}") from e
+    if not isinstance(data, list) or not data:
+        raise UsageError("类别文件必须是非空数组（字符串 id，或含 id/name/guidance 的对象）")
+    seen: set[str] = set()
+    cats: list[dict] = []
+    for i, item in enumerate(data):
+        where = f"categories[{i}]"
+        if isinstance(item, str):
+            item = {"id": item}
+        if not isinstance(item, dict):
+            raise UsageError(f"{where}: 必须是字符串或对象")
+        cid = str(item.get("id", "")).strip()
+        if not _CATEGORY_ID_RE.match(cid):
+            raise UsageError(
+                f"{where}: id 非法 `{cid}`（小写字母开头，仅小写字母/数字/下划线）"
+            )
+        if cid in seen:
+            raise UsageError(f"{where}: id 重复 `{cid}`")
+        seen.add(cid)
+        cats.append({
+            "id": cid,
+            "name": str(item.get("name", "")).strip() or cid,
+            "guidance": str(item.get("guidance", "")).strip(),
+        })
+    if len(cats) > MAX_CATEGORIES:
+        raise UsageError(f"类别过多（{len(cats)} > {MAX_CATEGORIES}）：机制卡片贵精不贵多")
+    return cats
+
+
+def effective_categories(paths: WikiPaths) -> list[dict]:
+    """The category list in force: user-supplied (persisted) or built-in."""
+    f = paths.knowledge_categories_file
+    if f.exists():
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            data = None
+        if isinstance(data, dict) and isinstance(data.get("categories"), list) and data["categories"]:
+            return data["categories"]
+    return [
+        {"id": cid, "name": guide}
+        for cid, guide in task_builders.DEFAULT_KNOWLEDGE_CATEGORIES
+    ]
 
 
 def scope_covers(scope_entry: str, path: str) -> bool:

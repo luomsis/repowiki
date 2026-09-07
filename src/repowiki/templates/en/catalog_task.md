@@ -43,7 +43,7 @@ Write every human-readable field (`title`, `summary`, `page_brief`) in **English
       "dependent_files": ["<repo-relative path>"],
       "page_brief": "<points this index page must cover (English, 2-5 bullet-style items)>",
       "children": [
-        { "id": "c0101", "title": "...", "slug": "...", "summary": "...", "kind": "page", "dependent_files": ["..."], "page_brief": "..." }
+        { "id": "c0101", "title": "...", "slug": "...", "summary": "...", "kind": "page", "archetype": "module", "dependent_files": ["..."], "page_brief": "..." }
       ]
     }
   ]
@@ -58,6 +58,7 @@ Write every human-readable field (`title`, `summary`, `page_brief`) in **English
 5. `page_brief` states the concrete points the page must cover — it becomes the prompt for the page-writing task, so be specific (which modules/classes/flows/configs).
 6. Coverage expectations (mirroring wikis of comparable projects): project overview, quick start, core concepts, main features/SDK usage, configuration, deployment/operations, API reference, examples/contributing — trim to what this repository actually contains; do not force sections that do not apply.
 7. `slug` is lowercase English and hyphens (e.g. `project-overview`, `quick-start`).
+8. (Optional) page nodes may set `archetype` to pick the page template: mechanism/process-themed pages (e.g. "lifecycle of a request", "build & release pipeline", "event loop") use `"archetype": "flow"` (Flow Overview / Key Steps / Involved Components / Data and State Changes); all other structural themes default to `"archetype": "module"` (Project Structure / Core Components / Architecture Overview / Dependency Analysis). The field may be omitted (same as module); every flow page should state the flow's start and end in its page_brief.
 
 ## Self-check (before writing the file)
 - [ ] JSON parses (re-read the file after writing to confirm)

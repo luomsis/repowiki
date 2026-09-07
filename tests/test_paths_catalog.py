@@ -129,3 +129,37 @@ class TestFlatten:
     def test_tree_text_contains_briefs(self):
         text = catalog_tree_text(flatten(valid_catalog()))
         assert "项目概述" in text and "page_brief" not in text
+
+
+class TestArchetype:
+    @staticmethod
+    def _flow_catalog():
+        c = valid_catalog()
+        c["chapters"][0]["children"][0]["archetype"] = "flow"
+        return c
+
+    def test_valid_archetype_accepted(self):
+        from conftest import FILES
+
+        errors, _ = validate_catalog(self._flow_catalog(), set(FILES))
+        assert not errors, errors
+
+    def test_invalid_archetype_rejected(self):
+        from conftest import FILES
+
+        c = self._flow_catalog()
+        c["chapters"][0]["children"][0]["archetype"] = "guide"
+        errors, _ = validate_catalog(c, set(FILES))
+        assert any("archetype" in e for e in errors)
+
+    def test_flatten_carries_archetype(self):
+        nodes = {n.id: n for n in flatten(self._flow_catalog())}
+        assert nodes["c0101"].archetype == "flow"
+        assert nodes["c01"].archetype == "module"  # chapters are unaffected
+        assert nodes["c02"].archetype == "module"  # default when omitted
+
+    def test_flatten_defaults_on_unknown_value(self):
+        c = self._flow_catalog()
+        c["chapters"][0]["children"][0]["archetype"] = "bogus"
+        nodes = {n.id: n for n in flatten(c)}
+        assert nodes["c0101"].archetype == "module"

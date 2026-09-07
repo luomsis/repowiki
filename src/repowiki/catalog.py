@@ -16,6 +16,7 @@ from .validate import PLACEHOLDER_RE
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 MAX_DEPTH = 4  # root chapters are depth 1
+ARCHETYPES = ("module", "flow")  # page templates; default "module"
 
 
 @dataclass
@@ -30,6 +31,7 @@ class FlatNode:
     parent_id: str | None
     depth: int
     output: str  # relative to .repowiki/, e.g. zh/content/Overview/Overview.md
+    archetype: str = "module"  # page template shape: "module" | "flow"
 
     def chapter_path(self, by_id: dict[str, "FlatNode"]) -> str:
         parts = [self.title]
@@ -102,6 +104,12 @@ def validate_catalog(data, known_paths: set[str]) -> tuple[list[str], list[str]]
             if kind not in ("chapter", "page"):
                 errors.append(f"{where}: kind 必须是 chapter 或 page，得到 {kind!r}")
                 kind = "page"
+            archetype = node.get("archetype", "module")
+            if archetype not in ARCHETYPES:
+                errors.append(
+                    f"{where}（{title or nid}）: archetype 必须是 module 或 flow（可省略，默认 module），得到 {archetype!r}"
+                )
+                archetype = "module"
             brief = node.get("page_brief")
             if not isinstance(brief, str) or not brief.strip():
                 errors.append(f"{where}（{title or nid}）: 缺少 page_brief（页面要点提示词）")
@@ -160,6 +168,7 @@ def flatten(data: dict, locale: str = "zh") -> list[FlatNode]:
                 parent_id=parent.id if parent else None,
                 depth=(parent.depth + 1) if parent else 1,
                 output=output,
+                archetype=node.get("archetype", "module") if node.get("archetype") in ARCHETYPES else "module",
             )
             by_id[flat.id] = flat
             out.append(flat)

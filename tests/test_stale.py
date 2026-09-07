@@ -103,6 +103,19 @@ def test_stale_maps_knowledge_cards_with_source_files(git_repo, capsys):
     assert data["affected_cards"] == ["k01"] and data["stale"] is True
 
 
+def test_stale_dirty_sees_uncommitted_changes(git_repo, capsys):
+    setup_wiki(git_repo)
+    (git_repo / "src/demo/models.py").write_text("CHANGED = 1\n", encoding="utf-8")
+    # committed-only view is clean; the dirty view catches the working tree
+    assert run("stale", str(git_repo), "--json") == 0
+    assert json.loads(capsys.readouterr().out)["stale"] is False
+    assert run("stale", str(git_repo), "--json", "--dirty") == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["dirty"] is True and data["stale"] is True
+    assert "c0101" in data["affected_pages"]
+    assert run("stale", str(git_repo), "--fail-if-stale", "--dirty") == 1
+
+
 # --- usage errors (mirror `update`) ---
 
 def test_stale_requires_git(tmp_path, capsys):

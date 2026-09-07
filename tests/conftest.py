@@ -198,3 +198,174 @@ def write_catalog(paths: WikiPaths, catalog: dict | None = None) -> None:
     paths.catalog_file.write_text(
         json.dumps(catalog or valid_catalog(), ensure_ascii=False), encoding="utf-8"
     )
+
+
+def flow_page(title: str = "请求生命周期", locale: str = "zh") -> str:
+    """A valid flow-archetype page (per-archetype required sections, 2 diagrams)."""
+    if locale == "en":
+        return f"""# {title}
+
+<cite>
+**Files referenced**
+- [README.md](file://README.md)
+- [src/demo/main.py](file://src/demo/main.py)
+</cite>
+
+## Contents
+1. [Introduction](#introduction)
+2. [Flow Overview](#flow-overview)
+3. [Key Steps](#key-steps)
+4. [Involved Components](#involved-components)
+5. [Data and State Changes](#data-and-state-changes)
+6. [Troubleshooting Guide](#troubleshooting-guide)
+7. [Conclusion](#conclusion)
+
+## Introduction
+The lifecycle of a demo request.
+
+## Flow Overview
+From entry to response.
+
+```mermaid
+sequenceDiagram
+participant U as "User"
+participant M as "main"
+U->>M : "request"
+M-->>U : "response"
+```
+
+Diagram sources
+- [src/demo/main.py:1-7](file://src/demo/main.py#L1-L7)
+
+Section sources
+- [README.md:1-2](file://README.md#L1-L2)
+
+## Key Steps
+### Step 1: receive
+- Input: the request
+- Handling: parse and dispatch
+
+Section sources
+- [src/demo/main.py:1-7](file://src/demo/main.py#L1-L7)
+
+### Step 2: respond
+- Output: the result
+
+**Section sources**
+- [src/demo/main.py:1-7](file://src/demo/main.py#L1-L7)
+
+## Involved Components
+- main: orchestrates the flow.
+
+Section sources
+- [src/demo/main.py:1-7](file://src/demo/main.py#L1-L7)
+
+## Data and State Changes
+Request state moves from new to done.
+
+```mermaid
+graph LR
+A["new"] -->|process| B["done"]
+```
+
+Diagram sources
+- [src/demo/api.py:1-8](file://src/demo/api.py#L1-L8)
+
+Section sources
+- [src/demo/api.py:1-8](file://src/demo/api.py#L1-L8)
+
+## Troubleshooting Guide
+- No response: check the entry point.
+
+Section sources
+- [src/demo/main.py:1-7](file://src/demo/main.py#L1-L7)
+
+## Conclusion
+Applies to the demo request path.
+
+Section sources
+- [README.md:1-2](file://README.md#L1-L2)
+"""
+    return f"""# {title}
+
+<cite>
+**本文引用的文件**
+- [README.md](file://README.md)
+- [src/demo/main.py](file://src/demo/main.py)
+</cite>
+
+## 目录
+1. [简介](#简介)
+2. [流程总览](#流程总览)
+3. [关键步骤](#关键步骤)
+4. [参与组件](#参与组件)
+5. [数据与状态变化](#数据与状态变化)
+6. [故障排查指南](#故障排查指南)
+7. [结论](#结论)
+
+## 简介
+demo 请求的生命周期流程。
+
+## 流程总览
+从入口到响应的端到端路径。
+
+```mermaid
+sequenceDiagram
+participant U as "用户"
+participant M as "main"
+U->>M : "请求"
+M-->>U : "响应"
+```
+
+图表来源
+- [src/demo/main.py:1-7](file://src/demo/main.py#L1-L7)
+
+章节来源
+- [README.md:1-2](file://README.md#L1-L2)
+
+## 关键步骤
+### 步骤 1：接收
+- 输入：请求
+- 处理：解析并分发
+
+章节来源
+- [src/demo/main.py:1-7](file://src/demo/main.py#L1-L7)
+
+### 步骤 2：响应
+- 输出：结果
+
+**章节来源**
+- [src/demo/main.py:1-7](file://src/demo/main.py#L1-L7)
+
+## 参与组件
+- main：编排整个流程。
+
+章节来源
+- [src/demo/main.py:1-7](file://src/demo/main.py#L1-L7)
+
+## 数据与状态变化
+请求状态从新建到完成。
+
+```mermaid
+graph LR
+A["新建"] -->|处理| B["完成"]
+```
+
+图表来源
+- [src/demo/api.py:1-8](file://src/demo/api.py#L1-L8)
+
+章节来源
+- [src/demo/api.py:1-8](file://src/demo/api.py#L1-L8)
+
+## 故障排查指南
+- 无响应：检查入口。
+
+章节来源
+- [src/demo/main.py:1-7](file://src/demo/main.py#L1-L7)
+
+## 结论
+流程适用于 demo 请求路径。
+
+章节来源
+- [README.md:1-2](file://README.md#L1-L2)
+"""

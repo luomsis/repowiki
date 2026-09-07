@@ -25,6 +25,7 @@ from .validate import (
     check_overview,
     check_page,
 )
+from .knowledge import effective_categories
 
 
 def _worker_id() -> str:
@@ -261,6 +262,23 @@ def run_check(paths: WikiPaths, task_id: str | None, as_json: bool,
     return 0 if all_ok else 1
 
 
+def _node_archetype(paths: WikiPaths, node_id: str) -> str:
+    """Archetype of the catalog node behind a page task (default "module")."""
+    try:
+        catalog = json.loads(paths.catalog_file.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return "module"
+    stack = list(catalog.get("chapters") or []) if isinstance(catalog, dict) else []
+    while stack:
+        n = stack.pop()
+        if not isinstance(n, dict):
+            continue
+        if n.get("id") == node_id:
+            return n.get("archetype") if n.get("archetype") in ("module", "flow") else "module"
+        stack.extend(n.get("children") or [])
+    return "module"
+
+
 def _check_readonly(paths: WikiPaths, task: dict, inv) -> dict:
     """Validate a done task without touching its status."""
     base = {"id": task["id"], "kind": task["kind"], "title": task["title"], "status": "done"}
@@ -271,8 +289,10 @@ def _check_readonly(paths: WikiPaths, task: dict, inv) -> dict:
                 "errors": [f"产出已不存在: {task['output']}（如需重建请用 update 或 plan --replan）"]}
     if task["kind"] in ("page", "page_update"):
         raw = out.read_text(encoding="utf-8")
+        node_id = task["id"][:-len("-update")] if task["id"].endswith("-update") else task["id"]
         res = check_page(raw, task["title"].replace("（增量更新）", ""), paths.repo_root,
-                         is_update=(task["kind"] == "page_update"), locale=paths.locale)
+                         is_update=(task["kind"] == "page_update"), locale=paths.locale,
+                         archetype=_node_archetype(paths, node_id))
         return {**base, "ok": res.ok, "readonly": True, "errors": res.errors,
                 "fixed": [], "warnings": res.warnings,
                 "note": "done 为终态，此结果仅供参考，状态未改变"}
@@ -303,14 +323,14 @@ def _check_one(paths: WikiPaths, store: TaskStore, task: dict, inv) -> dict:
     if kind in ("catalog", "knowledge_plan"):
         return _check_plan_task(paths, store, task, inv, base)
 
-    if kind in ("page", "page_update", "overview", "knowledge_card"):
+    if kind in ("page", "page_update", "overview", "overview_update", "knowledge_card"):
         out_file = paths.root / task["output"]
         if not out_file.is_file():
             store.update(tid, status="failed")
             return {**base, "ok": False, "status": "failed",
                     "errors": [f"输出文件不存在: {task['output']}（按任务规格写入该路径）"]}
         raw = out_file.read_text(encoding="utf-8")
-        if kind == "overview":
+        if kind in ("overview", "overview_update"):
             try:
                 repo_name = json.loads(paths.catalog_file.read_text(encoding="utf-8")).get("repo_name", "")
             except (json.JSONDecodeError, OSError) as e:
@@ -326,10 +346,13 @@ def _check_one(paths: WikiPaths, store: TaskStore, task: dict, inv) -> dict:
             )
             res = check_knowledge_card(raw, card.get("title", task["title"]), card.get("category", ""),
                                        paths.repo_root, locale=paths.locale,
-                                       is_update=tid.endswith("-update"))
+                                       is_update=tid.endswith("-update"),
+                                       categories={c["id"] for c in effective_categories(paths)})
         else:
+            node_id = tid[:-len("-update")] if tid.endswith("-update") else tid
             res = check_page(raw, task["title"].replace("（增量更新）", ""), paths.repo_root,
-                             is_update=(kind == "page_update"), locale=paths.locale)
+                             is_update=(kind == "page_update"), locale=paths.locale,
+                             archetype=_node_archetype(paths, node_id))
         if res.fixed and res.text != raw:
             out_file.write_text(res.text, encoding="utf-8")
         status = "done" if res.ok else "failed"
@@ -371,7 +394,8 @@ def _check_plan_task(paths: WikiPaths, store: TaskStore, task: dict, inv, base: 
     if tid == "catalog":
         errors, warnings = validate_catalog(data, inv.known_paths())
     else:
-        errors, warnings = check_knowledge_plan(data, inv.known_paths())
+        cats = {c["id"] for c in effective_categories(paths)}
+        errors, warnings = check_knowledge_plan(data, inv.known_paths(), categories=cats)
 
     if errors:
         store.update(tid, status="failed")

@@ -37,7 +37,7 @@ output: state/knowledge.json
     {
       "id": "k01",
       "title": "<卡片标题，如：配置系统 — YAML + pydantic-settings 分层加载>",
-      "category": "configuration_system",
+      "category": "<上方清单中的 category id>",
       "scope": ["**"],
       "source_files": ["<仓库相对路径>", "..."]
     }
@@ -47,7 +47,9 @@ output: state/knowledge.json
 
 ## 规划规则
 1. 模块 = 仓库中边界清晰的子系统/子项目（2~8 个为宜，可 1~2 层）。根模块覆盖仓库整体，子模块按 scope 路径划分。模块 id 顶层 m01…，子模块 m0101…；子模块需同时出现在父模块 children 与 modules 列表中。
-2. 机制卡片聚焦横切机制，category 六选一：`configuration_system` / `logging_system` / `error_handling` / `build_system` / `dependency_management` / `frontend_style`。只为仓库中真实存在且值得记录的机制建卡（0~2 张/类，宁缺毋滥）。
+2. 机制卡片聚焦横切机制，category 只能从下方清单（共 {{CATEGORY_COUNT}} 类）中选择；只为仓库中真实存在且值得记录的机制建卡（0~2 张/类，宁缺毋滥）：
+
+{{CATEGORY_BLOCK}}
 3. 卡片标题自包含（机制 + 关键技术），全局唯一；source_files 是实现该机制的核心文件（2~8 个，必须真实存在）。
 4. 卡片与模块相互独立：卡片描述「机制」，模块描述「结构」。
 
@@ -55,6 +57,6 @@ output: state/knowledge.json
 - [ ] JSON 可解析；模块/卡片 id 与标题唯一
 - [ ] children/depends_on/related_to 引用的 id 都存在
 - [ ] scope 与 source_files 路径真实存在
-- [ ] category 只用六个枚举值之一
+- [ ] category 只用上方清单中的枚举值
 
 完成后运行：`repowiki check <仓库路径> --task knowledge-plan`

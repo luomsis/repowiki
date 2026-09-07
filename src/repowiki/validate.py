@@ -89,7 +89,7 @@ def _file_loc(repo_root: Path, rel: str) -> int | None:
 
 
 def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False,
-               locale: str = "zh") -> CheckResult:
+               locale: str = "zh", archetype: str = "module") -> CheckResult:
     res = CheckResult(text=raw)
     text = raw
     lang = strings(locale)
@@ -109,9 +109,10 @@ def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False,
             text = _H1_RE.sub(f"# {expected}\n", text, count=1)
             res.fixed.append(f"H1 由「{h1s[0]}」改为「{expected}」")
 
-    # required sections
+    # required sections (per page archetype: module = structure pages, flow = mechanism/process pages)
     headings = _headings(text)
-    required = list(lang["required_sections"])
+    section_table = lang["flow_sections"] if archetype == "flow" else lang["required_sections"]
+    required = list(section_table)
     if is_update:
         required.insert(0, lang["update_extra"])
     for name, mode in required:
@@ -218,9 +219,11 @@ KNOWLEDGE_CATEGORIES = {
 }
 
 
-def check_knowledge_plan(data, known_paths: set[str]) -> tuple[list[str], list[str]]:
+def check_knowledge_plan(data, known_paths: set[str],
+                         categories: set[str] | None = None) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
+    allowed = categories if categories is not None else KNOWLEDGE_CATEGORIES
     if not isinstance(data, dict):
         return ["knowledge.json 必须是 JSON 对象"], warnings
     modules = data.get("modules")
@@ -262,8 +265,8 @@ def check_knowledge_plan(data, known_paths: set[str]) -> tuple[list[str], list[s
         seen_card_ids.add(cid)
         if not str(c.get("title", "")).strip():
             errors.append(f"卡片 {cid}: 缺少 title")
-        if c.get("category") not in KNOWLEDGE_CATEGORIES:
-            errors.append(f"卡片 {cid}: category 非法 `{c.get('category')}`（六选一）")
+        if c.get("category") not in allowed:
+            errors.append(f"卡片 {cid}: category 非法 `{c.get('category')}`（须取自类别清单）")
         for p in c.get("source_files") or []:
             if p not in known_paths:
                 errors.append(f"卡片 {cid}: source_files 引用不存在的文件 `{p}`")
@@ -288,9 +291,11 @@ def check_knowledge_module(out_dir: Path, locale: str = "zh") -> CheckResult:
 
 
 def check_knowledge_card(raw: str, title: str, category: str, repo_root: Path,
-                         locale: str = "zh", is_update: bool = False) -> CheckResult:
+                         locale: str = "zh", is_update: bool = False,
+                         categories: set[str] | None = None) -> CheckResult:
     res = CheckResult(text=raw)
     lang = strings(locale)
+    allowed = categories if categories is not None else KNOWLEDGE_CATEGORIES
     if PLACEHOLDER_RE.search(_strip_code(raw)):
         res.fail("卡片仍含未替换的模板占位符")
     fm = re.match(r"^---\s*\n(.*?)\n---\s*\n", raw, re.S)
@@ -305,8 +310,8 @@ def check_knowledge_card(raw: str, title: str, category: str, repo_root: Path,
     for key in ("kind", "name", "category"):
         if not meta.get(key):
             res.fail(f"front matter 缺少 {key}")
-    if meta.get("category") and meta.get("category") not in KNOWLEDGE_CATEGORIES:
-        res.fail(f"category 非法 `{meta.get('category')}`")
+    if meta.get("category") and meta.get("category") not in allowed:
+        res.fail(f"category 非法 `{meta.get('category')}`（须取自类别清单）")
     if not isinstance(meta.get("source_files"), list) or not meta.get("source_files"):
         res.fail("front matter 缺少 source_files 列表")
     for p in meta.get("source_files") or []:

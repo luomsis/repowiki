@@ -12,6 +12,7 @@ import sys
 from . import __version__
 from .dispatch import run_check, run_next, run_release, run_status, run_touch, run_watch
 from .errors import ConflictError, StateError, UsageError  # noqa: F401 (re-exported)
+from .coverage import run_coverage
 from .knowledge import run_knowledge
 from .metadata import run_finalize
 from .output import emit_error
@@ -101,27 +102,39 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("update", help="map git changes to page_update tasks (incremental regeneration)")
     p.add_argument("repo")
     p.add_argument("--since", default=None, help="commit sha to diff from (default: last_commit_id in metadata)")
+    p.add_argument("--dirty", action="store_true",
+                   help="also see uncommitted (staged+unstaged) and untracked changes, not just commits")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=lambda a, paths: run_update(paths, since=a.since, as_json=a.json))
+    p.set_defaults(func=lambda a, paths: run_update(paths, since=a.since, as_json=a.json, dirty=a.dirty))
 
     p = sub.add_parser("stale", help="read-only: report which pages `update` would affect for since..HEAD (CI staleness gate)")
     p.add_argument("repo")
     p.add_argument("--since", default=None, help="git ref to diff from (default: last_commit_id in metadata)")
+    p.add_argument("--dirty", action="store_true",
+                   help="also see uncommitted (staged+unstaged) and untracked changes, not just commits")
     p.add_argument("--fail-if-stale", dest="fail_if_stale", action="store_true",
                    help="exit 1 when any page/card/module is affected (for CI gates)")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_stale(
-        paths, since=a.since, fail_if_stale=a.fail_if_stale, as_json=a.json))
+        paths, since=a.since, fail_if_stale=a.fail_if_stale, as_json=a.json, dirty=a.dirty))
 
     p = sub.add_parser("knowledge", help="append the knowledge-card task set (planning + cards)")
     p.add_argument("repo")
+    p.add_argument("--categories", default=None, metavar="FILE",
+                   help="YAML/JSON file with a custom mechanism-card category list "
+                        "(replaces the built-in six; persisted in state/knowledge_categories.json)")
     p.add_argument("--json", action="store_true")
-    p.set_defaults(func=lambda a, paths: run_knowledge(paths, as_json=a.json))
+    p.set_defaults(func=lambda a, paths: run_knowledge(paths, as_json=a.json, categories=a.categories))
 
     p = sub.add_parser("status", help="show task statistics, failures and stale claims")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_status(paths, as_json=a.json))
+
+    p = sub.add_parser("coverage", help="read-only: which repo files has the wiki never cited (coverage report)")
+    p.add_argument("repo")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=lambda a, paths: run_coverage(paths, as_json=a.json))
 
     p = sub.add_parser("clean", help="remove .repowiki/state entirely (wiki output is kept)")
     p.add_argument("repo")

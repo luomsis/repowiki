@@ -40,7 +40,7 @@ output: state/catalog.json
       "dependent_files": ["<仓库相对路径>"],
       "page_brief": "<该索引页应涵盖的要点（中文 bullet 式描述，2-5 条）>",
       "children": [
-        { "id": "c0101", "title": "...", "slug": "...", "summary": "...", "kind": "page", "dependent_files": ["..."], "page_brief": "..." }
+        { "id": "c0101", "title": "...", "slug": "...", "summary": "...", "kind": "page", "archetype": "module", "dependent_files": ["..."], "page_brief": "..." }
       ]
     }
   ]
@@ -55,6 +55,7 @@ output: state/catalog.json
 5. `page_brief` 用中文写明该页要覆盖的内容要点——它会成为页面撰写任务的提示词，务必具体（覆盖哪些模块/类/流程/配置）。
 6. 覆盖面要求（参照同类型项目的 wiki 结构）：项目概述、快速开始、核心概念、主要功能/SDK 使用、配置、部署运维、API 参考、示例/贡献指南等——按本仓库实际情况裁剪，不生搬硬套。
 7. `slug` 为小写英文与连字符（如 `project-overview`、`quick-start`）。
+8. （可选）页面节点可设 `archetype` 选择页面模板：以流程/机制为主题的页面（如「一次请求的生命周期」「构建发布流水线」「事件处理循环」）设 `"archetype": "flow"`（流程型：流程总览/关键步骤/参与组件/数据与状态变化）；其余结构型主题默认 `"archetype": "module"`（项目结构/核心组件/架构总览/依赖分析）。字段可省略（等价 module）；每个 flow 页应在 page_brief 中写明流程的起点与终点。
 
 ## 质量自检（写文件前自查）
 - [ ] JSON 可被解析（建议写完后重新读一遍确认）

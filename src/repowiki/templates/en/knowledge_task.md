@@ -40,7 +40,7 @@ Write every human-readable field (`title`) in **English**, keeping technical pro
     {
       "id": "k01",
       "title": "<card title, e.g.: Configuration system — layered YAML + pydantic-settings loading>",
-      "category": "configuration_system",
+      "category": "<one id from the category list above>",
       "scope": ["**"],
       "source_files": ["<repo-relative path>", "..."]
     }
@@ -50,7 +50,9 @@ Write every human-readable field (`title`) in **English**, keeping technical pro
 
 ## Planning rules
 1. Modules = clearly bounded subsystems/sub-packages of the repository (2~8 is a good range, 1~2 levels). The root module covers the whole repository; sub-modules divide by scope path. Root ids m01…, sub-ids m0101…; a sub-module appears both in its parent's `children` and in the top-level `modules` list.
-2. Mechanism cards capture cross-cutting mechanisms; `category` is one of six: `configuration_system` / `logging_system` / `error_handling` / `build_system` / `dependency_management` / `frontend_style`. Only create cards for mechanisms that really exist and are worth documenting (0~2 per category; prefer fewer, better ones).
+2. Mechanism cards capture cross-cutting mechanisms; `category` must come from the list below ({{CATEGORY_COUNT}} categories). Only create cards for mechanisms that really exist and are worth documenting (0~2 per category; prefer fewer, better ones):
+
+{{CATEGORY_BLOCK}}
 3. Card titles are self-contained (mechanism + key technology) and globally unique; `source_files` are the core files implementing the mechanism (2~8, must really exist).
 4. Cards and modules are independent: cards describe "mechanisms", modules describe "structure".
 
@@ -58,6 +60,6 @@ Write every human-readable field (`title`) in **English**, keeping technical pro
 - [ ] JSON parses; module/card ids and titles unique
 - [ ] every id referenced by children/depends_on/related_to exists
 - [ ] scope and source_files paths really exist
-- [ ] category uses only the six enum values
+- [ ] category uses only the enum values from the list above
 
 When done run: `repowiki check <repo path> --task knowledge-plan`
