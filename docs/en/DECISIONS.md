@@ -83,3 +83,14 @@
     blocks and inline code first (leftovers in prose still fail). "Showing a
     placeholder literal inside code" is legitimate content; "leaving a placeholder in
     prose" is the defect.
+15. **Competitive research on record & P0 direction adopted** (2026-09-07; full study in
+    [research/competitive-analysis.md](research/competitive-analysis.md)): after comparing
+    DeepWiki / DeepWiki-Open / CodeWiki / GitDiagram / Swimm / Repomix, the gap is judged to be
+    distribution friction and ecosystem interfaces rather than generation quality. Four P0 items
+    adopted: `site` exports `llms.txt` / `llms-full.txt` (satisfying "let other agents consume the
+    wiki" with static files, without crossing the MCP non-goal); pyproject metadata completed for a
+    future PyPI publish (the upload itself needs a maintainer account and happens separately); a
+    read-only `stale` subcommand + GitHub Action (PR wiki-staleness gate + Pages publishing —
+    targeting Swimm's "docs that don't go stale" pitch, fully deterministic, no agent in CI, writes
+    no state). P1 (page archetypes, configurable knowledge-card categories, coverage report) is
+    queued for the next version; P2 (Q&A layer, MCP, large-monorepo evidence) awaits a decision.

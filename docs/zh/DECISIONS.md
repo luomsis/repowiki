@@ -52,3 +52,11 @@
     修复分两层：catalog 校验拒绝 title 含占位符形态（源头——title 会写进页面 H1 与输出路径）；
     产物校验的占位符扫描改为剔除 fenced 代码块与行内代码后进行（散文残留仍失败）。
     「在代码里展示占位符字面量」是合法内容，「在散文里残留占位符」才是缺陷。
+15. **竞品调研落盘与 P0 方向采纳**（2026-09-07，调研全文见
+    [research/competitive-analysis.md](research/competitive-analysis.md)）：对比 DeepWiki /
+    DeepWiki-Open / CodeWiki / GitDiagram / Swimm / Repomix 后认定差距在分发摩擦与生态接口而非生成
+    质量，采纳 P0 四项：`site` 导出 `llms.txt` / `llms-full.txt`（以静态文件满足「其他 agent 消费
+    wiki」需求，不破 MCP 非目标）；pyproject 元数据补全以备 PyPI 发布（发布动作需维护者账号，另行
+    执行）；只读 `stale` 子命令 + GitHub Action（PR wiki 过期门禁 + Pages 发布——对标 Swimm 的
+    「文档不过期」卖点，完全确定性、CI 内不跑 agent、不写 state）。P1（页面原型多样化、知识卡片
+    类别可配置、coverage 报告）列为下版本候选；P2（问答层、MCP、大仓库实证）待拍板。
