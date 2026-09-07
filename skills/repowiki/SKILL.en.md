@@ -37,7 +37,7 @@ repowiki next <repo> --claim --json   # 2. claim one task (read the returned ins
 repowiki check <repo> --task <id>     # 4. validate; on failure fix per errors and re-check
 #    5. back to step 2, until next returns empty with busy=0
 repowiki finalize <repo>      # 6. first run creates the overview task → execute it → finalize again to produce metadata.json
-repowiki site <repo>          # 7. build the single-file offline site .repowiki/<locale>/wiki.html (--open opens the browser)
+repowiki site <repo>          # 7. build the single-file offline site .repowiki/<locale>/wiki.html (--open opens the browser); also exports llms.txt / llms-full.txt for agent/IDE consumption by index
 #    (finalize auto-cleans state/claims and state/tasks on success; catalog/index are kept for update)
 #    if you don't need incremental updates, `repowiki clean <repo>` deletes all task state
 ```
@@ -48,7 +48,9 @@ After an incremental update or any post-finalize page rewrites, re-run
 Task types: `catalog` (section-tree planning, produces state/catalog.json) → `page`
 (one page each) → `overview`; optional: `repowiki knowledge <repo>` (knowledge cards),
 `repowiki update <repo>` (git-diff-based incremental update; rewrites affected pages
-with an "Update Summary" section).
+with an "Update Summary" section), `repowiki stale <repo> [--fail-if-stale]` (read-only
+staleness report: which pages/cards/modules would go stale; creates no tasks — built
+for CI gates).
 The output language is decided at plan time (auto-detection weighted by the README, or
 `--locale zh|en`), persisted in `state/locale`; the spec's template matches that
 language.

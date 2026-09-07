@@ -33,7 +33,7 @@ repowiki next <repo> --claim --json   # 2. 领取一个任务（读返回的 ins
 repowiki check <repo> --task <id>     # 4. 校验；失败则按 errors 修复后重新 check
 #    5. 回到第 2 步，直到 next 返回空且 busy=0
 repowiki finalize <repo>      # 6. 首次会创建 overview 任务→执行→再 finalize 生成 metadata.json
-repowiki site <repo>          # 7. 生成单文件离线查看站点 .repowiki/<locale>/wiki.html（--open 自动打开浏览器）
+repowiki site <repo>          # 7. 生成单文件离线查看站点 .repowiki/<locale>/wiki.html（--open 自动打开浏览器），同时导出 llms.txt / llms-full.txt 供 agent/IDE 按索引消费
 #    （finalize 成功后自动清理 state/claims 与 state/tasks；catalog/index 保留供 update）
 #    不需要增量更新时可执行 `repowiki clean <repo>` 删除全部任务状态
 ```
@@ -41,7 +41,7 @@ repowiki site <repo>          # 7. 生成单文件离线查看站点 .repowiki/<
 增量更新或 finalize 后重跑了页面，都可随时重跑 `repowiki site <repo>` 重建站点（幂等）。
 
 任务类型：`catalog`（目录树规划，产出 state/catalog.json）→ `page`（逐页撰写）→ `overview`（总览）；
-可选：`repowiki knowledge <repo>`（知识卡片）、`repowiki update <repo>`（基于 git diff 的增量更新，重写受影响页并附「更新摘要/Update Summary」小节）。
+可选：`repowiki knowledge <repo>`（知识卡片）、`repowiki update <repo>`（基于 git diff 的增量更新，重写受影响页并附「更新摘要/Update Summary」小节）、`repowiki stale <repo> [--fail-if-stale]`（只读过期报告：哪些页面/卡片/模块会过期，不创建任务——CI 门禁用）。
 产出语言由 plan 时确定（README 权重最高的自动检测，或 `--locale zh|en`），持久化于 `state/locale`，规格中的模板即对应语言。
 
 ## 并发流程（推荐，subagent 加速）

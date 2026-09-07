@@ -2,6 +2,34 @@
 
 **中文** | [English](CHANGELOG.en.md)
 
+## Unreleased
+
+### 新增
+
+- **`llms.txt` / `llms-full.txt` 导出**：`repowiki site` 在生成 `wiki.html` 的同时，按章节导出
+  全部页面的链接索引 `llms.txt` 与全文合并版 `llms-full.txt`（遵循 [llmstxt.org](https://llmstxt.org/)
+  约定）——任何 agent / IDE 可直接按索引消费 wiki，无需 MCP。
+- **只读 `stale` 子命令**：`repowiki stale <repo> [--since <ref>] [--fail-if-stale]`——复用
+  `update` 的 diff→受影响页面映射（含祖先链与知识库联动），报告哪些页面/卡片/模块会过期；
+  不创建任务、不写 state；`--fail-if-stale` 命中即 exit 1，供 CI 门禁。
+- **官方 GitHub Action（`wiki.yml`）**：PR 上自动跑 stale 门禁并在过期时评论受影响页面、拦截合并
+  （确定性检查，CI 内不跑 agent）；push main 自动 `site` 重建并发布 GitHub Pages。
+  采用 wiki-as-code 模式：仓库跟踪 `.repowiki/` 的内容/元数据/知识库/llms 索引，
+  `state/claims`、`state/tasks` 与可重建的 `wiki.html` 忽略。
+
+### 变更
+
+- pyproject 补全 PyPI 发布元数据（readme / urls / keywords / classifiers），
+  `pip install repowiki` 待首次上传后可用。
+
+### 文档
+
+- 新增竞品调研报告（`docs/{zh,en}/research/competitive-analysis.md`：DeepWiki /
+  DeepWiki-Open / CodeWiki / GitDiagram / Swimm / Repomix 对标与 P0-P2 改进分级）；
+  决策记录追加第 15 条（调研结论与 P0 采纳）。
+- README 双语：新增「CI 集成」一节、`stale` 命令行、GitHub Pages 在线样例链接、
+  agent 消费接口特性项。
+
 ## 0.4.0 — 2026-09-07
 
 ### 新增

@@ -42,8 +42,9 @@ repowiki 走第三条路：**读代码、写 wiki 的智能留给任意 agent，
 - **确定性构建**：plan / claim / check / 自动修复全是确定性代码，不绑定任何 agent CLI，无需 API Key、零网络调用；
 - **并发安全**：原子任务认领 + 心跳续期 + 过期自动回收，多个 agent / 进程 / 人可同时参与同一个仓库；
 - **断点续跑**：每任务状态落盘，随时中断随时继续，崩溃不留孤儿认领；
-- **增量更新**：`update` 基于 git diff 只重写受影响页面（含祖先链）；
+- **增量更新**：`update` 基于 git diff 只重写受影响页面（含祖先链）；只读 `stale` 命令输出同一映射，供 CI 做「wiki 过期」门禁；
 - **单文件离线站点**：`site` 产出约 4-5 MB 自包含 HTML——导航、搜索、mermaid、源码弹层，双击即看；
+- **agent 消费接口**：`site` 同时导出 `llms.txt` / `llms-full.txt`（[llmstxt.org](https://llmstxt.org/) 约定），任何 agent / IDE 按索引直接读 wiki，无需 MCP；
 - **双语产出**：zh / en 自动跟随目标仓库语言，表驱动设计可扩展；
 - **跨平台**：macOS / Linux / Windows 原生支持（无需 WSL），CI 三平台 × Python 3.10-3.13 矩阵回归；
 - **强校验**：锚点 / 行号 / H1 / 路径分隔符程序化自动修复，只有语义缺陷才判失败。
@@ -53,7 +54,7 @@ repowiki 走第三条路：**读代码、写 wiki 的智能留给任意 agent，
 - [为什么是 repowiki](#为什么是-repowiki) · [特性](#特性features)
 - [安装](#安装) · [快速开始](#快速开始)
 - [用法](#用法usage)（Worker 循环契约 / 并发配方）· [命令一览](#命令一览)
-- [查看 Wiki：单文件离线站点](#查看-wiki单文件离线站点)
+- [查看 Wiki：单文件离线站点](#查看-wiki单文件离线站点) · [CI 集成](#ci-集成wiki-门禁--pages-发布)
 - [可靠性设计](#可靠性设计) · [设计取舍](#设计取舍) · [已知边界](#已知边界) · [Non-Goals](#non-goals)
 - [Roadmap](#roadmap) · [贡献](#贡献contributing) · [社区](#社区) · [文档](#文档) · [License](#license)
 
@@ -127,12 +128,16 @@ myrepo/.repowiki/
 │   │   ├── 快速开始.md      # 顶级独立页
 │   │   └── 项目概述/项目概述.md, 核心概念.md, ...
 │   ├── meta/repowiki-metadata.json   # catalogs/items/source_files/snippets/relations
-│   └── wiki.html           # 单文件离线查看站点（repowiki site 生成，双击即开）
+│   ├── wiki.html           # 单文件离线查看站点（repowiki site 生成，双击即开）
+│   └── llms.txt / llms-full.txt      # agent 消费索引：章节链接目录 + 全文合并（site 同时导出）
 ├── knowledge/zh/           # 知识卡片：_index.yaml + 模块文档 + 机制卡片
 └── state/                  # 任务清单/规格/认领/locale（内部状态，可随时删除重规划）
 ```
 
 ## 查看 Wiki（单文件离线站点）
+
+**在线样例**：repowiki 为自己生成的 wiki 已发布到 GitHub Pages——
+[直接打开看效果](https://luomsis.github.io/repowiki/zh/wiki.html)（由下方 `wiki.yml` 工作流在每次 push main 后自动重建）。
 
 ![阅读视图：章节导航 + mermaid 渲染 + 源码引用](docs/assets/site-preview-reading.png)
 
@@ -213,13 +218,28 @@ done
 | `check --task ID \| --all` | 校验产出；锚点/行号/H1 自动修复；catalog/knowledge-plan 通过后自动展开后续任务；done 为终态（只读报告）；他人认领的任务需 --force |
 | `release --task ID [--force]` | 释放认领（崩溃恢复） |
 | `finalize` | 组装 metadata.json；要求全部任务 done |
-| `site [--open]` | 把完成的 wiki 渲染成单文件离线 HTML（`<locale>/wiki.html`：导航+搜索+mermaid+源码弹层，知识模块文档与卡片纳入「知识库」章）；要求先 finalize；`--open` 生成后用默认浏览器打开 |
+| `site [--open]` | 把完成的 wiki 渲染成单文件离线 HTML（`<locale>/wiki.html`：导航+搜索+mermaid+源码弹层，知识模块文档与卡片纳入「知识库」章），同时导出 `llms.txt` / `llms-full.txt` agent 索引；要求先 finalize；`--open` 生成后用默认浏览器打开 |
 | `update [--since <sha>]` | git diff → 受影响页面（含祖先链）→ 增量重写任务（附「更新摘要」）；同时联动知识库：`source_files` 命中变更的卡片与 scope 命中的模块各建刷新任务；仅识别**已提交**变更（since..HEAD），工作区未提交改动不可见 |
+| `stale [--since <ref>] [--fail-if-stale]` | 只读过期报告：复用 `update` 的 diff→受影响页面映射，报告哪些页面/卡片/模块会过期——不创建任务、不写 state；`--fail-if-stale` 供 CI 门禁（命中则 exit 1） |
 | `knowledge` | 追加知识卡片任务集（六类机制卡片 + 模块文档）；finalize 时聚合导出 `_index.yaml` / `_module.yaml` |
 | `status` | 进度 / 失败列表 / 过期认领 |
 | `clean` | 删除整个 `state/`（wiki 产出保留；失去 update/续跑/幂等 plan） |
 
 退出码：`0` 成功，`1` 校验失败或用法错误，`2` 状态冲突（任务被他人认领），`3` 进展性等待（finalize 已创建 overview 任务，完成后再次运行即可）。
+
+## CI 集成（wiki 门禁 + Pages 发布）
+
+[.github/workflows/wiki.yml](.github/workflows/wiki.yml) 提供两个独立 job（wiki-as-code 模式：
+仓库跟踪 `.repowiki/` 的内容、元数据与知识库；`state/claims`、`state/tasks` 与可重建的
+`wiki.html` 可忽略）：
+
+- **PR wiki 过期门禁**：`repowiki stale . --since origin/main --fail-if-stale` —— 代码改了、
+  wiki 过期则自动评论受影响页面并拦截合并（确定性检查，CI 内不跑任何 agent）；
+- **GitHub Pages 发布**：push main 后自动 `repowiki site .` 重建并发布，README 挂的在线样例
+  即由此产出。
+
+在你的仓库启用：拷贝该 workflow 文件，提交 `.repowiki/`（finalize 之后），并在仓库设置里把
+Pages 来源设为 GitHub Actions。
 
 ## 可靠性设计
 
@@ -236,7 +256,7 @@ done
 - **自动瘦身**：finalize 成功后自动清除运行时产物（`state/claims/`、`state/tasks/`），
   保留 `index.json`/`catalog.json`/`knowledge.json` 供增量更新与幂等重跑；
   不需要增量更新可执行 `repowiki clean <repo>` 删除全部状态（wiki 产出不受影响）。
-- **测试**：140 个单测覆盖竞态、孤儿认领自动回收、校验规则正反例、增量映射、知识聚合、双语产出（zh/en）、单文件站点生成、损坏状态文件与非法输入的友好报错（`pytest`；CI 矩阵覆盖 ubuntu/macos/windows × Python 3.10-3.13）。
+- **测试**：167 个单测覆盖竞态、孤儿认领自动回收、校验规则正反例、增量映射、过期门禁、知识聚合、双语产出（zh/en）、单文件站点与 llms 索引生成、损坏状态文件与非法输入的友好报错（`pytest`；CI 矩阵覆盖 ubuntu/macos/windows × Python 3.10-3.13）。
 
 ## 设计取舍
 
@@ -254,12 +274,12 @@ done
 
 ## Non-Goals
 
-LLM API 后端 · 内置 agent CLI 检测/执行器 · MCP 封装 · 常驻预览服务器（`site` 产物是纯静态单文件，双击即看，无需起服务） · zh/en 之外的产出语言。
+LLM API 后端 · 内置 agent CLI 检测/执行器 · MCP 封装（agent 读取 wiki 的需求由 `llms.txt` 静态导出满足） · 常驻预览服务器（`site` 产物是纯静态单文件，双击即看，无需起服务） · zh/en 之外的产出语言。
 
 ## Roadmap
 
 - [ ] `overview` 总览页纳入增量更新（当前结构性重构后需 `plan --replan` 全量重建）
-- [ ] 发布到 PyPI，`pip install repowiki` 直装（当前从 git 地址安装）
+- [ ] 发布到 PyPI：打包与元数据已就绪（`pip wheel` 可用、readme/urls/classifiers 齐全），待配置 PyPI 账号 / Trusted Publisher 后首次上传
 - [ ] 更多产出语言：表驱动设计，新增一门语言 = 一张字符串表 + 一套模板（欢迎 PR）
 - [ ] CLI 交互消息中英双语（当前为中文，面向驱动它的 agent）
 
@@ -287,7 +307,7 @@ pytest
 
 - [版本日志](CHANGELOG.md)（[English](CHANGELOG.en.md)，位于仓库根部）
 - [领域词汇表](docs/zh/CONTEXT.md)（产出物 / 编排 / 执行三组术语与 Avoid 对照）
-- [决策记录](docs/zh/DECISIONS.md)（规格空白处的 14 条最小合理决策）
+- [决策记录](docs/zh/DECISIONS.md)（规格空白处的 15 条最小合理决策）
 - 架构决策记录（ADR）：[Windows 原生支持的双锁后端](docs/zh/adr/0001-windows-native-support.md) ·
   [单文件离线站点](docs/zh/adr/0002-single-file-offline-site.md)
 - Agent Skill 指引：[中文](skills/repowiki/SKILL.md) · [English](skills/repowiki/SKILL.en.md)

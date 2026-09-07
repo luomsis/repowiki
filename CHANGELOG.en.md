@@ -2,6 +2,38 @@
 
 [中文](CHANGELOG.md) | **English**
 
+## Unreleased
+
+### Added
+
+- **`llms.txt` / `llms-full.txt` export**: `repowiki site` now writes, alongside
+  `wiki.html`, a chapter-organized link index (`llms.txt`) and a concatenated full-text
+  companion (`llms-full.txt`), following the [llmstxt.org](https://llmstxt.org/)
+  convention — any agent / IDE can consume the wiki by index, no MCP required.
+- **Read-only `stale` subcommand**: `repowiki stale <repo> [--since <ref>] [--fail-if-stale]`
+  — reuses `update`'s diff→affected-pages mapping (ancestor chains + knowledge linkage)
+  to report which pages/cards/modules would go stale; creates no tasks, writes no state;
+  `--fail-if-stale` exits 1 for CI gates.
+- **Official GitHub Action (`wiki.yml`)**: on PRs, runs the stale gate automatically —
+  comments the affected pages and blocks the merge when stale (deterministic check, no
+  agent in CI); on push to main, rebuilds with `site` and publishes to GitHub Pages.
+  Wiki-as-code mode: the repo tracks `.repowiki/` content/metadata/knowledge/llms
+  indexes; `state/claims`, `state/tasks` and the rebuildable `wiki.html` are ignored.
+
+### Changed
+
+- pyproject now carries complete PyPI publishing metadata (readme / urls / keywords /
+  classifiers); `pip install repowiki` becomes available after the first upload.
+
+### Documentation
+
+- Added a competitive-analysis report
+  (`docs/{zh,en}/research/competitive-analysis.md`: DeepWiki / DeepWiki-Open / CodeWiki /
+  GitDiagram / Swimm / Repomix, with P0-P2 ranked improvements); DECISIONS gains #15
+  (research conclusions and the adopted P0 direction).
+- Both READMEs: new "CI Integration" section, `stale` command row, GitHub Pages live
+  sample link, and the agent-consumption feature bullet.
+
 ## 0.4.0 — 2026-09-07
 
 ### Added
