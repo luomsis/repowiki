@@ -106,7 +106,7 @@ funnel bottleneck today.
 4. **Live sample**: publish this repo's self-generated wiki to GitHub Pages and link it from the
    README (screenshots exist; what's missing is a "click and see" artifact).
 
-### P1 — content depth & quality metrics (proposed next version)
+### P1 — content depth & quality metrics (implemented; trade-offs in DECISIONS #16; bilingual CLI messages remain on the roadmap)
 
 5. **Page archetypes**: the identical 9-section template fits large repos poorly; split into
    overview / module / flow archetypes with per-archetype validator rules; consider

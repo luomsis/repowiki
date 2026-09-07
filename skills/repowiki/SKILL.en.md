@@ -45,12 +45,16 @@ repowiki site <repo>          # 7. build the single-file offline site .repowiki/
 After an incremental update or any post-finalize page rewrites, re-run
 `repowiki site <repo>` anytime to rebuild the site (idempotent).
 
-Task types: `catalog` (section-tree planning, produces state/catalog.json) → `page`
-(one page each) → `overview`; optional: `repowiki knowledge <repo>` (knowledge cards),
-`repowiki update <repo>` (git-diff-based incremental update; rewrites affected pages
-with an "Update Summary" section), `repowiki stale <repo> [--fail-if-stale]` (read-only
-staleness report: which pages/cards/modules would go stale; creates no tasks — built
-for CI gates).
+Task types: `catalog` (section-tree planning, produces state/catalog.json; process- or
+mechanism-themed pages may set the optional `"archetype": "flow"` field to use the flow
+template — default `module` is structural) → `page` (one page each) → `overview`;
+optional: `repowiki knowledge <repo> [--categories <file>]` (knowledge cards; the
+category list can be replaced wholesale), `repowiki update <repo> [--dirty]`
+(git-diff-based incremental update; rewrites affected pages and the overview with an
+"Update Summary" section; `--dirty` includes uncommitted/untracked changes),
+`repowiki stale <repo> [--fail-if-stale]` (read-only staleness report: which
+pages/cards/modules would go stale; creates no tasks — built for CI gates),
+`repowiki coverage <repo>` (read-only coverage report: repo files the wiki never cites).
 The output language is decided at plan time (auto-detection weighted by the README, or
 `--locale zh|en`), persisted in `state/locale`; the spec's template matches that
 language.

@@ -50,8 +50,9 @@ reliability.**
 - **Deterministic build**: plan / claim / check / auto-repair are all deterministic code — bound to no agent CLI, no API keys, no network calls;
 - **Concurrency-safe**: atomic task claiming + heartbeat renewal + automatic stale-claim reclamation — multiple agents / processes / humans can work on the same repo at once;
 - **Resumable**: per-task state is persisted to disk; interrupt anytime and pick up where you left off, with no orphaned claims after a crash;
-- **Incremental updates**: `update` uses git diff to rewrite only affected pages (including ancestor chains); the read-only `stale` command reports the same mapping for CI "wiki staleness" gates;
+- **Incremental updates**: `update` uses git diff to rewrite only affected pages (including ancestor chains) plus the overview; `--dirty` includes uncommitted/untracked changes; the read-only `stale` command reports the same mapping for CI "wiki staleness" gates; the `coverage` report deterministically lists files the wiki never cites;
 - **Single-file offline site**: `site` produces a self-contained ~4-5 MB HTML file — navigation, search, mermaid diagrams, source-code popups — just double-click;
+- **Page archetypes**: the catalog can pick `module` (structural, default) or `flow` (process) templates per page theme, with per-archetype validator rules; knowledge-card categories can replace the built-in six wholesale via `--categories`;
 - **Agent-consumption interface**: `site` also exports `llms.txt` / `llms-full.txt` (the [llmstxt.org](https://llmstxt.org/) convention) so any agent / IDE can read the wiki by index, no MCP required;
 - **Bilingual output**: zh / en, auto-detected from the target repo; table-driven design makes new languages cheap;
 - **Cross-platform**: native macOS / Linux / Windows support (no WSL needed); CI regression on a 3-platform × Python 3.10-3.13 matrix;
@@ -214,9 +215,10 @@ done
 | `release --task ID [--force]` | Release a claim (crash recovery) |
 | `finalize` | Assemble metadata.json; requires all tasks done |
 | `site [--open]` | Render the finished wiki into a single-file offline HTML (`<locale>/wiki.html`: nav + search + mermaid + source popups; knowledge module docs and cards appear under a "Knowledge Base" chapter), plus `llms.txt` / `llms-full.txt` agent indexes; requires finalize first; `--open` opens it in the default browser |
-| `update [--since <sha>]` | git diff → affected pages (incl. ancestor chains) → incremental rewrite tasks (with change summaries); also refreshes knowledge: cards whose `source_files` changed and modules whose scope was touched each get a refresh task; recognizes only **committed** changes (since..HEAD); uncommitted working-tree changes are invisible |
-| `stale [--since <ref>] [--fail-if-stale]` | Read-only staleness report: reuses `update`'s diff→affected-pages mapping to report which pages/cards/modules would go stale — creates no tasks, writes no state; `--fail-if-stale` exits 1 for CI gates |
-| `knowledge` | Append the knowledge-card task set (six mechanism-card types + module docs); finalize aggregates them into `_index.yaml` / `_module.yaml` |
+| `update [--since <sha>] [--dirty]` | git diff → affected pages (incl. ancestor chains) and the overview → incremental rewrite tasks (with change summaries); also refreshes knowledge: cards whose `source_files` changed and modules whose scope was touched each get a refresh task; by default only **committed** changes count (since..HEAD); `--dirty` adds uncommitted working-tree and untracked changes |
+| `stale [--since <ref>] [--dirty] [--fail-if-stale]` | Read-only staleness report: reuses `update`'s diff→affected-pages mapping to report which pages/cards/modules would go stale — creates no tasks, writes no state; `--fail-if-stale` exits 1 for CI gates |
+| `coverage` | Read-only coverage report: repository files never cited by any wiki page/overview/knowledge card, plus per-page citation density (deterministic; JSON carries the full lists) |
+| `knowledge [--categories <file>]` | Append the knowledge-card task set (mechanism cards + module docs); `--categories` replaces the built-in six with a YAML/JSON list (persisted in state); finalize aggregates them into `_index.yaml` / `_module.yaml` |
 | `status` | Progress / failure list / expired claims |
 | `clean` | Delete the entire `state/` (wiki outputs are kept; loses update/resume/idempotent plan) |
 
@@ -265,13 +267,16 @@ file** (`<repo>/.repowiki/<locale>/wiki.html`, roughly 4-5 MB):
 - works even after `repowiki clean` (section order degrades to directory order;
   content is unaffected).
 
-Page template (enforced by the validator per language): H1 → `<cite>` citation block →
-TOC → intro → project structure (mermaid graph TB) → core components → architecture
-overview (sequenceDiagram) → detailed component analysis → dependency analysis
-(graph LR) → performance & consistency considerations → troubleshooting guide →
-conclusion; each section ends with "Section sources", each diagram with "Diagram
-sources", in the format `[path:Lx-Ly](file://path#Lx-Ly)`; zero cross-page links
-(which is exactly why all page tasks can run fully in parallel).
+Page templates (enforced by the validator per language) come in two archetypes:
+**module (default, structural)**: H1 → `<cite>` citation block → TOC → intro → project
+structure (mermaid graph TB) → core components → architecture overview (sequenceDiagram) →
+detailed component analysis → dependency analysis (graph LR) → performance & consistency
+considerations → troubleshooting guide → conclusion; **flow (process)**: introduction →
+flow overview (sequenceDiagram) → key steps → involved components → data and state
+changes (graph LR) → troubleshooting guide → conclusion. Pick per page via the optional
+`archetype` field on catalog nodes; each section ends with "Section sources", each
+diagram with "Diagram sources", in the format `[path:Lx-Ly](file://path#Lx-Ly)`; zero
+cross-page links (which is exactly why all page tasks can run fully in parallel).
 
 ## Reliability
 
@@ -297,8 +302,9 @@ sources", in the format `[path:Lx-Ly](file://path#Lx-Ly)`; zero cross-page links
   `knowledge.json` are kept for incremental updates and idempotent reruns; run
   `repowiki clean <repo>` to delete all state if you don't need incremental updates
   (wiki outputs are unaffected).
-- **Testing**: 167 unit tests covering races, orphaned-claim reclamation, validation
-  rule positives/negatives, incremental mapping, staleness gates, knowledge
+- **Testing**: 187 unit tests covering races, orphaned-claim reclamation, validation
+  rule positives/negatives (including the flow archetype), incremental mapping,
+  staleness gates, coverage accounting, custom knowledge categories, knowledge
   aggregation, bilingual output (zh/en), single-file site and llms index generation,
   and friendly errors for corrupted state files and illegal input (`pytest`; the CI
   matrix covers ubuntu/macos/windows × Python 3.10-3.13).
@@ -317,8 +323,6 @@ sources", in the format `[path:Lx-Ly](file://path#Lx-Ly)`; zero cross-page links
 
 ## Known Limitations
 
-- The `overview` page doesn't participate in incremental updates: after a structural
-  refactor, prefer a full `plan --replan` regeneration.
 - Each task spec embeds the full template and style guide (about 4-6k tokens) — the
   price of self-contained, parallel-safe tasks; small-context agents can replace the
   template section in the spec with a reference to the `templates/` directory.
@@ -335,7 +339,6 @@ view, no service needed) · output languages beyond zh/en.
 
 ## Roadmap
 
-- [ ] Include the `overview` page in incremental updates (currently a structural refactor needs a full `plan --replan`)
 - [ ] Publish to PyPI: packaging and metadata are ready (`pip wheel` works; readme/urls/classifiers complete) — first upload awaits a PyPI account / Trusted Publisher setup
 - [ ] More output languages: table-driven design — one language = one string table + one template set (PRs welcome)
 - [ ] Bilingual CLI interaction messages (currently Chinese, aimed at the driving agent)

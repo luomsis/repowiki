@@ -90,7 +90,7 @@ git-URL 安装 + 手动驱动循环是最大的漏斗瓶颈。
 4. **在线样例**：把本仓库自产的 wiki 发布到 GitHub Pages 并在 README 挂链接
    （截图已有，缺一个「点开就看」的活样例）。
 
-### P1 — 内容深度与质量度量（建议下一版本）
+### P1 — 内容深度与质量度量（已实现，实现取舍见 DECISIONS #16；其中 CLI 双语仍留 roadmap）
 
 5. **页面原型多样化**：每页同构的 9 段模板在大仓库不合适，拆 overview / module / flow 三种
    archetype，validator 按 archetype 分规则；借鉴 CodeWiki 按受众/文档类型选模板。

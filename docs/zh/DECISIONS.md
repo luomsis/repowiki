@@ -60,3 +60,21 @@
     执行）；只读 `stale` 子命令 + GitHub Action（PR wiki 过期门禁 + Pages 发布——对标 Swimm 的
     「文档不过期」卖点，完全确定性、CI 内不跑 agent、不写 state）。P1（页面原型多样化、知识卡片
     类别可配置、coverage 报告）列为下版本候选；P2（问答层、MCP、大仓库实证）待拍板。
+16. **P1 内容深度四项的实现取舍**（2026-09-08）：
+    ① **页面原型**由 catalog 节点的可选 `archetype` 字段声明（`module` 默认 / `flow` 流程型），
+    规划任务规格在规则 8 中引导规划者仅为流程/机制主题页选 flow；`check` 不在任务记录里存
+    archetype，而是按任务 id 反查 catalog——单一事实来源，重规划后旧任务也不会校验错模板。
+    flow 必备小节七段（简介/流程总览/关键步骤/参与组件/数据与状态变化/故障/结论），仍满足
+    MIN_SECTIONS=6 与双 mermaid 门槛，校验器其余规则（cite/锚点/行号/占位符）原型无关。
+    ② **`--dirty` 语义**：`git diff <since>`（工作区，含已暂存+未暂存）+ `ls-files --others
+    --exclude-standard`（未跟踪）——「改完没提交也想让 wiki 跟上」是本地迭代的真实需求；
+    CI 门禁仍用默认的 committed-only 视图保证可复现。
+    ③ **overview 纳入增量更新**：只要本轮命中了任何页面就排 `overview-update` 任务（总览描述
+    仓库整体，页面命中即视为结构性内容有变）；总览不是页面，规格明确不加「更新摘要」小节，
+    校验沿用 check_overview 的 H1+两小节形状。
+    ④ **自定义知识类别**：`knowledge --categories <file>` 整表替换内置六类（非追加——追加会让
+    「0~2 张/类」的宁缺毋滥约束失去基准），持久化于 `state/knowledge_categories.json`，
+    check/update 按持久化清单校验；未提供时回落内置清单，旧仓库零迁移。id 限
+    `^[a-z][a-z0-9_]{1,39}$` 以安全进入 YAML front matter。
+    第 8 项低垂果实中 overview 与 `--dirty` 均已落地；**CLI 交互消息双语推迟**（保留 roadmap）：
+    消息面向驱动它的 agent（中英理解无差），全量字符串表化是机械大改、边际收益最低。

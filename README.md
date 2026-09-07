@@ -42,8 +42,9 @@ repowiki 走第三条路：**读代码、写 wiki 的智能留给任意 agent，
 - **确定性构建**：plan / claim / check / 自动修复全是确定性代码，不绑定任何 agent CLI，无需 API Key、零网络调用；
 - **并发安全**：原子任务认领 + 心跳续期 + 过期自动回收，多个 agent / 进程 / 人可同时参与同一个仓库；
 - **断点续跑**：每任务状态落盘，随时中断随时继续，崩溃不留孤儿认领；
-- **增量更新**：`update` 基于 git diff 只重写受影响页面（含祖先链）；只读 `stale` 命令输出同一映射，供 CI 做「wiki 过期」门禁；
+- **增量更新**：`update` 基于 git diff 只重写受影响页面（含祖先链）与总览页，`--dirty` 可纳入未提交/未跟踪变更；只读 `stale` 命令输出同一映射，供 CI 做「wiki 过期」门禁；`coverage` 报告确定性统计 wiki 从未引用的文件；
 - **单文件离线站点**：`site` 产出约 4-5 MB 自包含 HTML——导航、搜索、mermaid、源码弹层，双击即看；
+- **页面原型**：catalog 可按页面主题选 `module`（结构型，默认）/ `flow`（流程型）两种模板，校验器按原型分规则；知识卡片类别可用 `--categories` 整表替换内置六类；
 - **agent 消费接口**：`site` 同时导出 `llms.txt` / `llms-full.txt`（[llmstxt.org](https://llmstxt.org/) 约定），任何 agent / IDE 按索引直接读 wiki，无需 MCP；
 - **双语产出**：zh / en 自动跟随目标仓库语言，表驱动设计可扩展；
 - **跨平台**：macOS / Linux / Windows 原生支持（无需 WSL），CI 三平台 × Python 3.10-3.13 矩阵回归；
@@ -154,11 +155,13 @@ myrepo/.repowiki/
 - 幂等可重跑：finalize、update 或手动改了页面之后随时重新执行 `repowiki site` 重建；
 - 执行过 `repowiki clean` 也能重建（此时章节顺序退化为目录序，内容不受影响）。
 
-页面模板（校验器按语言强制）：H1 → `<cite>` 引用块 → 目录 → 简介 → 项目结构（mermaid
-graph TB）→ 核心组件 → 架构总览（sequenceDiagram）→ 详细组件分析 → 依赖关系分析（graph LR）
-→ 性能与一致性考量 → 故障排查指南 → 结论；每节末尾「Section sources/章节来源」、每图后
-「Diagram sources/图表来源」，链接格式 `[path:Lx-Ly](file://path#Lx-Ly)`；页间零链接
-（正因如此所有页面任务可完全并行）。
+页面模板（校验器按语言强制）按原型分两种：**module（默认，结构型）** H1 → `<cite>` 引用块 →
+目录 → 简介 → 项目结构（mermaid graph TB）→ 核心组件 → 架构总览（sequenceDiagram）→ 详细组件
+分析 → 依赖关系分析（graph LR）→ 性能与一致性考量 → 故障排查指南 → 结论；**flow（流程型）**
+简介 → 流程总览（sequenceDiagram）→ 关键步骤 → 参与组件 → 数据与状态变化（graph LR）→ 故障
+排查指南 → 结论。规划时在 catalog 节点上用可选 `archetype` 字段选择；每节末尾「Section
+sources/章节来源」、每图后「Diagram sources/图表来源」，链接格式
+`[path:Lx-Ly](file://path#Lx-Ly)`；页间零链接（正因如此所有页面任务可完全并行）。
 
 ## 用法（Usage）
 
@@ -219,9 +222,10 @@ done
 | `release --task ID [--force]` | 释放认领（崩溃恢复） |
 | `finalize` | 组装 metadata.json；要求全部任务 done |
 | `site [--open]` | 把完成的 wiki 渲染成单文件离线 HTML（`<locale>/wiki.html`：导航+搜索+mermaid+源码弹层，知识模块文档与卡片纳入「知识库」章），同时导出 `llms.txt` / `llms-full.txt` agent 索引；要求先 finalize；`--open` 生成后用默认浏览器打开 |
-| `update [--since <sha>]` | git diff → 受影响页面（含祖先链）→ 增量重写任务（附「更新摘要」）；同时联动知识库：`source_files` 命中变更的卡片与 scope 命中的模块各建刷新任务；仅识别**已提交**变更（since..HEAD），工作区未提交改动不可见 |
-| `stale [--since <ref>] [--fail-if-stale]` | 只读过期报告：复用 `update` 的 diff→受影响页面映射，报告哪些页面/卡片/模块会过期——不创建任务、不写 state；`--fail-if-stale` 供 CI 门禁（命中则 exit 1） |
-| `knowledge` | 追加知识卡片任务集（六类机制卡片 + 模块文档）；finalize 时聚合导出 `_index.yaml` / `_module.yaml` |
+| `update [--since <sha>] [--dirty]` | git diff → 受影响页面（含祖先链）与总览页 → 增量重写任务（附「更新摘要」）；同时联动知识库：`source_files` 命中变更的卡片与 scope 命中的模块各建刷新任务；默认仅识别**已提交**变更（since..HEAD），`--dirty` 纳入工作区未提交与未跟踪变更 |
+| `stale [--since <ref>] [--dirty] [--fail-if-stale]` | 只读过期报告：复用 `update` 的 diff→受影响页面映射，报告哪些页面/卡片/模块会过期——不创建任务、不写 state；`--fail-if-stale` 供 CI 门禁（命中则 exit 1） |
+| `coverage` | 只读覆盖率报告：统计 wiki 页面/总览/知识卡片从未引用的仓库文件与逐页引用密度（确定性计算，JSON 含全量清单） |
+| `knowledge [--categories <file>]` | 追加知识卡片任务集（机制卡片 + 模块文档）；`--categories` 用 YAML/JSON 文件整表替换内置六类（持久化于 state）；finalize 时聚合导出 `_index.yaml` / `_module.yaml` |
 | `status` | 进度 / 失败列表 / 过期认领 |
 | `clean` | 删除整个 `state/`（wiki 产出保留；失去 update/续跑/幂等 plan） |
 
@@ -256,7 +260,7 @@ Pages 来源设为 GitHub Actions。
 - **自动瘦身**：finalize 成功后自动清除运行时产物（`state/claims/`、`state/tasks/`），
   保留 `index.json`/`catalog.json`/`knowledge.json` 供增量更新与幂等重跑；
   不需要增量更新可执行 `repowiki clean <repo>` 删除全部状态（wiki 产出不受影响）。
-- **测试**：167 个单测覆盖竞态、孤儿认领自动回收、校验规则正反例、增量映射、过期门禁、知识聚合、双语产出（zh/en）、单文件站点与 llms 索引生成、损坏状态文件与非法输入的友好报错（`pytest`；CI 矩阵覆盖 ubuntu/macos/windows × Python 3.10-3.13）。
+- **测试**：187 个单测覆盖竞态、孤儿认领自动回收、校验规则正反例（含 flow 原型）、增量映射、过期门禁、覆盖率统计、自定义知识类别、知识聚合、双语产出（zh/en）、单文件站点与 llms 索引生成、损坏状态文件与非法输入的友好报错（`pytest`；CI 矩阵覆盖 ubuntu/macos/windows × Python 3.10-3.13）。
 
 ## 设计取舍
 
@@ -267,7 +271,6 @@ Pages 来源设为 GitHub Actions。
 
 ## 已知边界
 
-- `overview` 总览不参与增量更新：结构性重构后建议 `plan --replan` 全量重生成。
 - 每个任务规格内嵌完整模板与文风规范（约 4-6k tokens）——换取任务自包含与并行安全；
   小上下文 agent 可将规格中的模板段落替换为对 `templates/` 目录的引用。
 - 产出语言由 plan 时确定并持久化，中途换语言需 `plan --replan`；`file://` 引用解析、程序化领取依赖 `jq` 属常见但非必需。
@@ -278,7 +281,6 @@ LLM API 后端 · 内置 agent CLI 检测/执行器 · MCP 封装（agent 读取
 
 ## Roadmap
 
-- [ ] `overview` 总览页纳入增量更新（当前结构性重构后需 `plan --replan` 全量重建）
 - [ ] 发布到 PyPI：打包与元数据已就绪（`pip wheel` 可用、readme/urls/classifiers 齐全），待配置 PyPI 账号 / Trusted Publisher 后首次上传
 - [ ] 更多产出语言：表驱动设计，新增一门语言 = 一张字符串表 + 一套模板（欢迎 PR）
 - [ ] CLI 交互消息中英双语（当前为中文，面向驱动它的 agent）

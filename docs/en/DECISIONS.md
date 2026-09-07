@@ -94,3 +94,32 @@
     targeting Swimm's "docs that don't go stale" pitch, fully deterministic, no agent in CI, writes
     no state). P1 (page archetypes, configurable knowledge-card categories, coverage report) is
     queued for the next version; P2 (Q&A layer, MCP, large-monorepo evidence) awaits a decision.
+16. **Implementation trade-offs for the four P1 content-depth items** (2026-09-08):
+    ① **Page archetypes** are declared by an optional `archetype` field on catalog nodes
+    (`module` default / `flow` for process-mechanism pages); the catalog task spec (rule 8)
+    steers the planner toward flow only for flow/mechanism-themed pages. `check` does not
+    store the archetype in the task record — it looks the node up in the catalog by task id
+    (single source of truth; stale tasks still validate against the right template after a
+    replan). Flow has seven required sections (Introduction / Flow Overview / Key Steps /
+    Involved Components / Data and State Changes / Troubleshooting / Conclusion) and still
+    clears MIN_SECTIONS=6 plus the two-mermaid bar; all other validator rules (cite /
+    anchors / line ranges / placeholders) are archetype-agnostic.
+    ② **`--dirty` semantics**: `git diff <since>` (working tree, staged + unstaged) plus
+    `ls-files --others --exclude-standard` (untracked) — "I changed code but haven't
+    committed and still want the wiki to catch up" is a real local-iteration need; the CI
+    gate keeps the default committed-only view for reproducibility.
+    ③ **Overview in incremental updates**: whenever any page is affected this round, an
+    `overview-update` task is queued (the overview describes the repo as a whole; a page
+    hit means structural content changed). The overview is not a page — its spec explicitly
+    forbids an "Update Summary" section, and validation reuses check_overview's
+    H1-plus-two-sections shape.
+    ④ **Custom knowledge categories**: `knowledge --categories <file>` replaces the built-in
+    six wholesale (not append — appending would break the 0-2-per-category less-is-more
+    baseline), persisted in `state/knowledge_categories.json`; check/update validate against
+    the persisted list, falling back to the built-ins when absent (zero migration for
+    existing repos). Ids are limited to `^[a-z][a-z0-9_]{1,39}$` so they are safe in YAML
+    front matter.
+    Of item 8's low-hanging fruit, the overview and `--dirty` have landed; **bilingual CLI
+    interaction messages are deferred** (kept on the roadmap): the messages target the
+    driving agent (which reads either language), and a full string-table migration would
+    be a large mechanical change with the lowest marginal value.

@@ -6,6 +6,19 @@
 
 ### 新增
 
+- **页面原型（module / flow）**：catalog 页面节点新增可选 `archetype` 字段——流程/机制主题页设
+  `"archetype": "flow"` 使用流程型模板（简介/流程总览/关键步骤/参与组件/数据与状态变化/故障
+  排查/结论，配时序图+状态图），默认 `module` 保持原结构型九段模板；校验器按原型分必备小节
+  规则，catalog 任务规格引导规划者按主题选型。
+- **`coverage` 子命令**：只读覆盖率报告——统计 wiki 页面/总览/知识卡片从未引用的仓库文件、
+  逐页引用密度与零引用页面，全部确定性计算（对标竞品给不出的「可证明质量」指标）。
+- **`update`/`stale` 新增 `--dirty`**：默认只看已提交变更（since..HEAD）；`--dirty` 纳入工作区
+  未提交（暂存+未暂存）与未跟踪变更——改完没提交也能让 wiki 跟上。
+- **overview 总览页纳入增量更新**：`update` 命中任何页面时自动排 `overview-update` 任务
+  （同步定位概述与章节导航；总览不加「更新摘要」小节，校验沿用总览形状）。
+- **知识卡片类别可配置**：`repowiki knowledge --categories <file>` 用 YAML/JSON 清单整表替换
+  内置六类（id 限小写下划线，≤12 类），持久化于 `state/knowledge_categories.json`，
+  check/update 按其校验；未提供时行为不变（零迁移）。
 - **`llms.txt` / `llms-full.txt` 导出**：`repowiki site` 在生成 `wiki.html` 的同时，按章节导出
   全部页面的链接索引 `llms.txt` 与全文合并版 `llms-full.txt`（遵循 [llmstxt.org](https://llmstxt.org/)
   约定）——任何 agent / IDE 可直接按索引消费 wiki，无需 MCP。
@@ -21,14 +34,16 @@
 
 - pyproject 补全 PyPI 发布元数据（readme / urls / keywords / classifiers），
   `pip install repowiki` 待首次上传后可用。
+- 内置知识类别表迁移为带说明的 `DEFAULT_KNOWLEDGE_CATEGORIES`（tasks.py），规划任务规格的
+  类别清单改为渲染注入（`{{CATEGORY_BLOCK}}`），不再硬编码于模板。
 
 ### 文档
 
 - 新增竞品调研报告（`docs/{zh,en}/research/competitive-analysis.md`：DeepWiki /
   DeepWiki-Open / CodeWiki / GitDiagram / Swimm / Repomix 对标与 P0-P2 改进分级）；
-  决策记录追加第 15 条（调研结论与 P0 采纳）。
-- README 双语：新增「CI 集成」一节、`stale` 命令行、GitHub Pages 在线样例链接、
-  agent 消费接口特性项。
+  决策记录追加第 15 条（调研结论与 P0 采纳）与第 16 条（P1 四项实现取舍）。
+- README 双语：新增「CI 集成」一节、`stale`/`coverage` 命令行、GitHub Pages 在线样例链接、
+  agent 消费接口与页面原型特性项；「已知边界」移除 overview 不参与增量更新一条（已实现）。
 
 ## 0.4.0 — 2026-09-07
 

@@ -6,6 +6,26 @@
 
 ### Added
 
+- **Page archetypes (module / flow)**: catalog page nodes gain an optional `archetype`
+  field — process/mechanism-themed pages set `"archetype": "flow"` to use the flow
+  template (Introduction / Flow Overview / Key Steps / Involved Components / Data and
+  State Changes / Troubleshooting / Conclusion, with a sequence diagram + state graph);
+  the default `module` keeps the original structural nine-section template. The validator
+  enforces required sections per archetype, and the catalog task spec steers the planner.
+- **`coverage` subcommand**: read-only coverage report — repository files never cited by
+  any wiki page/overview/knowledge card, per-page citation density and zero-citation
+  pages, all computed deterministically (the "provable quality" metric competitors
+  cannot offer).
+- **`--dirty` for `update`/`stale`**: by default only committed changes count
+  (since..HEAD); `--dirty` adds uncommitted working-tree (staged + unstaged) and
+  untracked changes — the wiki can catch up before you commit.
+- **Overview page in incremental updates**: when `update` hits any page, it also queues
+  an `overview-update` task (refreshes the positioning paragraphs and section
+  navigation; no "Update Summary" section — validation keeps the overview shape).
+- **Configurable knowledge-card categories**: `repowiki knowledge --categories <file>`
+  replaces the built-in six with a YAML/JSON list (lowercase ids, ≤12 categories),
+  persisted in `state/knowledge_categories.json` and enforced by check/update; without
+  the flag behavior is unchanged (zero migration).
 - **`llms.txt` / `llms-full.txt` export**: `repowiki site` now writes, alongside
   `wiki.html`, a chapter-organized link index (`llms.txt`) and a concatenated full-text
   companion (`llms-full.txt`), following the [llmstxt.org](https://llmstxt.org/)
@@ -24,15 +44,20 @@
 
 - pyproject now carries complete PyPI publishing metadata (readme / urls / keywords /
   classifiers); `pip install repowiki` becomes available after the first upload.
+- The built-in knowledge category table moved to `DEFAULT_KNOWLEDGE_CATEGORIES`
+  (with per-category guidance, tasks.py); the plan task spec now renders the category
+  list via `{{CATEGORY_BLOCK}}` instead of hardcoding it in the template.
 
 ### Documentation
 
 - Added a competitive-analysis report
   (`docs/{zh,en}/research/competitive-analysis.md`: DeepWiki / DeepWiki-Open / CodeWiki /
   GitDiagram / Swimm / Repomix, with P0-P2 ranked improvements); DECISIONS gains #15
-  (research conclusions and the adopted P0 direction).
-- Both READMEs: new "CI Integration" section, `stale` command row, GitHub Pages live
-  sample link, and the agent-consumption feature bullet.
+  (research conclusions and the adopted P0 direction) and #16 (P1 implementation
+  trade-offs).
+- Both READMEs: new "CI Integration" section, `stale`/`coverage` command rows, GitHub
+  Pages live sample link, agent-consumption and page-archetype feature bullets; the
+  overview-update limitation was removed from Known Limitations (now implemented).
 
 ## 0.4.0 — 2026-09-07
 
