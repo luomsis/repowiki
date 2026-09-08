@@ -123,3 +123,11 @@
     interaction messages are deferred** (kept on the roadmap): the messages target the
     driving agent (which reads either language), and a full string-table migration would
     be a large mechanical change with the lowest marginal value.
+17. **Roadmap removal & scope freeze** (2026-09-08): output languages are frozen to
+    zh/en — the table-driven mechanism stays but no more languages will be added; the
+    "bilingual CLI messages" plan is cancelled and CLI messages remain as they are
+    (aimed at the driving agent); the README Roadmap section is removed — completed work
+    lives in the CHANGELOG, direction discussions go to Discussions. The same day the
+    PyPI distribution name was set to `repowiki-cli` (`repowiki` was taken by the
+    same-purpose project he-yufeng/RepoWiki; the command and import package remain
+    `repowiki`), with publishing via Trusted Publisher (`pypi.yml`, tokenless OIDC).

@@ -78,3 +78,9 @@
     `^[a-z][a-z0-9_]{1,39}$` 以安全进入 YAML front matter。
     第 8 项低垂果实中 overview 与 `--dirty` 均已落地；**CLI 交互消息双语推迟**（保留 roadmap）：
     消息面向驱动它的 agent（中英理解无差），全量字符串表化是机械大改、边际收益最低。
+17. **Roadmap 移除与范围冻结**（2026-09-08）：产出语言冻结为 zh/en——表驱动机制保留但不再
+    扩展更多语言；「CLI 交互消息中英双语」计划取消，CLI 消息维持中文现状（面向驱动它的
+    agent）；README 的 Roadmap 小节移除——已完成事项由 CHANGELOG 记录，方向性讨论走
+    Discussions。同日 PyPI 分发名定为 `repowiki-cli`（`repowiki` 名被同用途项目
+    he-yufeng/RepoWiki 占用；命令名与 import 包名保持 `repowiki` 不变），发布流水线走
+    Trusted Publisher（`pypi.yml`，OIDC 免 token）。

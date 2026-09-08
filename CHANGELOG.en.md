@@ -2,6 +2,14 @@
 
 [中文](CHANGELOG.md) | **English**
 
+## Unreleased
+
+### Removed
+
+- **Roadmap section removed**: output languages are frozen to zh/en with no further
+  languages planned; the bilingual-CLI-messages plan is cancelled (CLI messages stay as
+  they are, aimed at the driving agent).
+
 ## 0.5.1 — 2026-09-08
 
 ### Fixed

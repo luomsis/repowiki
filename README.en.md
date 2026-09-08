@@ -54,7 +54,7 @@ reliability.**
 - **Single-file offline site**: `site` produces a self-contained ~4-5 MB HTML file — navigation, search, mermaid diagrams, source-code popups — just double-click;
 - **Page archetypes**: the catalog can pick `module` (structural, default) or `flow` (process) templates per page theme, with per-archetype validator rules; knowledge-card categories can replace the built-in six wholesale via `--categories`;
 - **Agent-consumption interface**: `site` also exports `llms.txt` / `llms-full.txt` (the [llmstxt.org](https://llmstxt.org/) convention) so any agent / IDE can read the wiki by index, no MCP required;
-- **Bilingual output**: zh / en, auto-detected from the target repo; table-driven design makes new languages cheap;
+- **Bilingual output**: zh / en, auto-detected from the target repo;
 - **Cross-platform**: native macOS / Linux / Windows support (no WSL needed); CI regression on a 3-platform × Python 3.10-3.13 matrix;
 - **Strong validation**: anchors, line ranges, H1s, and path separators are repaired programmatically; only semantic defects fail the build.
 
@@ -65,7 +65,7 @@ reliability.**
 - [Usage](#usage) (worker loop contract / concurrency recipes) · [Command Reference](#command-reference)
 - [Viewing the Wiki: single-file offline site](#viewing-the-wiki-single-file-offline-site) · [CI Integration](#ci-integration-wiki-gate--pages-publishing)
 - [Reliability](#reliability) · [Design Trade-offs](#design-trade-offs) · [Known Limitations](#known-limitations) · [Non-Goals](#non-goals)
-- [Roadmap](#roadmap) · [Contributing](#contributing) · [Community](#community) · [Documentation](#documentation) · [License](#license)
+- [Contributing](#contributing) · [Community](#community) · [Documentation](#documentation) · [License](#license)
 
 ## Install
 
@@ -316,8 +316,8 @@ cross-page links (which is exactly why all page tasks can run fully in parallel)
   `state/` and is never exported.
 - ADR-style knowledge cards are not generated; mechanism cards and module docs are
   fully supported.
-- Wiki output languages are Simplified Chinese (`zh/`) and English (`en/`); the design
-  is table-driven — a new language is one string table plus one template set.
+- Wiki output languages are Simplified Chinese (`zh/`) and English (`en/`), frozen — no
+  further languages are planned.
 - CLI interaction messages are currently Chinese (aimed at the driving agent); this
   does not affect the wiki's output language.
 
@@ -337,12 +337,6 @@ reads-the-wiki need is met by the static `llms.txt` export) · resident
 preview servers (the `site` artifact is a purely static single file — double-click to
 view, no service needed) · output languages beyond zh/en.
 
-## Roadmap
-
-- [ ] Publish to PyPI: packaging and metadata are ready (`pip wheel` works; readme/urls/classifiers complete) — first upload awaits a PyPI account / Trusted Publisher setup
-- [ ] More output languages: table-driven design — one language = one string table + one template set (PRs welcome)
-- [ ] Bilingual CLI interaction messages (currently Chinese, aimed at the driving agent)
-
 ## Contributing
 
 Issues and PRs are welcome! Local development:
@@ -354,9 +348,7 @@ pytest
 ```
 
 - For behavior changes, open an issue or start a Discussions thread to align on
-  direction before writing code;
-- Adding a new output language = one string table + one template set (see Design
-  Trade-offs) — a great first contribution.
+  direction before writing code.
 
 ## Community
 

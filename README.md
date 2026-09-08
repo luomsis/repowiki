@@ -46,7 +46,7 @@ repowiki 走第三条路：**读代码、写 wiki 的智能留给任意 agent，
 - **单文件离线站点**：`site` 产出约 4-5 MB 自包含 HTML——导航、搜索、mermaid、源码弹层，双击即看；
 - **页面原型**：catalog 可按页面主题选 `module`（结构型，默认）/ `flow`（流程型）两种模板，校验器按原型分规则；知识卡片类别可用 `--categories` 整表替换内置六类；
 - **agent 消费接口**：`site` 同时导出 `llms.txt` / `llms-full.txt`（[llmstxt.org](https://llmstxt.org/) 约定），任何 agent / IDE 按索引直接读 wiki，无需 MCP；
-- **双语产出**：zh / en 自动跟随目标仓库语言，表驱动设计可扩展；
+- **双语产出**：zh / en 自动跟随目标仓库语言；
 - **跨平台**：macOS / Linux / Windows 原生支持（无需 WSL），CI 三平台 × Python 3.10-3.13 矩阵回归；
 - **强校验**：锚点 / 行号 / H1 / 路径分隔符程序化自动修复，只有语义缺陷才判失败。
 
@@ -57,7 +57,7 @@ repowiki 走第三条路：**读代码、写 wiki 的智能留给任意 agent，
 - [用法](#用法usage)（Worker 循环契约 / 并发配方）· [命令一览](#命令一览)
 - [查看 Wiki：单文件离线站点](#查看-wiki单文件离线站点) · [CI 集成](#ci-集成wiki-门禁--pages-发布)
 - [可靠性设计](#可靠性设计) · [设计取舍](#设计取舍) · [已知边界](#已知边界) · [Non-Goals](#non-goals)
-- [Roadmap](#roadmap) · [贡献](#贡献contributing) · [社区](#社区) · [文档](#文档) · [License](#license)
+- [贡献](#贡献contributing) · [社区](#社区) · [文档](#文档) · [License](#license)
 
 ## 安装
 
@@ -266,7 +266,7 @@ Pages 来源设为 GitHub Actions。
 
 - `metadata.json` 只含可读字段（catalogs/items/source_files/snippets/relations），不输出加密内部状态（运行时状态在 `state/`）。
 - ADR 类知识卡片不生成；机制卡片/模块文档完整支持。
-- 产出语言为简体中文（`zh/`）与英文（`en/`），表驱动设计，新增语言 = 一张字符串表 + 一套模板。
+- 产出语言为简体中文（`zh/`）与英文（`en/`），冻结不再扩展。
 - CLI 交互消息当前为中文（面向驱动它的 agent），不影响 wiki 产出语言。
 
 ## 已知边界
@@ -279,12 +279,6 @@ Pages 来源设为 GitHub Actions。
 
 LLM API 后端 · 内置 agent CLI 检测/执行器 · MCP 封装（agent 读取 wiki 的需求由 `llms.txt` 静态导出满足） · 常驻预览服务器（`site` 产物是纯静态单文件，双击即看，无需起服务） · zh/en 之外的产出语言。
 
-## Roadmap
-
-- [ ] 发布到 PyPI：打包与元数据已就绪（`pip wheel` 可用、readme/urls/classifiers 齐全），待配置 PyPI 账号 / Trusted Publisher 后首次上传
-- [ ] 更多产出语言：表驱动设计，新增一门语言 = 一张字符串表 + 一套模板（欢迎 PR）
-- [ ] CLI 交互消息中英双语（当前为中文，面向驱动它的 agent）
-
 ## 贡献（Contributing）
 
 欢迎 issue 与 PR！本地开发：
@@ -295,8 +289,7 @@ pip install -e '.[test]'
 pytest
 ```
 
-- 行为变更请先开 issue 或去 Discussions 对齐方向，再动手；
-- 新增一门产出语言 = 一张字符串表 + 一套模板（见「设计取舍」），是很好的入门贡献点。
+- 行为变更请先开 issue 或去 Discussions 对齐方向，再动手。
 
 ## 社区
 

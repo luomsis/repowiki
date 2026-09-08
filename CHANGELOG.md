@@ -2,6 +2,13 @@
 
 **中文** | [English](CHANGELOG.en.md)
 
+## Unreleased
+
+### Removed
+
+- **Roadmap 小节移除**：产出语言冻结为 zh/en，不再扩展更多语言；「CLI 交互消息双语」计划
+  取消（CLI 消息维持现状，面向驱动它的 agent）。
+
 ## 0.5.1 — 2026-09-08
 
 ### 修复
