@@ -70,15 +70,27 @@ pip install git+https://github.com/luomsis/repowiki.git   # 或 pipx install git
 
 Windows 原生支持（无需 WSL）：并发状态控制自动使用 `msvcrt` 文件锁（POSIX 用 `fcntl`），
 全部功能在 PowerShell / cmd / git-bash 下可用；后台运行 watch 的 PowerShell 等价命令见
-[skills/repowiki/SKILL.md](skills/repowiki/SKILL.md)。CI 在三大平台上回归。
+[src/repowiki/skills/repowiki/SKILL.md](src/repowiki/skills/repowiki/SKILL.md)。CI 在三大平台上回归。
 
 ### 2. Agent Skill（可选，让 agent 自动触发本工作流）
 
-`skills/repowiki/` 是符合 SKILL.md 开放约定的 skill 目录，两种装法任选：
+skill 文件随 CLI 一起分发，推荐装完第 1 步的 CLI 后一条命令安装：
+
+```bash
+repowiki skill install                                  # 默认装入 ~/.agents/skills/repowiki/（各 agent 通用的全局 skills 目录）
+repowiki skill install --agent claude --agent zcode     # 或装入指定客户端的全局 skills 目录
+repowiki skill status                                   # 查看已装版本、是否过期
+```
+
+`--agent` 支持 `claude` / `codex` / `zcode` / `cursor` / `opencode`；`--target <目录>` 可指定
+任意 skills 目录。安装后重启客户端会话生效；`pip install --upgrade repowiki-cli` 后重跑
+`repowiki skill install` 即可更新。
+
+其他装法（任选）：
 
 - **插件安装**（支持版本管理）：把本仓库作为插件市场目录或直接指向其 git 地址安装，
   仓库根部的插件清单会被自动识别；
-- **手动拷贝**：把 `skills/repowiki/` 整个目录拷进所用客户端的个人 skills 目录
+- **手动拷贝**：把包内 `src/repowiki/skills/repowiki/` 目录拷进所用客户端的个人 skills 目录
   （常见为 `~/.claude/skills/repowiki/`、`~/.agents/skills/repowiki/` 等）。
 
 skill 只是指引（告诉 agent 按什么流程调用 CLI），真正干活的是第 1 步装的 `repowiki` 命令。
@@ -104,8 +116,8 @@ repowiki --version                                # 验证
 
 用 pipx 的话：`pipx install --no-index repowiki_cli-*.whl`。要跑测试套再额外离线装 `pytest`（`[test]` extra）。
 
-Agent Skill 同样离线可用——`skills/repowiki/` 是纯文本目录，直接整目录拷进客户端的
-skills 目录（`~/.claude/skills/repowiki/` 等）即可；skill 只调用本机已装好的 `repowiki` 命令，
+Agent Skill 同样离线可用——skill 已随 whl 打包，装好 CLI 后执行 `repowiki skill install` 即可
+（纯本地拷贝，无任何在线操作）；skill 只调用本机已装好的 `repowiki` 命令，
 不需要任何在线服务。注意 repowiki 自身零网络，但 `update` 依赖目标仓库本地的 git CLI
 （`git diff` / `git rev-parse`），git 预装的机器无需额外配置。
 
@@ -187,7 +199,7 @@ worker 中途退出时手中不留孤儿认领；即便异常退出，过期认�
 
 **Subagent 型（Claude Code / OpenCode 等）**：主 agent 先串行完成 plan + catalog，
 然后 spawn N 个 subagent 各自跑 worker 循环（N=3~6 即可，页面任务相互独立）。
-详见 [skills/repowiki/SKILL.md](skills/repowiki/SKILL.md)。
+详见 [src/repowiki/skills/repowiki/SKILL.md](src/repowiki/skills/repowiki/SKILL.md)。
 
 **无人值守（任何 headless agent CLI，由你决定用哪个）**：
 
@@ -305,7 +317,7 @@ pytest
 - [决策记录](docs/zh/DECISIONS.md)（规格空白处的 15 条最小合理决策）
 - 架构决策记录（ADR）：[Windows 原生支持的双锁后端](docs/zh/adr/0001-windows-native-support.md) ·
   [单文件离线站点](docs/zh/adr/0002-single-file-offline-site.md)
-- Agent Skill 指引：[中文](skills/repowiki/SKILL.md) · [English](skills/repowiki/SKILL.en.md)
+- Agent Skill 指引：[中文](src/repowiki/skills/repowiki/SKILL.md) · [English](src/repowiki/skills/repowiki/SKILL.en.md)
 
 ## License
 

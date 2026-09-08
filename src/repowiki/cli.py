@@ -19,6 +19,7 @@ from .output import emit_error
 from .paths import WikiPaths
 from .plan import run_plan
 from .site import run_site
+from .skill_install import AGENTS, run_skill_install, run_skill_status
 from .state import run_clean
 from .updater import run_stale, run_update
 
@@ -141,12 +142,34 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_clean(paths, as_json=a.json))
 
+    p = sub.add_parser("skill", help="manage the bundled agent skill (pip installs carry it; no repo context needed)")
+    skill_sub = p.add_subparsers(dest="skill_command", required=True)
+
+    s = skill_sub.add_parser("install",
+                             help="copy the bundled skill into agent skills directories "
+                                  "(default: the shared ~/.agents/skills)")
+    s.add_argument("--agent", action="append", choices=list(AGENTS), metavar="NAME",
+                   help="target one client's global skills directory: %s (repeatable)" % ", ".join(AGENTS))
+    s.add_argument("--target", action="append", metavar="DIR",
+                   help="custom skills directory, e.g. ~/.claude/skills (repeatable)")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(func=run_skill_install)
+
+    s = skill_sub.add_parser("status",
+                             help="report installed skill versions vs this package (same targets as install)")
+    s.add_argument("--agent", action="append", choices=list(AGENTS), metavar="NAME",
+                   help="check one client's global skills directory (repeatable)")
+    s.add_argument("--target", action="append", metavar="DIR",
+                   help="custom skills directory to check (repeatable)")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(func=run_skill_status)
+
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    paths = WikiPaths(args.repo)
+    paths = WikiPaths(args.repo) if getattr(args, "repo", None) is not None else None
     try:
         return args.func(args, paths)
     except ConflictError as e:

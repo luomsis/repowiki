@@ -79,17 +79,28 @@ pip install git+https://github.com/luomsis/repowiki.git   # or pipx install git+
 Native Windows support (no WSL needed): the concurrent state control automatically uses
 `msvcrt` file locking (POSIX uses `fcntl`); every feature works under PowerShell / cmd /
 git-bash. For the PowerShell equivalent of background `watch`, see
-[skills/repowiki/SKILL.md](skills/repowiki/SKILL.md). CI regression covers all three platforms.
+[src/repowiki/skills/repowiki/SKILL.md](src/repowiki/skills/repowiki/SKILL.md). CI regression covers all three platforms.
 
 ### 2. Agent Skill (optional; lets an agent trigger the workflow automatically)
 
-`skills/repowiki/` is a skill directory following the open SKILL.md convention; two ways
-to install it:
+The skill files ship with the CLI; after step 1, one command installs them:
+
+```bash
+repowiki skill install                                  # default: ~/.agents/skills/repowiki/ (the shared global skills directory)
+repowiki skill install --agent claude --agent zcode     # or a specific client's global skills directory
+repowiki skill status                                   # check the installed version / staleness
+```
+
+`--agent` accepts `claude` / `codex` / `zcode` / `cursor` / `opencode`; `--target <dir>` points
+at any skills directory. Restart the client session after installing; after
+`pip install --upgrade repowiki-cli`, rerun `repowiki skill install` to refresh.
+
+Alternative installs:
 
 - **Plugin install** (version-managed): point your client's plugin marketplace at this
   repo's git URL — the plugin manifest at the repo root is detected automatically;
-- **Manual copy**: copy the whole `skills/repowiki/` directory into your client's
-  personal skills directory (commonly `~/.claude/skills/repowiki/`,
+- **Manual copy**: copy the packaged `src/repowiki/skills/repowiki/` directory into your
+  client's personal skills directory (commonly `~/.claude/skills/repowiki/`,
   `~/.agents/skills/repowiki/`, etc.).
 
 The skill is only a playbook (it tells the agent how to call the CLI); the actual work is
@@ -119,8 +130,8 @@ repowiki --version                                # verify
 With pipx: `pipx install --no-index repowiki_cli-*.whl`. To run the test suite, additionally
 install `pytest` offline (the `[test]` extra).
 
-The agent skill works offline too — `skills/repowiki/` is a plain-text directory; copy it
-wholesale into the client's skills directory (`~/.claude/skills/repowiki/` etc.). The
+The agent skill works offline too — it is packaged inside the whl, so once the CLI is
+installed just run `repowiki skill install` (a purely local copy, no online step). The
 skill only invokes the locally installed `repowiki` command and needs no online service.
 Note that while repowiki itself is zero-network, `update` relies on the target repo's
 local git CLI (`git diff` / `git rev-parse`); no extra setup on machines where git is
@@ -180,7 +191,7 @@ automatically return to the queue (see Reliability).
 **Subagent-based (Claude Code / OpenCode, etc.)**: the main agent completes plan +
 catalog serially first, then spawns N subagents each running the worker loop
 (N=3~6 is plenty; page tasks are mutually independent). See
-[skills/repowiki/SKILL.md](skills/repowiki/SKILL.md) for details.
+[src/repowiki/skills/repowiki/SKILL.md](src/repowiki/skills/repowiki/SKILL.md) for details.
 
 **Unattended (any headless agent CLI — your choice which)**:
 
@@ -369,8 +380,8 @@ file names in both):
 - Architecture decision records (ADRs): [dual stdlib lock backends for native
   Windows](docs/en/adr/0001-windows-native-support.md) ·
   [single-file offline site](docs/en/adr/0002-single-file-offline-site.md)
-- Agent Skill playbook: [English](skills/repowiki/SKILL.en.md) ·
-  [中文](skills/repowiki/SKILL.md)
+- Agent Skill playbook: [English](src/repowiki/skills/repowiki/SKILL.en.md) ·
+  [中文](src/repowiki/skills/repowiki/SKILL.md)
 
 ## License
 
