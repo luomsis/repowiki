@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "repowiki-cli"
-version = "0.5.1"
+version = "0.6.0"
 description = "Deterministic repo wiki build system, driven by any coding agent. Output language follows the repository (zh/en)."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -43,7 +43,7 @@ repowiki = "repowiki.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-repowiki = ["templates/*/*", "templates/site.html", "templates/site/*", "vendor/*.js"]
+repowiki = ["templates/*/*", "templates/site.html", "templates/site/*", "vendor/*.js", "skills/repowiki/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

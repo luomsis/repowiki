@@ -2,9 +2,35 @@
 
 **中文** | [English](CHANGELOG.en.md)
 
-## Unreleased
+## 0.6.0 — 2026-09-09
 
-### Removed
+### 新增
+
+- **`repowiki skill install / status`**：skill 文件（`SKILL.md` / `SKILL.en.md`）随 wheel
+  一起分发，pip 装完 CLI 后一条命令即可把 skill 安装到 agent 全局 skills 目录——默认
+  `~/.agents/skills/repowiki/`，`--agent claude|codex|zcode|cursor|opencode` 指定客户端
+  目录，`--target <目录>` 完全自定义；安装写入版本戳，幂等可重复执行。
+  `repowiki skill status` 报告各处已装版本与包版本的差异，识别未安装 / 手拷无版本戳 /
+  过期 / 已是最新四种状态；两命令均支持 `--json`。
+
+### 变更
+
+- **skill 目录迁入包内**：`skills/repowiki/` → `src/repowiki/skills/repowiki/`（单一事实
+  源，wheel 与 git/插件安装读同一份文件）；`.claude-plugin/plugin.json` 的 `skills` 字段
+  改指 `src/repowiki/skills`。
+
+### 文档
+
+- README（zh/en）安装节改为推荐 `pip install repowiki-cli` + `repowiki skill install`，
+  手动拷贝降级为备选；离线安装节更新为「装好 CLI 后 `repowiki skill install`」；
+  skill 路径引用同步到新位置。
+
+### 测试
+
+- 新增 `tests/test_skill_install.py`（7 项）：包内 skill 资源可读（守护 package-data）、
+  默认/`--agent`/`--target` 三种目标安装、幂等与旧版更新报告、status 四态判定。
+
+### 清理
 
 - **Roadmap 小节移除**：产出语言冻结为 zh/en，不再扩展更多语言；「CLI 交互消息双语」计划
   取消（CLI 消息维持现状，面向驱动它的 agent）。

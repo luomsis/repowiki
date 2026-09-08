@@ -2,9 +2,40 @@
 
 [中文](CHANGELOG.md) | **English**
 
-## Unreleased
+## 0.6.0 — 2026-09-09
 
-### Removed
+### Added
+
+- **`repowiki skill install / status`**: the skill files (`SKILL.md` / `SKILL.en.md`) now
+  ship inside the wheel, so after a pip install one command puts the skill into an agent's
+  global skills directory — `~/.agents/skills/repowiki/` by default, `--agent
+  claude|codex|zcode|cursor|opencode` for a specific client, `--target <dir>` for a custom
+  location. Installs are stamped with the version and idempotent. `repowiki skill status`
+  reports each installed copy against the package version and distinguishes not
+  installed / manual copy without stamp / outdated / up to date; both commands support
+  `--json`.
+
+### Changed
+
+- **Skill directory moved into the package**: `skills/repowiki/` →
+  `src/repowiki/skills/repowiki/` (single source of truth shared by the wheel and
+  git/plugin installs); `.claude-plugin/plugin.json`'s `skills` field now points at
+  `src/repowiki/skills`.
+
+### Docs
+
+- README (zh/en) install sections now recommend `pip install repowiki-cli` +
+  `repowiki skill install`, with manual copy demoted to a fallback; the offline-install
+  section becomes "install the CLI, then `repowiki skill install`"; skill path references
+  updated to the new location.
+
+### Tests
+
+- New `tests/test_skill_install.py` (7 cases): bundled skill resource readable (guards the
+  package-data), installs to default / `--agent` / `--target`, idempotency and stale-copy
+  update reporting, and all four `skill status` states.
+
+### Housekeeping
 
 - **Roadmap section removed**: output languages are frozen to zh/en with no further
   languages planned; the bilingual-CLI-messages plan is cancelled (CLI messages stay as
