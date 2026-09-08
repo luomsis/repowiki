@@ -2,7 +2,14 @@
 
 [中文](CHANGELOG.md) | **English**
 
-## Unreleased
+## 0.5.1 — 2026-09-08
+
+### Fixed
+
+- **Version detection adapted to the new distribution name**: after the rename to
+  `repowiki-cli`, a clean install reported `repowiki --version` as 0.0.0 (the `__init__`
+  metadata lookup still used the old name) — it now queries `repowiki-cli` first with a
+  legacy-name fallback.
 
 ### Changed
 

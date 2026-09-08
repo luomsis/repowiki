@@ -13,6 +13,9 @@ intelligence is supplied by whatever agent drives the worker loop:
 from importlib.metadata import PackageNotFoundError, version as _package_version
 
 try:
-    __version__ = _package_version("repowiki")
-except PackageNotFoundError:  # running from an uninstalled source tree
-    __version__ = "0.0.0"
+    __version__ = _package_version("repowiki-cli")
+except PackageNotFoundError:
+    try:  # 历史安装可能仍登记为旧分发名
+        __version__ = _package_version("repowiki")
+    except PackageNotFoundError:  # running from an uninstalled source tree
+        __version__ = "0.0.0"

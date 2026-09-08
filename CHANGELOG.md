@@ -2,7 +2,12 @@
 
 **中文** | [English](CHANGELOG.en.md)
 
-## Unreleased
+## 0.5.1 — 2026-09-08
+
+### 修复
+
+- **版本号检测适配新分发名**：分发名改为 `repowiki-cli` 后，干净安装的 `repowiki --version`
+  显示 0.0.0（`__init__` 的 metadata 查询仍用旧名）——现优先查 `repowiki-cli`，兼容旧名回退。
 
 ### 变更
 
