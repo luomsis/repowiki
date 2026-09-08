@@ -91,18 +91,18 @@ repowiki 的运行时依赖**只有 `pyyaml>=6`**，离线安装只需三样东�
 
 ```bash
 pip download PyYAML==6.* -d wheels/        # 下载 pyyaml wheel（按目标机平台/Python 版本：macOS/Linux 各架构、Windows 的 wheel 互不通用）
-pip wheel --no-deps -w wheels/ .           # 或直接用 Release 页附带的 repowiki-*.whl
+pip wheel --no-deps -w wheels/ .           # 或直接用 Release 页附带的 repowiki_cli-*.whl
 ```
 
-把仓库目录（或 `repowiki-*.whl`）与 `wheels/` 一起拷到目标机，然后：
+把仓库目录（或 `repowiki_cli-*.whl`）与 `wheels/` 一起拷到目标机，然后：
 
 ```bash
 pip install --no-index wheels/PyYAML-*.whl        # 先装唯一依赖
-pip install --no-index repowiki-*.whl             # 再装 repowiki 本体（或 -e 源码目录）
+pip install --no-index repowiki_cli-*.whl             # 再装 repowiki 本体（或 -e 源码目录）
 repowiki --version                                # 验证
 ```
 
-用 pipx 的话：`pipx install --no-index repowiki-*.whl`。要跑测试套再额外离线装 `pytest`（`[test]` extra）。
+用 pipx 的话：`pipx install --no-index repowiki_cli-*.whl`。要跑测试套再额外离线装 `pytest`（`[test]` extra）。
 
 Agent Skill 同样离线可用——`skills/repowiki/` 是纯文本目录，直接整目录拷进客户端的
 skills 目录（`~/.claude/skills/repowiki/` 等）即可；skill 只调用本机已装好的 `repowiki` 命令，

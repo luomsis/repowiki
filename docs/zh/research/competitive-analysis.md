@@ -83,7 +83,7 @@ git-URL 安装 + 手动驱动循环是最大的漏斗瓶颈。
 1. **导出 `llms.txt` / `llms-full.txt`**：`site` 时按章节索引全部页面并合并全文，
    占住「wiki for agents」生态位——对 DeepWiki MCP 需求的静态文件回应。
 2. **PyPI 就绪与发布**：补全 pyproject 元数据（readme/urls/classifiers）；
-   `pip install repowiki` / `uvx repowiki` 是上手摩擦的最大单项。
+   `pip install repowiki-cli` / `uvx repowiki-cli` 是上手摩擦的最大单项。
 3. **只读 `stale` 子命令 + 官方 GitHub Action**：`repowiki stale --since <ref>` 复用 update 的
    diff→受影响页面映射（不写 state），CI 里做「代码改了、wiki 过期」门禁（对标 Swimm）；
    push main 自动 `site` 重建并发布 GitHub Pages（在线样例）。

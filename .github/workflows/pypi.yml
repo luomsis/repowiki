@@ -3,7 +3,7 @@
 # 前提（一次性，在 PyPI 网站上配置）：把本仓库登记为 repowiki 项目的
 # Trusted Publisher —— 项目尚未上传过 PyPI 时用「Pending Publisher」预登记：
 #   https://pypi.org/manage/account/publishing/ → Add a new pending project publisher
-#     PyPI project name: repowiki
+#     PyPI project name: repowiki-cli
 #     Owner:             luomsis
 #     Repository:        repowiki
 #     Workflow filename: pypi.yml   （必须与本文件名完全一致）

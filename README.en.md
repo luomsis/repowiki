@@ -104,19 +104,19 @@ three things: the repo source, a pyyaml wheel, and Python ≥ 3.10 on the target
 
 ```bash
 pip download PyYAML==6.* -d wheels/        # download the pyyaml wheel (match the target platform/Python: macOS/Linux per-arch and Windows wheels are not interchangeable)
-pip wheel --no-deps -w wheels/ .           # or grab repowiki-*.whl from the Releases page
+pip wheel --no-deps -w wheels/ .           # or grab repowiki_cli-*.whl from the Releases page
 ```
 
-Copy the repo directory (or `repowiki-*.whl`) together with `wheels/` to the target
+Copy the repo directory (or `repowiki_cli-*.whl`) together with `wheels/` to the target
 machine, then:
 
 ```bash
 pip install --no-index wheels/PyYAML-*.whl        # the only dependency first
-pip install --no-index repowiki-*.whl             # then repowiki itself (or -e a source checkout)
+pip install --no-index repowiki_cli-*.whl             # then repowiki itself (or -e a source checkout)
 repowiki --version                                # verify
 ```
 
-With pipx: `pipx install --no-index repowiki-*.whl`. To run the test suite, additionally
+With pipx: `pipx install --no-index repowiki_cli-*.whl`. To run the test suite, additionally
 install `pytest` offline (the `[test]` extra).
 
 The agent skill works offline too — `skills/repowiki/` is a plain-text directory; copy it

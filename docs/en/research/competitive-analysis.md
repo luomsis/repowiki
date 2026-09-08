@@ -98,7 +98,7 @@ funnel bottleneck today.
    during `site`, claiming the "wiki for agents" niche — a static-file answer to the DeepWiki MCP
    need.
 2. **PyPI readiness & publishing**: complete pyproject metadata (readme/urls/classifiers);
-   `pip install repowiki` / `uvx repowiki` is the single biggest onboarding win.
+   `pip install repowiki-cli` / `uvx repowiki-cli` is the single biggest onboarding win.
 3. **Read-only `stale` subcommand + official GitHub Action**: `repowiki stale --since <ref>` reuses
    update's diff→affected-pages mapping (writes no state) as a CI gate for "code changed, wiki
    stale" (à la Swimm); on push to main, rebuild with `site` and publish to GitHub Pages (live

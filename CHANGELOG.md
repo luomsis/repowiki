@@ -2,6 +2,15 @@
 
 **中文** | [English](CHANGELOG.en.md)
 
+## Unreleased
+
+### 变更
+
+- **PyPI 分发名定为 [`repowiki-cli`](https://pypi.org/project/repowiki-cli/)**：PyPI 上的
+  `repowiki` 名已被同用途项目（he-yufeng/RepoWiki）占用。分发名变更不影响使用——
+  命令名仍为 `repowiki`、import 包名仍为 `repowiki`，`pip install repowiki-cli` 后照常使用；
+  离线安装的 wheel 文件名相应变为 `repowiki_cli-*.whl`。
+
 ## 0.5.0 — 2026-09-08
 
 ### 新增

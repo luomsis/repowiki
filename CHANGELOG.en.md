@@ -2,6 +2,16 @@
 
 [中文](CHANGELOG.md) | **English**
 
+## Unreleased
+
+### Changed
+
+- **PyPI distribution name set to [`repowiki-cli`](https://pypi.org/project/repowiki-cli/)**:
+  the `repowiki` name on PyPI is taken by a same-purpose project (he-yufeng/RepoWiki).
+  This changes nothing about usage — the command is still `repowiki` and the import
+  package is still `repowiki`; after `pip install repowiki-cli` everything works as
+  documented. Offline-install wheel filenames become `repowiki_cli-*.whl`.
+
 ## 0.5.0 — 2026-09-08
 
 ### Added
