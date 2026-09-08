@@ -48,7 +48,10 @@
   to tell apart);
 - Site UI: **the on-page table of contents is now collapsible** — reusing the chapter-nav
   interaction (chevron rotation + aria-expanded) with the collapsed state persisted in
-  localStorage across page switches and theme toggles.
+  localStorage across page switches and theme toggles; when collapsed the TOC bar docks
+  to the bottom of the sidebar, giving the space back to the chapter navigation; TOC
+  entries are statically color-coded by level (H2 entries in body color and semibold,
+  H3 entries muted and indented), with the scroll-spy highlight kept on top.
 
 ### Changed
 

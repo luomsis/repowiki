@@ -145,6 +145,7 @@ button { font: inherit; color: inherit; }
 /* on-this-page toc */
 #toc-wrap { flex: 1 1 42%; min-height: 0; overflow-y: auto; padding: 6px 8px 20px; border-top: 1px solid var(--border-soft); }
 #toc-wrap[hidden] { display: none; }
+#toc-wrap.collapsed { flex: 0 0 auto; overflow-y: visible; padding-bottom: 8px; }
 #toc-toggle {
   display: flex; align-items: center; justify-content: space-between; gap: 6px;
   width: 100%; margin: 8px 0 6px; padding: 4px 8px;
@@ -163,6 +164,8 @@ button { font: inherit; color: inherit; }
   white-space: nowrap; text-overflow: ellipsis;
 }
 #page-toc a.l3 { padding-left: 24px; }
+#page-toc a.toc-h2 { color: var(--fg); font-weight: 600; }
+#page-toc a.toc-h3 { color: var(--muted); font-weight: 400; }
 #page-toc a:hover { color: var(--fg); }
 #page-toc a.active {
   color: var(--accent); border-left-color: var(--accent); font-weight: 600;

@@ -178,6 +178,8 @@
   function applyTocOpen() {
     $('#toc-toggle').setAttribute('aria-expanded', String(tocOpen));
     $('#page-toc').hidden = !tocOpen;
+    // 折叠时目录栏停靠侧栏底部，把空间还给章节导航
+    $('#toc-wrap').classList.toggle('collapsed', !tocOpen);
   }
   $('#toc-toggle').addEventListener('click', function () {
     tocOpen = !tocOpen;
