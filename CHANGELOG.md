@@ -30,6 +30,13 @@
   采用 wiki-as-code 模式：仓库跟踪 `.repowiki/` 的内容/元数据/知识库/llms 索引，
   `state/claims`、`state/tasks` 与可重建的 `wiki.html` 忽略。
 
+### 修复
+
+- 站点 UI：**H1/H2 层级区分度增强**——H1 加大为 2em/800 并保留全宽下划线，H2 改为主题色
+  文字 + 3px 同色左侧竖条（原先两级同为前景色 + 全宽下划线，视觉难以区分）；
+- 站点 UI：**「本页内容」目录框支持折叠**——复用章节导航的交互（chevron 旋转 + aria-expanded），
+  折叠状态持久化（localStorage），跨翻页与主题切换保持。
+
 ### 变更
 
 - pyproject 补全 PyPI 发布元数据（readme / urls / keywords / classifiers），

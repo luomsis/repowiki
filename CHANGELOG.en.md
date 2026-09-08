@@ -40,6 +40,16 @@
   Wiki-as-code mode: the repo tracks `.repowiki/` content/metadata/knowledge/llms
   indexes; `state/claims`, `state/tasks` and the rebuildable `wiki.html` are ignored.
 
+### Fixed
+
+- Site UI: **stronger H1/H2 hierarchy** — H1 grows to 2em/800 and keeps the only
+  full-width underline; H2 switches to accent-colored text with a 3px matching left bar
+  (both levels previously shared foreground color + full-width underlines and were hard
+  to tell apart);
+- Site UI: **the on-page table of contents is now collapsible** — reusing the chapter-nav
+  interaction (chevron rotation + aria-expanded) with the collapsed state persisted in
+  localStorage across page switches and theme toggles.
+
 ### Changed
 
 - pyproject now carries complete PyPI publishing metadata (readme / urls / keywords /

@@ -258,9 +258,9 @@ file** (`<repo>/.repowiki/<locale>/wiki.html`, roughly 4-5 MB):
   directly — click a `file://` reference to inspect the highlighted, line-numbered
   snippet in an in-page popup. No IDE, no network; send a colleague one file and they
   can browse the whole wiki;
-- collapsible sidebar section navigation + on-page table of contents (scroll-spy
-  highlighting), full-text search (hit highlighting), one-click code copy, prev/next
-  paging, reading progress bar, dark/light theme (follows system + manual toggle);
+- collapsible sidebar section navigation + collapsible on-page table of contents
+  (scroll-spy highlighting), full-text search (hit highlighting), one-click code copy,
+  prev/next paging, reading progress bar, dark/light theme (follows system + manual toggle);
 - fully offline: the markdown/mermaid rendering libraries (marked/mermaid, MIT) are
   embedded in the file itself;
 - idempotent: re-run `repowiki site` anytime after finalize, update, or manual edits;

@@ -173,6 +173,19 @@
   }
 
   // --- on-this-page toc + scroll spy + reading progress ---------------------
+  var tocOpen = true;
+  try { tocOpen = localStorage.getItem('rw-toc') !== '0'; } catch (e) { /* ignore */ }
+  function applyTocOpen() {
+    $('#toc-toggle').setAttribute('aria-expanded', String(tocOpen));
+    $('#page-toc').hidden = !tocOpen;
+  }
+  $('#toc-toggle').addEventListener('click', function () {
+    tocOpen = !tocOpen;
+    applyTocOpen();
+    try { localStorage.setItem('rw-toc', tocOpen ? '1' : '0'); } catch (e) { /* ignore */ }
+  });
+  applyTocOpen();
+
   var tocHeads = [];
   function buildToc() {
     var box = $('#page-toc');

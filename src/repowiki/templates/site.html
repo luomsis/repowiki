@@ -145,10 +145,17 @@ button { font: inherit; color: inherit; }
 /* on-this-page toc */
 #toc-wrap { flex: 1 1 42%; min-height: 0; overflow-y: auto; padding: 6px 8px 20px; border-top: 1px solid var(--border-soft); }
 #toc-wrap[hidden] { display: none; }
-.toc-label {
-  margin: 8px 8px 6px; font-size: 11px; font-weight: 650; letter-spacing: .08em;
-  color: var(--muted); text-transform: uppercase;
+#toc-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  width: 100%; margin: 8px 0 6px; padding: 4px 8px;
+  border: none; background: none; cursor: pointer; text-align: left;
+  font-size: 11px; font-weight: 650; letter-spacing: .08em;
+  color: var(--muted); text-transform: uppercase; border-radius: var(--radius-sm);
 }
+#toc-toggle:hover { color: var(--fg); }
+#toc-toggle .chev { flex: none; transition: transform .15s ease; }
+#toc-toggle[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+#page-toc[hidden] { display: none; }
 #page-toc a {
   display: block; padding: 3px 10px; font-size: 12.5px; line-height: 1.5;
   color: var(--muted); text-decoration: none; border-left: 2px solid transparent;
@@ -171,11 +178,14 @@ button { font: inherit; color: inherit; }
   line-height: 1.35; margin: 1.5em 0 .6em; text-wrap: balance; scroll-margin-top: calc(var(--topbar-h) + 16px);
 }
 #content h1 {
-  font-size: 1.85em; font-weight: 700; letter-spacing: -.01em;
-  margin-top: .1em; padding-bottom: .35em; border-bottom: 1px solid var(--border);
+  font-size: 2em; font-weight: 800; letter-spacing: -.015em;
+  margin-top: .1em; padding-bottom: .4em; border-bottom: 1px solid var(--border);
 }
-#content h2 { font-size: 1.4em; font-weight: 650; padding-bottom: .3em; border-bottom: 1px solid var(--border-soft); }
-#content h3 { font-size: 1.18em; font-weight: 650; }
+#content h2 {
+  font-size: 1.32em; font-weight: 700; color: var(--accent);
+  margin-top: 2em; padding-left: .6em; border-left: 3px solid var(--accent);
+}
+#content h3 { font-size: 1.12em; font-weight: 650; }
 #content h4 { font-size: 1.02em; font-weight: 650; color: var(--fg); }
 #content h5, #content h6 { font-size: .95em; font-weight: 650; color: var(--muted); }
 #content p { margin: .85em 0; }
@@ -307,7 +317,7 @@ button { font: inherit; color: inherit; }
 }
 @media (max-width: 600px) {
   .crumb-sep, .crumb-page { display: none; }
-  #content h1 { font-size: 1.55em; }
+  #content h1 { font-size: 1.7em; }
   #pager { grid-template-columns: 1fr; }
   #pager .next { text-align: left; }
 }
@@ -333,7 +343,7 @@ button { font: inherit; color: inherit; }
 </header>
 <nav id="sidebar" aria-label="目录">
   <div id="nav-tree"></div>
-  <div id="toc-wrap" hidden><div class="toc-label" id="toc-label"></div><div id="page-toc"></div></div>
+  <div id="toc-wrap" hidden><button type="button" id="toc-toggle" aria-expanded="true" aria-controls="page-toc"><span id="toc-label"></span><svg class="chev" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button><div id="page-toc"></div></div>
 </nav>
 <div id="backdrop"></div>
 <main id="main"><article id="content" class="md-body"></article><nav id="pager" hidden aria-label="翻页"></nav></main>
