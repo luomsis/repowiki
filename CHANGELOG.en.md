@@ -2,7 +2,7 @@
 
 [中文](CHANGELOG.md) | **English**
 
-## Unreleased
+## 0.5.0 — 2026-09-08
 
 ### Added
 
@@ -39,27 +39,32 @@
   agent in CI); on push to main, rebuilds with `site` and publishes to GitHub Pages.
   Wiki-as-code mode: the repo tracks `.repowiki/` content/metadata/knowledge/llms
   indexes; `state/claims`, `state/tasks` and the rebuildable `wiki.html` are ignored.
+- **Three site-UI reworks**: stronger H1/H2 hierarchy (H1 grows to 2em/800 and keeps the
+  only full-width underline; H2 switches to accent-colored text with a 3px matching left
+  bar); chapter navigation rebuilt (the chapter title itself is now a link to the
+  chapter's index page in the accent color, all-caps dropped, and the dropdown no longer
+  repeats the identically named index entry); the on-page TOC is collapsible and docks to
+  the bottom of the sidebar when collapsed (the TOC panel's own styling is unchanged).
+- **PyPI publishing ready**: pyproject now carries complete publishing metadata
+  (readme / urls / keywords / classifiers); `pip install repowiki` becomes available
+  after the first upload.
 
 ### Fixed
 
-- Site UI: **stronger H1/H2 hierarchy** — H1 grows to 2em/800 and keeps the only
-  full-width underline; H2 switches to accent-colored text with a 3px matching left bar
-  (both levels previously shared foreground color + full-width underlines and were hard
-  to tell apart);
-- Site UI: **chapter navigation rework** — the chapter title itself is now a link to the
-  chapter's index page, shown in the accent color (all-caps styling dropped), and the
-  dropdown no longer repeats the identically named index entry, making the hierarchy
-  obvious at a glance; the on-page table of contents is collapsible (reusing the
-  chevron/aria-expanded interaction with persisted state) and docks to the bottom of the
-  sidebar when collapsed; the TOC panel's own styling is back to the original.
+- Site UI: H1 and H2 previously shared foreground color + full-width underlines, making
+  the visual hierarchy hard to tell apart (addressed by the three reworks above).
 
-### Changed
+### Housekeeping
 
-- pyproject now carries complete PyPI publishing metadata (readme / urls / keywords /
-  classifiers); `pip install repowiki` becomes available after the first upload.
 - The built-in knowledge category table moved to `DEFAULT_KNOWLEDGE_CATEGORIES`
   (with per-category guidance, tasks.py); the plan task spec now renders the category
   list via `{{CATEGORY_BLOCK}}` instead of hardcoding it in the template.
+
+### Tests
+
+- Tests 157 → 187: positive/negative and end-to-end coverage for the coverage report,
+  staleness gate, `--dirty`, overview incremental refresh, custom knowledge categories,
+  the flow archetype, and llms export.
 
 ### Documentation
 

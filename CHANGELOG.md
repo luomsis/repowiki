@@ -2,7 +2,7 @@
 
 **中文** | [English](CHANGELOG.en.md)
 
-## Unreleased
+## 0.5.0 — 2026-09-08
 
 ### 新增
 
@@ -29,22 +29,26 @@
   （确定性检查，CI 内不跑 agent）；push main 自动 `site` 重建并发布 GitHub Pages。
   采用 wiki-as-code 模式：仓库跟踪 `.repowiki/` 的内容/元数据/知识库/llms 索引，
   `state/claims`、`state/tasks` 与可重建的 `wiki.html` 忽略。
+- **站点 UI 三项**：H1/H2 层级区分度增强（H1 加大为 2em/800 并保留全宽下划线，H2 改为主题色
+  文字 + 3px 同色左侧竖条）；章节导航层级重构（章节标题本身成为指向该章索引页的链接并以
+  主题色显示、去掉全大写样式，下拉中不再重复显示与章节同名的索引页）；「本页内容」目录框
+  支持折叠并在折叠时停靠侧栏底部（目录面板样式维持原状）。
+- **PyPI 发布就绪**：pyproject 补全 readme / urls / keywords / classifiers，
+  `pip install repowiki` 待首次上传后可用。
 
 ### 修复
 
-- 站点 UI：**H1/H2 层级区分度增强**——H1 加大为 2em/800 并保留全宽下划线，H2 改为主题色
-  文字 + 3px 同色左侧竖条（原先两级同为前景色 + 全宽下划线，视觉难以区分）；
-- 站点 UI：**章节导航层级重构**——章节标题本身成为指向该章索引页的链接并以主题色显示
-  （去掉全大写样式），下拉中不再重复显示与章节同名的索引页，标题与子页面层级一眼可辨；
-  「本页内容」目录框支持折叠（复用 chevron 旋转 + aria-expanded 交互，状态持久化），
-  折叠时停靠侧栏底部、空间还给章节导航；目录面板样式维持原状。
+- 站点 UI：原先 H1 与 H2 同为前景色 + 全宽下划线，视觉层级难以区分（见上条的三项重构）。
 
-### 变更
+### 清理
 
-- pyproject 补全 PyPI 发布元数据（readme / urls / keywords / classifiers），
-  `pip install repowiki` 待首次上传后可用。
 - 内置知识类别表迁移为带说明的 `DEFAULT_KNOWLEDGE_CATEGORIES`（tasks.py），规划任务规格的
   类别清单改为渲染注入（`{{CATEGORY_BLOCK}}`），不再硬编码于模板。
+
+### 测试
+
+- 测试 157 → 187：新增 coverage 报告、stale 门禁、`--dirty`、overview 增量刷新、自定义
+  知识类别、flow 原型与 llms 导出的正反例与端到端覆盖。
 
 ### 文档
 
