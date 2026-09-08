@@ -46,13 +46,12 @@
   full-width underline; H2 switches to accent-colored text with a 3px matching left bar
   (both levels previously shared foreground color + full-width underlines and were hard
   to tell apart);
-- Site UI: **the on-page table of contents is now collapsible** — reusing the chapter-nav
-  interaction (chevron rotation + aria-expanded) with the collapsed state persisted in
-  localStorage across page switches and theme toggles; when collapsed the TOC bar docks
-  to the bottom of the sidebar, giving the space back to the chapter navigation; TOC
-  entries are statically color-coded by level (H2 entries in the accent color, H3
-  entries muted and indented — echoing the blue H2 headings in the page body); the
-  scroll-spy current item is marked with a soft accent background and left bar.
+- Site UI: **chapter navigation rework** — the chapter title itself is now a link to the
+  chapter's index page, shown in the accent color (all-caps styling dropped), and the
+  dropdown no longer repeats the identically named index entry, making the hierarchy
+  obvious at a glance; the on-page table of contents is collapsible (reusing the
+  chevron/aria-expanded interaction with persisted state) and docks to the bottom of the
+  sidebar when collapsed; the TOC panel's own styling is back to the original.
 
 ### Changed
 

@@ -59,10 +59,17 @@
     D.nav.forEach(function (entry, i) {
       if (entry.children) {
         var open = navState['c' + i] !== '0';
-        html += '<button type="button" class="nav-chapter" data-ch="' + i + '" aria-expanded="' + open + '">' +
-          '<span>' + esc(entry.title) + '</span>' + ICON_CHEV + '</button>';
+        // 章节自身的索引页 = 下拉里与章节同名的第一项：把它提升为章节标题链接，
+        // 下拉不再重复显示同名项（catalog 保证标题全局唯一，不会误伤其他子页）
+        var kids = entry.children, own = null;
+        if (kids.length && kids[0].title === entry.title) own = kids.shift();
+        var title = own
+          ? '<a class="nav-chapter" data-page="' + own.page + '" data-ch="' + i + '" href="#/p/' + own.page + '">' + esc(entry.title) + '</a>'
+          : '<span class="nav-chapter">' + esc(entry.title) + '</span>';
+        html += '<div class="nav-chap">' + title +
+          '<button type="button" class="nav-toggle" data-ch="' + i + '" aria-expanded="' + open + '" aria-label="' + esc(entry.title) + '">' + ICON_CHEV + '</button></div>';
         html += '<div class="nav-children" data-chp="' + i + '"' + (open ? '' : ' hidden') + '>';
-        entry.children.forEach(function (c) {
+        kids.forEach(function (c) {
           html += navLink(c.page, c.title, 'nav-page');
         });
         html += '</div>';
@@ -76,9 +83,13 @@
     var a = document.querySelector('#nav-tree a[data-page="' + pageIdx + '"]');
     if (!a) return;
     var group = a.closest('.nav-children');
+    if (!group && a.classList.contains('nav-chapter')) {
+      // 章节标题链接在 .nav-children 之外，用 data-ch 定位它的下拉组
+      group = document.querySelector('#nav-tree .nav-children[data-chp="' + a.getAttribute('data-ch') + '"]');
+    }
     if (!group) return;
     group.hidden = false;
-    var btn = document.querySelector('#nav-tree .nav-chapter[data-ch="' + group.getAttribute('data-chp') + '"]');
+    var btn = document.querySelector('#nav-tree .nav-toggle[data-ch="' + group.getAttribute('data-chp') + '"]');
     if (btn) btn.setAttribute('aria-expanded', 'true');
   }
 
@@ -343,7 +354,7 @@
   $('#menu-btn').addEventListener('click', function () { document.body.classList.toggle('sidebar-open'); });
   $('#backdrop').addEventListener('click', closeSidebar);
   $('#nav-tree').addEventListener('click', function (ev) {
-    var btn = ev.target.closest ? ev.target.closest('.nav-chapter') : null;
+    var btn = ev.target.closest ? ev.target.closest('.nav-toggle') : null;
     if (btn) {
       var group = document.querySelector('#nav-tree .nav-children[data-chp="' + btn.getAttribute('data-ch') + '"]');
       if (group) {
