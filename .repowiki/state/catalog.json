@@ -5,352 +5,214 @@
       "id": "c01",
       "title": "项目概述",
       "slug": "project-overview",
-      "summary": "repowiki 的定位、核心设计理念与适用场景。",
+      "summary": "repowiki 的定位、确定性编排设计理念与仓库整体结构。",
       "kind": "chapter",
-      "dependent_files": [
-        "README.md",
-        "CONTEXT.md",
-        "DECISIONS.md",
-        "pyproject.toml",
-        "src/repowiki/__init__.py",
-        "src/repowiki/cli.py"
-      ],
-      "page_brief": "该索引页面向首次接触 repowiki 的读者：它是什么、不是什么、解决什么问题；强调『确定性构建系统 + agent 智能写作』的双层架构；点出与一般 LLM 工具的区别（零 API Key、零网络调用、产出语言自动跟随仓库）。",
+      "dependent_files": ["README.md", "docs/zh/CONTEXT.md", "pyproject.toml"],
+      "page_brief": "项目一句话定位（为代码仓库生成结构化 Wiki 的确定性任务编排器）；智能工作分离原则（CLI 无 LLM，agent 负责读写与撰写）；核心特性（mermaid 图、file:// 源码引用、zh/en 双语、单文件离线站点）；产出物在 <repo>/.repowiki/ 下的整体布局。",
       "children": [
         {
           "id": "c0101",
-          "title": "快速开始",
-          "slug": "quick-start",
-          "summary": "5 分钟内对任意仓库跑通 plan → next → check → finalize → site 的完整流程。",
+          "title": "定位与设计理念",
+          "slug": "positioning-and-design",
+          "summary": "repowiki 解决什么问题，以及「确定性编排 + agent 智能」的职责边界。",
           "kind": "page",
-          "dependent_files": [
-            "README.md",
-            "src/repowiki/cli.py",
-            "pyproject.toml"
-          ],
-          "page_brief": "覆盖：pip/pipx 安装方式、CLI 入口 `repowiki` 的注册、对一个示例仓库依次执行 plan/next/check/finalize/site 的命令序列、单文件离线站点的打开方式（--open）。"
+          "archetype": "module",
+          "dependent_files": ["README.md", "docs/zh/CONTEXT.md", "docs/zh/DECISIONS.md"],
+          "page_brief": "repowiki 面向的问题（LLM 直接撰写 wiki 不可控、难并发）；确定性编排器与驱动 agent 的分工（CLI 只做规划/校验/组装，无 LLM、零网络）；产出物形态（<repo>/.repowiki/ 下的 <locale>/content 页面、meta 元数据、knowledge 知识卡片、wiki.html 离线站点）；产出语言自动跟随仓库（README 权重）与 --locale 覆盖。"
         },
         {
           "id": "c0102",
-          "title": "领域词汇与设计哲学",
-          "slug": "concepts-and-vocabulary",
-          "summary": "Wiki/页面/章节/总览/Worker/认领/心跳 等核心概念的定义。",
+          "title": "仓库结构与分发形态",
+          "slug": "repo-layout-and-distribution",
+          "summary": "src 布局、wheel/PyPI 分发与 Agent Skill 分发三条线。",
           "kind": "page",
-          "dependent_files": [
-            "CONTEXT.md",
-            "DECISIONS.md",
-            "skills/repowiki/SKILL.md"
-          ],
-          "page_brief": "整理 CONTEXT.md 中的官方词汇表：Wiki 产物四类（页面/章节/总览/站点）、编排三概念（任务/规格/阶段）、执行三概念（Worker/认领/心跳）；同时列出 DECISIONS.md 中被刻意回避的『避免词』（manifest、agent、TOC 等）。"
+          "archetype": "module",
+          "dependent_files": ["pyproject.toml", ".claude-plugin/plugin.json", "src/repowiki/skills/repowiki/SKILL.md", "CHANGELOG.md"],
+          "page_brief": "src 布局单包 src/repowiki 及各子模块角色速览；PyPI 分发（分发名 repowiki-cli、Trusted Publisher 自动发布、Release 附 whl 的离线安装约定）；Agent Skill 分发（skill 文件内嵌包内 src/repowiki/skills/repowiki/、.claude-plugin/plugin.json 插件清单）；双语 README/CHANGELOG 与 AGENTS.md 发版六步规则。"
         }
       ]
     },
     {
       "id": "c02",
-      "title": "架构与数据流",
-      "slug": "architecture",
-      "summary": "plan → catalog → pages → overview → finalize → site 六阶段的状态机与目录布局。",
+      "title": "快速开始",
+      "slug": "quick-start",
+      "summary": "从安装 CLI/Skill 到生成第一个离线 wiki 站点的最短路径。",
       "kind": "chapter",
-      "dependent_files": [
-        "src/repowiki/cli.py",
-        "src/repowiki/plan.py",
-        "src/repowiki/dispatch.py",
-        "src/repowiki/paths.py"
-      ],
-      "page_brief": "该索引页用 mermaid 描绘 CLI 入口如何分发到 plan/dispatch 等命令、`state/` 与 `content/` 两棵目录树如何随阶段生长，以及「阶段门控」如何保证前序未完成时后续任务不发。",
+      "dependent_files": ["README.md", "src/repowiki/skills/repowiki/SKILL.md"],
+      "page_brief": "CLI 与 Skill 的安装方式；plan → next → check → finalize → site 主流程速览；并发 worker 模式的适用场景。",
       "children": [
         {
           "id": "c0201",
-          "title": "CLI 入口与命令分发",
-          "slug": "cli-and-dispatch",
-          "summary": "main() 如何解析 argv 并把 plan/next/check/release/touch/finalize/site 等子命令路由到 plan/dispatch/site 模块。",
+          "title": "安装与 Agent Skill 安装",
+          "slug": "installation",
+          "summary": "pip/pipx/离线 whl 安装 CLI，repowiki skill install 安装 skill。",
           "kind": "page",
-          "dependent_files": [
-            "src/repowiki/cli.py",
-            "src/repowiki/dispatch.py"
-          ],
-          "page_brief": "说明 CLI 的 argparse 设计：每个子命令对应一个 module 顶层函数；focus 在 dispatch.py 内部如何把 next/check/release/touch/watch 等『运行时交互命令』与 plan/finalize/site 这类『阶段转换命令』分层。"
+          "archetype": "module",
+          "dependent_files": ["README.md", "src/repowiki/skill_install.py", ".github/workflows/pypi.yml"],
+          "page_brief": "PyPI 安装（pip / pipx，依赖仅 pyyaml，Python ≥ 3.10）；离线安装三要素（源码或 whl、pyyaml wheel、目标机 Python）；repowiki skill install / status 用法：默认目标 ~/.agents/skills/repowiki/、--agent claude|codex|zcode|cursor|opencode 目录映射、--target 自定义、版本戳与幂等语义；GitHub Release 附 whl 的离线路径。"
         },
         {
           "id": "c0202",
-          "title": "任务状态机与目录布局",
-          "slug": "task-state-machine",
-          "summary": "tasks.json 索引、claim 目录、stale 窗口与 attempts 计数共同构成的运行时目录树。",
+          "title": "标准生成流程",
+          "slug": "standard-workflow",
+          "summary": "从 plan 到 site 的七步串行流程与并发 worker 模式。",
           "kind": "page",
-          "dependent_files": [
-            "src/repowiki/state.py",
-            "src/repowiki/paths.py",
-            "src/repowiki/tasks.py"
-          ],
-          "page_brief": "覆盖 .repowiki/state/ 下的 tasks.json、catalog.json、claims/、tasks/、index.json 等文件/目录的职责；状态值 pending/in_progress/done/failed/exhausted 的迁移规则；mtime 作为单一心跳来源的设计取舍（DECISIONS #3/#12）。"
-        },
-        {
-          "id": "c0203",
-          "title": "路径与输出布局",
-          "slug": "paths-and-output",
-          "summary": ".repowiki/<locale>/{content,meta} 与 knowledge/<locale>/ 的统一路径契约。",
-          "kind": "page",
-          "dependent_files": [
-            "src/repowiki/paths.py",
-            "src/repowiki/output.py"
-          ],
-          "page_brief": "封装所有路径常量的 paths.py 如何避免散落字符串拼接；output.py 如何把 stdout 同时映射成 human/JSON 双格式（DECISIONS #0 commit message 中提到的『one emit seam』）。"
+          "archetype": "flow",
+          "dependent_files": ["src/repowiki/cli.py", "src/repowiki/plan.py", "src/repowiki/skills/repowiki/SKILL.md"],
+          "page_brief": "流程起点为 repowiki plan 扫描仓库，终点为 repowiki site 产出离线站点；逐步说明 plan / next --claim / 按任务规格撰写 / check / finalize（两步：创建 overview → 执行 → 再 finalize）/ site 的命令与职责；并发模式：全局 FIFO 队列 + 等价 worker 循环 + touch 心跳 + 后台 watch 监控；退出码语义（0 成功、1 校验失败、2 冲突、3 finalize 创建 overview 属正常进展）。"
         }
       ]
     },
     {
       "id": "c03",
-      "title": "编排流水线",
-      "slug": "orchestration-pipeline",
-      "summary": "plan → next/check/release → finalize → site 各阶段的具体算法与并发安全。",
+      "title": "核心机制",
+      "slug": "core-mechanisms",
+      "summary": "任务状态机、模板体系与质量门禁三大机制的内部实现。",
       "kind": "chapter",
-      "dependent_files": [
-        "src/repowiki/plan.py",
-        "src/repowiki/dispatch.py",
-        "src/repowiki/tasks.py",
-        "src/repowiki/updater.py"
-      ],
-      "page_brief": "该索引页串联六个阶段对应的源文件；强调『catalog 幂等』与『overview 两步 finalize』（DECISIONS #6/#7）这两个对外不显眼但对 agent 协作者很关键的契约。",
+      "dependent_files": ["src/repowiki/state.py", "src/repowiki/tasks.py", "src/repowiki/validate.py"],
+      "page_brief": "任务从 pending 到 done 的状态流转与文件锁并发控制；任务规格的生成与 zh/en 模板渲染；页面校验规则、自动修复与覆盖率统计。",
       "children": [
         {
           "id": "c0301",
-          "title": "plan：扫描仓库并生成任务清单",
-          "slug": "plan-and-scanner",
-          "summary": "scanner.py 如何遍历仓库得到代码文件树与语言线索，plan.py 如何据此展开 catalog 与 page 任务。",
+          "title": "任务状态机与并发控制",
+          "slug": "task-state-machine",
+          "summary": "任务状态流转、原子认领、心跳续期与停滞回收的实现。",
           "kind": "page",
-          "dependent_files": [
-            "src/repowiki/plan.py",
-            "src/repowiki/scanner.py",
-            "src/repowiki/i18n.py"
-          ],
-          "page_brief": "覆盖：忽略规则（.git/.repowiki/node_modules 等）、文件扩展名白名单、语言自动检测的权重策略（README > 主语言文件）、locale 持久化到 state/locale。"
+          "archetype": "flow",
+          "dependent_files": ["src/repowiki/state.py", "src/repowiki/dispatch.py", "src/repowiki/errors.py"],
+          "page_brief": "流程起点为 plan/catalog 写入 pending 任务，终点为 check 通过置 done；状态枚举（pending / in_progress / done / failed / exhausted）与存储布局（state/tasks/、state/claims/）；next --claim 的原子认领实现（POSIX fcntl 与 Windows msvcrt 文件锁）；touch 心跳与 stale 窗口（默认 900 秒）自动回收；release --force 重置与 exhausted 毒任务（REPOWIKI_MAX_ATTEMPTS）；ConflictError / StateError / UsageError 的退出码映射（2/1/1）。"
         },
         {
           "id": "c0302",
-          "title": "next/check/release/touch：认领与回收",
-          "slug": "claim-and-lifecycle",
-          "summary": "原子认领、stale 抢占、attempt 计数与 watch 监控的完整生命周期。",
+          "title": "任务规格与模板体系",
+          "slug": "task-spec-and-templates",
+          "summary": "任务规格文件的结构、instructions 渲染与 zh/en 模板镜像。",
           "kind": "page",
-          "dependent_files": [
-            "src/repowiki/dispatch.py",
-            "src/repowiki/state.py",
-            "src/repowiki/errors.py"
-          ],
-          "page_brief": "覆盖：_try_mkdir_claim 的抢占路径、ready_tasks 如何把过期 in_progress 重新入队、REPOWIKI_STALE_SECONDS/REPOWIKI_MAX_ATTEMPTS 两个环境变量、touch 心跳与 check 顺带续期的双保险（DECISIONS #11）。"
+          "archetype": "module",
+          "dependent_files": ["src/repowiki/tasks.py", "src/repowiki/templates.py", "src/repowiki/templates/zh/page_task.md", "src/repowiki/templates/zh/STYLE.md"],
+          "page_brief": "任务规格文件（state/tasks/<id>.md）的 frontmatter 字段（id/kind/phase/title/output）与 instructions 正文如何由模板渲染；templates/zh 与 templates/en 的 13 个模板文件各自用途（catalog_task、page_task、flow_template、overview_task、update_task、knowledge 系列等）；STYLE 规范要点（必备小节、每节末 Section sources、每个 mermaid 图后 Diagram sources、[path:Lx-Ly](file://path#Lx-Ly) 引用格式、行号不越界、页间零链接、禁 emoji 与表格）；archetype=flow 与 module 两类页面模板的差异。"
         },
         {
           "id": "c0303",
-          "title": "finalize：阶段收尾与元数据",
-          "slug": "finalize-and-metadata",
-          "summary": "首次 finalize 创建 overview 任务（退出码 3）、再次 finalize 写 metadata.json 并清理运行时产物。",
+          "title": "页面校验与自动修复",
+          "slug": "validation-and-autofix",
+          "summary": "check 的确定性校验项、自动修复边界与覆盖率报告。",
           "kind": "page",
-          "dependent_files": [
-            "src/repowiki/dispatch.py",
-            "src/repowiki/metadata.py",
-            "src/repowiki/tasks.py"
-          ],
-          "page_brief": "覆盖 metadata.json 的字段契约（章节树、源码引用、片段关系），finalize 后的 state 清理策略（保留 catalog/index/knowledge，删 claims/tasks，DECISIONS #10）。"
-        },
-        {
-          "id": "c0304",
-          "title": "update：基于 git diff 的增量更新",
-          "slug": "incremental-update",
-          "summary": "如何从 git 变更反推受影响页面并附加『更新摘要』。",
-          "kind": "page",
-          "dependent_files": [
-            "src/repowiki/updater.py",
-            "src/repowiki/gitutil.py"
-          ],
-          "page_brief": "覆盖：git diff 的解析、dependent_files 反查影响页、重写任务规格中追加『Update Summary』小节的机制；强调 update 依赖 catalog.json 而非 metadata.json 的原因（DECISIONS #10）。"
+          "archetype": "module",
+          "dependent_files": ["src/repowiki/validate.py", "src/repowiki/coverage.py", "src/repowiki/output.py", "src/repowiki/errors.py"],
+          "page_brief": "check 对页面产出的确定性校验项（H1 唯一、锚点、file:// 引用行号越界、未替换占位符、必备小节缺失等）；哪些缺陷由 check 自动修复（锚点/行号/H1 类），哪些必须报 errors 交 agent 修复（语义问题）；coverage 命令如何统计 wiki 从未引用的仓库文件；emit 双格式输出 seam（--json 与 human 模式同源、emit_error 的退出码与通道分离）。"
         }
       ]
     },
     {
       "id": "c04",
-      "title": "页面模板与校验",
-      "slug": "templates-and-validation",
-      "summary": "page/overview/knowledge 任务规格的模板语法与 validate.py 的确定性修复策略。",
+      "title": "CLI 命令与实现",
+      "slug": "cli-commands",
+      "summary": "全部子命令的职责划分、参数与对应模块实现。",
       "kind": "chapter",
-      "dependent_files": [
-        "src/repowiki/templates.py",
-        "src/repowiki/templates/zh/page_task.md",
-        "src/repowiki/templates/zh/page_template.md",
-        "src/repowiki/templates/zh/overview_task.md",
-        "src/repowiki/validate.py"
-      ],
-      "page_brief": "该索引页解释『任务规格 = 模板 + 写作约束 + hint_files』三件套如何在不依赖 LLM 的前提下让任意 worker 写出一致风格的页面。",
+      "dependent_files": ["src/repowiki/cli.py", "src/repowiki/dispatch.py", "src/repowiki/site.py"],
+      "page_brief": "argparse 子命令注册总览（15+ 命令）；规划、worker 循环、增量更新、站点导出、skill 安装五组命令背后的模块与关键函数。",
       "children": [
         {
           "id": "c0401",
-          "title": "模板加载与占位符预渲染",
-          "slug": "template-loading",
-          "summary": "templates.py 如何从 package 内嵌的 templates/<locale>/ 读取规格并替换占位符。",
+          "title": "规划与扫描",
+          "slug": "plan-and-scan",
+          "summary": "plan 命令的仓库扫描、语言检测与 catalog 任务生成。",
           "kind": "page",
-          "dependent_files": [
-            "src/repowiki/templates.py",
-            "src/repowiki/templates/zh/STYLE.md"
-          ],
-          "page_brief": "覆盖：importlib.resources 读取包内模板、locale 切换、{{TITLE}} 在任务生成时即被替换的设计动机（DECISIONS #4）。"
+          "archetype": "module",
+          "dependent_files": ["src/repowiki/plan.py", "src/repowiki/scanner.py", "src/repowiki/catalog.py", "src/repowiki/i18n.py"],
+          "page_brief": "plan 的仓库扫描逻辑（代码文件识别规则、文件树展示截断、关键文件挑选）；i18n 语言自动检测（README 权重最高、--locale 覆盖、state/locale 持久化）；catalog 任务的创建与 catalog.json 的校验入库（标题/slug/id 唯一、深度、dependent_files 存在性）；--replan / --max-pages / --knowledge 参数行为。"
         },
         {
           "id": "c0402",
-          "title": "validate：必检项与自动修复",
-          "slug": "validation-and-auto-fix",
-          "summary": "check 命令的语义检查（errors）与确定性缺陷（锚点/行号/H1）自动修复的边界。",
+          "title": "worker 循环命令",
+          "slug": "worker-loop-commands",
+          "summary": "next / touch / watch / release / status 的实现细节。",
           "kind": "page",
-          "dependent_files": [
-            "src/repowiki/validate.py",
-            "src/repowiki/i18n.py"
-          ],
-          "page_brief": "覆盖：锚点的 GitHub 规则（删标点、空白转 -，DECISIONS #5）、行号不越界校验、Section sources/Diagram sources 小节末尾强制、`file://path#Lx-Ly` 链接格式校验。"
+          "archetype": "module",
+          "dependent_files": ["src/repowiki/dispatch.py", "src/repowiki/paths.py", "src/repowiki/state.py"],
+          "page_brief": "next 的就绪任务判定（依赖与阶段）与单任务发放；claim 原子性与 --worker 记录；touch 心跳续期；watch 的轮询间隔、停滞（stalled）与超时判定及退出码 0/1；release 退回 pending 与 --force 抢占；status 的任务统计、失败与 stale claim 报告；WikiPaths 的路径布局约定。"
         },
         {
           "id": "c0403",
-          "title": "知识卡片任务族",
-          "slug": "knowledge-cards",
-          "summary": "knowledge 命令下的六类机制卡片与模块文档。",
+          "title": "增量更新与过期检测",
+          "slug": "update-and-stale",
+          "summary": "基于 git diff 的增量任务生成与 CI 过期门禁。",
           "kind": "page",
-          "dependent_files": [
-            "src/repowiki/knowledge.py",
-            "src/repowiki/templates/zh/knowledge_task.md",
-            "src/repowiki/templates/zh/knowledge_card_task.md",
-            "src/repowiki/templates/zh/knowledge_module_task.md"
-          ],
-          "page_brief": "覆盖：knowledge 命令的入口与产出路径（knowledge/<locale>/）、六类机制卡片（配置/日志/错误处理/并发模型/边界与异常/依赖注入）的适用判断、与 wiki 页面的解耦关系。"
+          "archetype": "module",
+          "dependent_files": ["src/repowiki/updater.py", "src/repowiki/gitutil.py"],
+          "page_brief": "update 如何把 git 变更映射为 page_update 任务（since 缺省取 metadata 的 last_commit_id；--dirty 纳入未提交/未跟踪变更）；受影响页面、知识卡片与模块的判定规则；重写的页面如何附加「更新摘要/Update Summary」小节；stale 只读报告与 --fail-if-stale 作为 CI 门禁的用法；gitutil 对 git CLI 的依赖封装。"
+        },
+        {
+          "id": "c0404",
+          "title": "知识卡片与 finalize",
+          "slug": "knowledge-and-finalize",
+          "summary": "知识卡片任务集与元数据组装。",
+          "kind": "page",
+          "archetype": "module",
+          "dependent_files": ["src/repowiki/knowledge.py", "src/repowiki/metadata.py", "src/repowiki/templates/zh/knowledge_task.md"],
+          "page_brief": "knowledge 命令追加的任务集（机制卡 planning + 卡片撰写，六类内置类别与 --categories 自定义清单、持久化于 state/knowledge_categories.json）；卡片产出到 knowledge/<locale>/ 的布局；finalize 两步走（第一次运行创建 overview 任务并退出码 3 → overview 完成后组装 <locale>/meta/repowiki-metadata.json）；metadata 关键字段（last_commit_id 供 update 增量、任务统计）；完成后自动清理 state/claims 与 state/tasks。"
+        },
+        {
+          "id": "c0405",
+          "title": "离线站点与 llms.txt 导出",
+          "slug": "site-and-llms",
+          "summary": "单文件 wiki.html 站点与 agent 索引的生成。",
+          "kind": "page",
+          "archetype": "module",
+          "dependent_files": ["src/repowiki/site.py", "src/repowiki/llms.py", "src/repowiki/templates/site.html", "src/repowiki/templates/site/app.js", "src/repowiki/vendor/README.md"],
+          "page_brief": "site 命令把 content 页面组装为单文件 .repowiki/<locale>/wiki.html（vendor 内联 marked.min.js / mermaid.min.js、目录导航与前端渲染逻辑 site/app.js）；llms.txt / llms-full.txt 两种 agent 索引的内容与差异；--open 浏览器打开；幂等重建语义；GitHub Pages 发布流程（.github/workflows/wiki.yml）。"
+        },
+        {
+          "id": "c0406",
+          "title": "skill 安装与 CLI 骨架",
+          "slug": "skill-install-and-cli",
+          "summary": "skill install/status 的实现与 argparse 命令注册。",
+          "kind": "page",
+          "archetype": "module",
+          "dependent_files": ["src/repowiki/skill_install.py", "src/repowiki/cli.py", "src/repowiki/__init__.py"],
+          "page_brief": "skill install 的 agent 目录映射（agents/claude/codex/zcode/cursor/opencode 六个 --agent 值）、importlib.resources 读取包内 skill、版本戳 .repowiki-skill-version 与幂等/current/updated 判定；skill status 的四态报告；cli.py 的 argparse 子命令组注册（skill 组无 repo 参数、WikiPaths 按需构建）与退出码分发；__init__.py 的版本号解析回退链（repowiki-cli → repowiki → 0.0.0）。"
         }
       ]
     },
     {
       "id": "c05",
-      "title": "离线查看站点",
-      "slug": "offline-site",
-      "summary": "site 命令如何把全部页面与渲染库打包成一个可双击打开的 wiki.html。",
+      "title": "测试、CI 与设计决策",
+      "slug": "testing-ci-and-decisions",
+      "summary": "测试套件组织、三平台 CI 与发布流水线、架构决策记录。",
       "kind": "chapter",
-      "dependent_files": [
-        "src/repowiki/site.py",
-        "src/repowiki/templates/site.html",
-        "src/repowiki/templates/site/app.js",
-        "src/repowiki/vendor/marked.min.js",
-        "src/repowiki/vendor/mermaid.min.js"
-      ],
-      "page_brief": "该索引页解释为什么选择『单文件离线 HTML』而非静态站点目录：双击即看、可邮件分发、无服务器依赖；强调 vendor/ 目录里 marked 与 mermaid 的内嵌。",
+      "dependent_files": ["tests/conftest.py", ".github/workflows/ci.yml", "docs/zh/DECISIONS.md"],
+      "page_brief": "13 个测试文件的组织与覆盖面；CI 矩阵、PyPI Trusted Publisher 与 Pages 发布；15 条最小合理决策与术语表。",
       "children": [
         {
           "id": "c0501",
-          "title": "单文件站点的组装流程",
-          "slug": "single-file-site-assembly",
-          "summary": "site.py 如何把 markdown、源码片段、渲染库塞进一个 HTML 文件。",
+          "title": "测试套件",
+          "slug": "test-suite",
+          "summary": "pytest 测试的组织方式与各文件覆盖的模块。",
           "kind": "page",
-          "dependent_files": [
-            "src/repowiki/site.py",
-            "src/repowiki/templates/site.html"
-          ],
-          "page_brief": "覆盖：页面正文抽取、源码行内联、TOC 与主题切换、mermaid 主题变量；产出路径 `<repo>/.repowiki/<locale>/wiki.html`。"
+          "archetype": "module",
+          "dependent_files": ["tests/conftest.py", "tests/test_state.py", "tests/test_validate.py", "tests/test_skill_install.py", "tests/test_site.py"],
+          "page_brief": "conftest 的合成示例仓库 fixture（make_repo 与任务/页面样本）；各测试文件与模块的对应（test_state 状态机与并发、test_validate 校验与自动修复、test_skill_install 六种 --agent 目标与版本戳、test_site 站点与 llms 导出、test_coverage/test_i18n/test_stale/test_flow/test_robustness/test_paths_catalog/test_output/test_scanner）；monkeypatch Path.home 等跨平台测试技巧。"
         },
         {
           "id": "c0502",
-          "title": "前端渲染与交互",
-          "slug": "frontend-rendering",
-          "summary": "app.js 如何驱动 marked + mermaid 完成 markdown 解析、图渲染、目录高亮。",
+          "title": "CI 与发布流水线",
+          "slug": "ci-and-release-pipeline",
+          "summary": "从 push 到 PyPI 上线与 Pages 更新的三条 workflow。",
           "kind": "page",
-          "dependent_files": [
-            "src/repowiki/templates/site/app.js"
-          ],
-          "page_brief": "覆盖：客户端路由（hash 同步）、TOC 锚点跳转不重置页面（commit d54d086 的 fix）、nav 高亮跟随当前选中的 section。"
-        }
-      ]
-    },
-    {
-      "id": "c06",
-      "title": "测试与跨平台支持",
-      "slug": "testing-and-cross-platform",
-      "summary": "pytest 套件覆盖的边界条件与 Windows 原生支持的差异点。",
-      "kind": "chapter",
-      "dependent_files": [
-        "tests/conftest.py",
-        "tests/test_flow.py",
-        "tests/test_robustness.py",
-        "tests/test_state.py",
-        "tests/test_validate.py",
-        "tests/test_paths_catalog.py",
-        "tests/test_scanner.py",
-        "tests/test_site.py",
-        "tests/test_i18n.py",
-        "tests/test_output.py",
-        "docs/adr/0001-windows-native-support.md",
-        "docs/adr/0002-single-file-offline-site.md"
-      ],
-      "page_brief": "该索引页把测试目录按『功能模块 / 健壮性 / 跨平台』三组串起来，点出两个 ADR 对应 Windows 原生支持与单文件站点的决策由来。",
-      "children": [
-        {
-          "id": "c0601",
-          "title": "并发安全与生命周期测试",
-          "slug": "concurrency-tests",
-          "summary": "test_flow / test_state / test_robustness 暴露过的真实竞态 bug。",
-          "kind": "page",
-          "dependent_files": [
-            "tests/test_flow.py",
-            "tests/test_state.py",
-            "tests/test_robustness.py",
-            "tests/conftest.py",
-            "DECISIONS.md"
-          ],
-          "page_brief": "覆盖：T5 busy 信号、T9 模板替换、stale 抢占、6×12 压测下的 flock TOCTOU、40 页并发实战回收等场景；展示 DECISIONS.md 中编号决策与测试用例的对应关系。"
+          "archetype": "flow",
+          "dependent_files": [".github/workflows/ci.yml", ".github/workflows/pypi.yml", ".github/workflows/wiki.yml", "AGENTS.md"],
+          "page_brief": "流程起点为 push/PR 触发 ci.yml，终点为 PyPI 上线与 GitHub Pages 更新；ci.yml 的三平台 × Python 3.10-3.13 矩阵与 stale 门禁；pypi.yml 的 Trusted Publisher 机制（Release 触发、OIDC 免 token、发布 wheel+sdist）；wiki.yml 的 Pages 发布与 PR staleness 检查；AGENTS.md 发版六步规则（版本号同步、双语 CHANGELOG、打 wheel、附 Release、pytest 门禁、gh release create）。"
         },
         {
-          "id": "c0602",
-          "title": "Windows 原生支持",
-          "slug": "windows-native",
-          "summary": "msvcrt 文件锁、pathlib.Path 与 Windows 兼容的处理。",
+          "id": "c0503",
+          "title": "架构决策与术语",
+          "slug": "architecture-decisions-and-glossary",
+          "summary": "最小合理决策记录、ADR 与领域术语表。",
           "kind": "page",
-          "dependent_files": [
-            "docs/adr/0001-windows-native-support.md",
-            "src/repowiki/state.py",
-            "src/repowiki/cli.py"
-          ],
-          "page_brief": "覆盖 ADR 0001 的决策背景：用 `msvcrt` 替代 `fcntl` 做文件锁、跨平台分支的位置（state.py）、PowerShell 与 bash 在并发流程中的命令差异。"
-        }
-      ]
-    },
-    {
-      "id": "c07",
-      "title": "开发与扩展",
-      "slug": "development-and-extension",
-      "summary": "如何新增命令、扩展模板、贡献 PR 的入口。",
-      "kind": "chapter",
-      "dependent_files": [
-        "README.md",
-        "CHANGELOG.md",
-        "pyproject.toml",
-        ".github/workflows/ci.yml"
-      ],
-      "page_brief": "该索引页面向想动手改 repowiki 的开发者：仓库结构、开发约定、CI 入口。",
-      "children": [
-        {
-          "id": "c0701",
-          "title": "如何新增一个命令",
-          "slug": "add-a-command",
-          "summary": "在 cli.py 注册子命令、在 dispatch.py/plan.py 等模块加顶层函数的约定。",
-          "kind": "page",
-          "dependent_files": [
-            "src/repowiki/cli.py",
-            "src/repowiki/dispatch.py"
-          ],
-          "page_brief": "覆盖：argparse 子解析器、命名风格（动名词/动词）、错误码语义（0/1/2/3）、新增任务类型时同步更新 tasks.py 与 templates.py 的检查清单。"
-        },
-        {
-          "id": "c0702",
-          "title": "贡献流程与 CI",
-          "slug": "contributing-and-ci",
-          "summary": "本地开发、pytest、GitHub Actions 检查项。",
-          "kind": "page",
-          "dependent_files": [
-            ".github/workflows/ci.yml",
-            "pyproject.toml",
-            "CHANGELOG.md",
-            "README.md"
-          ],
-          "page_brief": "覆盖：pip install -e .[test]、pytest -q、ci.yml 触发的条件、CHANGELOG.md 的写法约定、conventional commit 与 PR 模板（如有）。"
+          "archetype": "module",
+          "dependent_files": ["docs/zh/DECISIONS.md", "docs/zh/CONTEXT.md", "docs/zh/adr/0001-windows-native-support.md", "docs/zh/adr/0002-single-file-offline-site.md"],
+          "page_brief": "DECISIONS.md 的 15 条最小合理决策摘要与理由；两份 ADR（Windows 原生支持：msvcrt/fcntl 双文件锁；单文件离线站点：vendor 内联而非外链）；CONTEXT.md 术语表三组（artifacts 产物 / orchestration 编排 / execution 执行）与 Avoid list；竞争分析（docs/zh/research/competitive-analysis.md）的定位结论。"
         }
       ]
     }

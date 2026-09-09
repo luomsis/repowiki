@@ -1,27 +1,32 @@
 # repowiki Wiki 总览
 
-repowiki 是一个确定性的仓库 Wiki 构建系统：编排与校验由 CLI 完成，智能写作（读码、产出页面）由驱动它的 agent 完成。它把「为任意仓库生成结构化文档」这件事拆成两层——底层的任务规划、原子认领、产出校验、状态清理由一个零 LLM 依赖的 Python CLI 承担，上层的页面撰写则交给任意能跑 shell + 读写文件的执行者（包括并发 subagent）。这种「编排/写作」分离的架构让 repowiki 既保持仓库产出的可复现性，又让任何驱动 agent 都能参与：CLI 不绑定任何特定 LLM，零 API Key、零网络调用，产出的 wiki 语言自动跟随目标仓库（中文仓库 → 中文页面，英文仓库 → 英文页面）。
+## 概述
 
-本 Wiki 以章节为单位组织，共七章、二十六张页面，覆盖从首次安装到二次开发的全部路径。第一章交代项目定位与术语，后续五章分别走架构、编排、模板与校验、离线站点、测试与跨平台等纵深维度，最后一章给出贡献者视角的开发与扩展入口。所有页面遵循同一文风规范：简体中文为主、专有名词保留英文、每节末尾带「章节来源」、每个 mermaid 图后带「图表来源」。
+repowiki 是一个为代码仓库生成结构化 Wiki 的确定性任务编排器，以 Python CLI 形式分发（PyPI 分发名 `repowiki-cli`）。它的核心设计是「确定性编排 + agent 智能」的职责分离：CLI 本身不含任何 LLM 调用，只负责扫描仓库、规划任务、原子分发任务、校验产出与组装元数据；所有智能工作——阅读源码、按任务规格撰写 wiki 页面——由驱动它的任意 coding agent 完成。这一分离使产出质量取决于 agent 的阅读与写作能力，而产出的一致性、可并发性与可校验性由编排器保证。
+
+主要特性包括：页面内使用 mermaid 图表与 `[path:Lx-Ly](file://path#Lx-Ly)` 行级源码引用，确保每个论断可回溯到具体代码；产出语言自动跟随目标仓库（中文或英文，plan 时检测并以 `--locale` 覆盖）；基于文件锁的任务认领与心跳机制支持多个 agent 并发撰写同一仓库的 wiki；finalize 后可将全部页面组装为单文件离线 HTML 站点（`wiki.html`），并导出 `llms.txt` / `llms-full.txt` 供其他 agent 或 IDE 按索引消费。
+
+分发形态有三条线：PyPI 常规安装（依赖仅 `pyyaml`，Python ≥ 3.10，由 GitHub Release 触发 Trusted Publisher 自动上传）；GitHub Release 附带 wheel 供离线环境安装；Agent Skill 分发——skill 文件（`SKILL.md`）随 wheel 内嵌打包，装完 CLI 后执行 `repowiki skill install` 即可安装到各 agent 的全局 skills 目录，仓库同时提供 Claude Code / ZCode 插件清单。
+
+[README.md:1-100](file://README.md#L1-L100)
+[pyproject.toml:1-50](file://pyproject.toml#L1-L50)
+[src/repowiki/__init__.py:1-21](file://src/repowiki/__init__.py#L1-L21)
 
 ## 章节导航
 
-- 项目概述 —— repowiki 是什么、双层架构的设计动机、与一般 LLM 工具的区别，以及首次安装到跑通完整流程的命令序列。
-- 架构与数据流 —— CLI 入口如何把 plan/next/check/release/finalize/site 等子命令路由到对应模块，state/ 与 content/ 两棵目录树如何随阶段生长，path 常量如何统一收口。
-- 编排流水线 —— plan/scanner 如何从仓库扫描出任务清单，next/check/release/touch 的认领-心跳-过期回收闭环，finalize 如何产出 metadata.json 并清理运行时产物，以及基于 git diff 的 update 增量更新。
-- 页面模板与校验 —— templates.py 这个刻意做小的资产加载器如何按 locale 取模板并替换占位符，validate.py 如何校验硬性规则并自动修复确定性缺陷，knowledge 知识卡片族与 wiki 页面的解耦关系。
-- 离线查看站点 —— site 命令如何把全部页面与渲染库打包成一个可双击打开的单文件 wiki.html，前端 app.js 如何驱动 marked 与 mermaid 完成 markdown 解析与目录高亮。
-- 测试与跨平台支持 —— pytest 套件覆盖的真实竞态 bug 与对应的 DECISIONS 编号决策，Windows 原生支持下的 msvcrt 文件锁与命令差异。
-- 开发与扩展 —— 如何新增 CLI 子命令、新增模板类型，以及本地开发、pytest、CI 检查项的贡献流程。
+- 项目概述 —— repowiki 的定位、设计理念，以及仓库结构与 PyPI / Skill / 插件三条分发线。
+- 快速开始 —— 安装 CLI 与 Agent Skill，跑通从 plan 到 site 的标准生成流程与并发 worker 模式。
+- 核心机制 —— 任务状态机与并发控制、任务规格与 zh/en 模板体系、页面校验与自动修复的实现。
+- CLI 命令与实现 —— 规划扫描、worker 循环命令、增量更新与过期检测、知识卡片与 finalize、离线站点导出、skill 安装与 CLI 骨架六组命令的实现细节。
+- 测试、CI 与设计决策 —— 13 个测试文件的组织、三条 GitHub Actions 流水线、15 条架构决策与领域术语表。
+
+[本节为目录性说明，不直接分析具体文件，故无"章节来源"]
 
 ## 如何使用本 Wiki
 
-新手读者建议按章节顺序阅读：项目概述 → 架构与数据流 → 编排流水线 → 离线查看站点。这一路径在概念上从「它是什么」逐步走到「它如何工作」再到「产物长什么样」，无需先读源码也能建立完整的认知地图；如果只关心使用方式，跳到项目概述下的「快速开始」页即可跑通一个最小示例。
+新手路径：先读「项目概述」建立对定位与产出物形态的整体认识，然后按「快速开始」的「安装与 Agent Skill 安装」装好 CLI 与 skill，再用「标准生成流程」在自己关心的仓库上跑通第一次生成；遇到需要定制或排查的场景时，回到「核心机制」理解任务状态机与校验规则即可定位绝大多数问题。
 
-贡献者路径建议从项目概述的「领域词汇与设计哲学」入手，把 CONTEXT.md 与 DECISIONS.md 中的官方词汇表当作契约；然后并行阅读编排流水线与页面模板与校验两个章节，理解任务规格的三件套结构（模板 + 写作约束 + hint_files）。动手修改前可参考开发与扩展下的「如何新增一个命令」与「贡献流程与 CI」；修改涉及并发或状态机时，建议先看测试与跨平台支持下的「并发安全与生命周期测试」，里面有 T5 busy 信号、stale 抢占、6×12 压测等真实 bug 与对应修复的索引，便于快速定位风险点。
+贡献者与二次开发路径：直接从「核心机制」进入，掌握 state.py 的并发原语与 templates 的规格渲染后，按「CLI 命令与实现」逐组对照源码阅读；「测试套件」说明了每条机制对应的测试入口，「CI 与发布流水线」与「架构决策与术语」则给出修改代码后需要遵守的发版规则与既有决策边界。
 
-章节来源
-- [README.md:1-40](file://README.md#L1-L40)
-- [CONTEXT.md:1-40](file://CONTEXT.md#L1-L40)
-- [DECISIONS.md:1-40](file://DECISIONS.md#L1-L40)
-- [pyproject.toml:1-30](file://pyproject.toml#L1-L30)
+[README.md:100-180](file://README.md#L100-L180)
+[src/repowiki/skills/repowiki/SKILL.md:25-45](file://src/repowiki/skills/repowiki/SKILL.md#L25-L45)
