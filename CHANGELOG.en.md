@@ -2,6 +2,24 @@
 
 [中文](CHANGELOG.md) | **English**
 
+## 0.6.1 — 2026-09-09
+
+### Docs
+
+- **README restructured**: added a PyPI badge and a front-and-center live-sample link at
+  the top; the feature list was rewritten as 7 "bold keyword + one-line effect" bullets;
+  the primary install path is now PyPI `pip install repowiki-cli`; the command table is
+  trimmed to the 8 common commands; offline installation is condensed; Design Trade-offs
+  / Known Limitations / Non-Goals merged into a single "Design Boundaries" section;
+  stale hard-coded numbers removed; the "Quick Start / Usage / CI Integration" sections
+  were further removed (the five-command flow, output layout, and wiki.yml integration
+  notes moved into USAGE.md), keeping the README focused on selling points and install.
+- **New [docs/en/USAGE.md](docs/en/USAGE.md) / [docs/zh/USAGE.md](docs/zh/USAGE.md)**:
+  collects everything moved out of the README — the worker loop contract, concurrency
+  recipes (including the worker.sh script), the full 15-command reference, the
+  module/flow template section layout, reliability internals, and the complete offline
+  installation steps. No information lost.
+
 ## 0.6.0 — 2026-09-09
 
 ### Added

@@ -2,6 +2,19 @@
 
 **中文** | [English](CHANGELOG.en.md)
 
+## 0.6.1 — 2026-09-09
+
+### 文档
+
+- **README 重构**：顶部新增 PyPI 徽章与在线样例前置链接；特性列表重写为 7 条「加粗关键词 +
+  一句话效果」；安装主线更新为 PyPI `pip install repowiki-cli`；命令表精简为常用 8 条；
+  离线安装压缩；设计取舍 / 已知边界 / Non-Goals 合并为「设计边界」一节；移除易过时的具体数字；
+  进一步移除「快速开始 / 用法 / CI 集成」三节（五命令流程、输出结构树与 wiki.yml 集成说明
+  并入 USAGE.md），README 聚焦卖点与安装。
+- **新增 [docs/zh/USAGE.md](docs/zh/USAGE.md) / [docs/en/USAGE.md](docs/en/USAGE.md)**：
+  收纳自 README 移出的完整内容——Worker 循环契约、并发配方（含 worker.sh 脚本）、15 条命令
+  完整参数表、module/flow 模板小节枚举、可靠性机制细节与离线安装完整步骤，无信息丢失。
+
 ## 0.6.0 — 2026-09-09
 
 ### 新增
