@@ -9,8 +9,7 @@
 - **Page layout**: the "Files referenced by this page" cite block moved from the top of
   the page (after the H1) to the very end (after the Conclusion section); the incremental
   update task's insertion anchor was adjusted accordingly (after the H1, before the TOC);
-  existing wiki pages have been migrated; validate gains an auto-fix that moves misplaced
-  cite blocks to the end (old-habit pages need no rework).
+  existing wiki pages have been migrated.
 
 ## 0.6.1 — 2026-09-09
 
