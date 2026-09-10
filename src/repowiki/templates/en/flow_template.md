@@ -1,11 +1,5 @@
 # {{TITLE}}
 
-<cite>
-**Files referenced**
-- [<file name>](file://<repo-relative path>)
-- [<file name>](file://<repo-relative path>)
-</cite>
-
 ## Contents
 1. [Introduction](#introduction)
 2. [Flow Overview](#flow-overview)
@@ -85,3 +79,9 @@ Section sources
 
 Section sources
 - [<path>:<from>-<to>](file://<path>#L<from>-L<to>)
+
+<cite>
+**Files referenced**
+- [<file name>](file://<repo-relative path>)
+- [<file name>](file://<repo-relative path>)
+</cite>

@@ -1,15 +1,5 @@
 # 离线站点与 llms.txt 导出
 
-<cite>
-**本文引用的文件**
-- [src/repowiki/site.py](file://src/repowiki/site.py)
-- [src/repowiki/llms.py](file://src/repowiki/llms.py)
-- [src/repowiki/templates/site.html](file://src/repowiki/templates/site.html)
-- [src/repowiki/templates/site/app.js](file://src/repowiki/templates/site/app.js)
-- [src/repowiki/vendor/README.md](file://src/repowiki/vendor/README.md)
-- [.github/workflows/wiki.yml](file://.github/workflows/wiki.yml)
-</cite>
-
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -240,3 +230,13 @@ WF["wiki.yml<br/>publish-pages"] --> SITE
 - [src/repowiki/site.py:1-11](file://src/repowiki/site.py#L1-L11)
 - [src/repowiki/llms.py:1-8](file://src/repowiki/llms.py#L1-L8)
 - [.github/workflows/wiki.yml:1-12](file://.github/workflows/wiki.yml#L1-L12)
+
+<cite>
+**本文引用的文件**
+- [src/repowiki/site.py](file://src/repowiki/site.py)
+- [src/repowiki/llms.py](file://src/repowiki/llms.py)
+- [src/repowiki/templates/site.html](file://src/repowiki/templates/site.html)
+- [src/repowiki/templates/site/app.js](file://src/repowiki/templates/site/app.js)
+- [src/repowiki/vendor/README.md](file://src/repowiki/vendor/README.md)
+- [.github/workflows/wiki.yml](file://.github/workflows/wiki.yml)
+</cite>

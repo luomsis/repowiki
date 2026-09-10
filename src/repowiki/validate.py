@@ -128,7 +128,7 @@ def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False,
     # <cite> block
     cite = _CITE_RE.search(text)
     if not cite:
-        res.fail("缺少 <cite>…</cite> 引用块（应位于 H1 之后、「目录」之前）")
+        res.fail("缺少 <cite>…</cite> 引用块（应位于页面末尾）")
     else:
         cite_links = _FILE_LINK_RE.findall(cite.group("body"))
         if not cite_links:

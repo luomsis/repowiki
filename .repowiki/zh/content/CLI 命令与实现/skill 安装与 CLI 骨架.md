@@ -1,12 +1,5 @@
 # skill 安装与 CLI 骨架
 
-<cite>
-**本文引用的文件**
-- [skill_install.py](file://src/repowiki/skill_install.py)
-- [cli.py](file://src/repowiki/cli.py)
-- [__init__.py](file://src/repowiki/__init__.py)
-</cite>
-
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -213,3 +206,10 @@ skill 安装与 CLI 骨架是 repowiki「工具不感知、分发自包含」定
 - [cli.py:1-4](file://src/repowiki/cli.py#L1-L4)
 - [cli.py:145-165](file://src/repowiki/cli.py#L145-L165)
 - [__init__.py:13-21](file://src/repowiki/__init__.py#L13-L21)
+
+<cite>
+**本文引用的文件**
+- [skill_install.py](file://src/repowiki/skill_install.py)
+- [cli.py](file://src/repowiki/cli.py)
+- [__init__.py](file://src/repowiki/__init__.py)
+</cite>

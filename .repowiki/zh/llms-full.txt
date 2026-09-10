@@ -41,13 +41,6 @@ repowiki 是一个为代码仓库生成结构化 Wiki 的确定性任务编排�
 
 # 项目概述
 
-<cite>
-**本文引用的文件**
-- [README.md](file://README.md)
-- [docs/zh/CONTEXT.md](file://docs/zh/CONTEXT.md)
-- [pyproject.toml](file://pyproject.toml)
-</cite>
-
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -266,16 +259,16 @@ repowiki 的一句话定位是「agent 负责聪明，repowiki 负责靠谱」�
 - [README.md:124-133](file://README.md#L124-L133)
 - [README.md:180-196](file://README.md#L180-L196)
 
----
-
-# 定位与设计理念
-
 <cite>
 **本文引用的文件**
 - [README.md](file://README.md)
 - [docs/zh/CONTEXT.md](file://docs/zh/CONTEXT.md)
-- [docs/zh/DECISIONS.md](file://docs/zh/DECISIONS.md)
+- [pyproject.toml](file://pyproject.toml)
 </cite>
+
+---
+
+# 定位与设计理念
 
 ## 目录
 1. [简介](#简介)
@@ -488,21 +481,16 @@ repowiki 的定位是「Wiki 的构建系统」而非「会写文档的 AI」：
 - [README.md:10-16](file://README.md#L10-L16)
 - [README.md:260-275](file://README.md#L260-L275)
 
+<cite>
+**本文引用的文件**
+- [README.md](file://README.md)
+- [docs/zh/CONTEXT.md](file://docs/zh/CONTEXT.md)
+- [docs/zh/DECISIONS.md](file://docs/zh/DECISIONS.md)
+</cite>
+
 ---
 
 # 仓库结构与分发形态
-
-<cite>
-**本文引用的文件**
-- [pyproject.toml](file://pyproject.toml)
-- [.claude-plugin/plugin.json](file://.claude-plugin/plugin.json)
-- [src/repowiki/skills/repowiki/SKILL.md](file://src/repowiki/skills/repowiki/SKILL.md)
-- [CHANGELOG.md](file://CHANGELOG.md)
-- [AGENTS.md](file://AGENTS.md)
-- [README.md](file://README.md)
-- [.github/workflows/pypi.yml](file://.github/workflows/pypi.yml)
-- [src/repowiki/__init__.py](file://src/repowiki/__init__.py)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -741,17 +729,21 @@ repowiki 以 src 布局单包 `src/repowiki` 为唯一实现载体，通过 `pyp
 - [pyproject.toml:5-15](file://pyproject.toml#L5-L15)
 - [AGENTS.md:3-11](file://AGENTS.md#L3-L11)
 
+<cite>
+**本文引用的文件**
+- [pyproject.toml](file://pyproject.toml)
+- [.claude-plugin/plugin.json](file://.claude-plugin/plugin.json)
+- [src/repowiki/skills/repowiki/SKILL.md](file://src/repowiki/skills/repowiki/SKILL.md)
+- [CHANGELOG.md](file://CHANGELOG.md)
+- [AGENTS.md](file://AGENTS.md)
+- [README.md](file://README.md)
+- [.github/workflows/pypi.yml](file://.github/workflows/pypi.yml)
+- [src/repowiki/__init__.py](file://src/repowiki/__init__.py)
+</cite>
+
 ---
 
 # 快速开始
-
-<cite>
-**本文引用的文件**
-- [README.md](file://README.md)
-- [SKILL.md](file://src/repowiki/skills/repowiki/SKILL.md)
-- [pyproject.toml](file://pyproject.toml)
-- [cli.py](file://src/repowiki/cli.py)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -963,17 +955,17 @@ CLI --> OUT["Wiki 产出<br/>.repowiki/"]
 - [README.md:124-133](file://README.md#L124-L133)
 - [src/repowiki/skills/repowiki/SKILL.md:57-72](file://src/repowiki/skills/repowiki/SKILL.md#L57-L72)
 
----
-
-# 安装与 Agent Skill 安装
-
 <cite>
 **本文引用的文件**
 - [README.md](file://README.md)
-- [skill_install.py](file://src/repowiki/skill_install.py)
-- [pypi.yml](file://.github/workflows/pypi.yml)
+- [SKILL.md](file://src/repowiki/skills/repowiki/SKILL.md)
 - [pyproject.toml](file://pyproject.toml)
+- [cli.py](file://src/repowiki/cli.py)
 </cite>
+
+---
+
+# 安装与 Agent Skill 安装
 
 ## 目录
 1. [简介](#简介)
@@ -1189,16 +1181,17 @@ CLI --> PYAML["pyyaml >= 6<br/>唯一运行时依赖"]
 - [src/repowiki/skill_install.py:79-122](file://src/repowiki/skill_install.py#L79-L122)
 - [README.md:119-122](file://README.md#L119-L122)
 
+<cite>
+**本文引用的文件**
+- [README.md](file://README.md)
+- [skill_install.py](file://src/repowiki/skill_install.py)
+- [pypi.yml](file://.github/workflows/pypi.yml)
+- [pyproject.toml](file://pyproject.toml)
+</cite>
+
 ---
 
 # 标准生成流程
-
-<cite>
-**本文引用的文件**
-- [src/repowiki/cli.py](file://src/repowiki/cli.py)
-- [src/repowiki/plan.py](file://src/repowiki/plan.py)
-- [src/repowiki/skills/repowiki/SKILL.md](file://src/repowiki/skills/repowiki/SKILL.md)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -1385,18 +1378,16 @@ META -->|"site"| HTML["wiki.html 与 llms 索引"]
 - [src/repowiki/skills/repowiki/SKILL.md:29-45](file://src/repowiki/skills/repowiki/SKILL.md#L29-L45)
 - [src/repowiki/cli.py:35-101](file://src/repowiki/cli.py#L35-L101)
 
+<cite>
+**本文引用的文件**
+- [src/repowiki/cli.py](file://src/repowiki/cli.py)
+- [src/repowiki/plan.py](file://src/repowiki/plan.py)
+- [src/repowiki/skills/repowiki/SKILL.md](file://src/repowiki/skills/repowiki/SKILL.md)
+</cite>
+
 ---
 
 # 核心机制
-
-<cite>
-**本文引用的文件**
-- [state.py](file://src/repowiki/state.py)
-- [tasks.py](file://src/repowiki/tasks.py)
-- [validate.py](file://src/repowiki/validate.py)
-- [templates.py](file://src/repowiki/templates.py)
-- [coverage.py](file://src/repowiki/coverage.py)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -1640,16 +1631,18 @@ repowiki 的核心机制是一条「确定性流水线」：state.py 用一个 `
 - [validate.py:1-6](file://src/repowiki/validate.py#L1-L6)
 - [coverage.py:1-8](file://src/repowiki/coverage.py#L1-L8)
 
----
-
-# 任务状态机与并发控制
-
 <cite>
 **本文引用的文件**
 - [state.py](file://src/repowiki/state.py)
-- [dispatch.py](file://src/repowiki/dispatch.py)
-- [errors.py](file://src/repowiki/errors.py)
+- [tasks.py](file://src/repowiki/tasks.py)
+- [validate.py](file://src/repowiki/validate.py)
+- [templates.py](file://src/repowiki/templates.py)
+- [coverage.py](file://src/repowiki/coverage.py)
 </cite>
+
+---
+
+# 任务状态机与并发控制
 
 ## 目录
 1. [简介](#简介)
@@ -1833,19 +1826,16 @@ I -->|"release 或过期回收<br/>.stale-* / .released-*"| P
 - [src/repowiki/state.py:294-341](file://src/repowiki/state.py#L294-L341)
 - [src/repowiki/dispatch.py:50-76](file://src/repowiki/dispatch.py#L50-L76)
 
+<cite>
+**本文引用的文件**
+- [state.py](file://src/repowiki/state.py)
+- [dispatch.py](file://src/repowiki/dispatch.py)
+- [errors.py](file://src/repowiki/errors.py)
+</cite>
+
 ---
 
 # 任务规格与模板体系
-
-<cite>
-**本文引用的文件**
-- [tasks.py](file://src/repowiki/tasks.py)
-- [templates.py](file://src/repowiki/templates.py)
-- [page_task.md](file://src/repowiki/templates/zh/page_task.md)
-- [STYLE.md](file://src/repowiki/templates/zh/STYLE.md)
-- [page_template.md](file://src/repowiki/templates/zh/page_template.md)
-- [flow_template.md](file://src/repowiki/templates/zh/flow_template.md)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -2075,18 +2065,19 @@ SPEC --> AGENT["执行 Agent<br/>instructions"]
 - [src/repowiki/templates.py:1-8](file://src/repowiki/templates.py#L1-L8)
 - [src/repowiki/templates/zh/page_task.md:28-45](file://src/repowiki/templates/zh/page_task.md#L28-L45)
 
+<cite>
+**本文引用的文件**
+- [tasks.py](file://src/repowiki/tasks.py)
+- [templates.py](file://src/repowiki/templates.py)
+- [page_task.md](file://src/repowiki/templates/zh/page_task.md)
+- [STYLE.md](file://src/repowiki/templates/zh/STYLE.md)
+- [page_template.md](file://src/repowiki/templates/zh/page_template.md)
+- [flow_template.md](file://src/repowiki/templates/zh/flow_template.md)
+</cite>
+
 ---
 
 # 页面校验与自动修复
-
-<cite>
-**本文引用的文件**
-- [src/repowiki/validate.py](file://src/repowiki/validate.py)
-- [src/repowiki/coverage.py](file://src/repowiki/coverage.py)
-- [src/repowiki/output.py](file://src/repowiki/output.py)
-- [src/repowiki/errors.py](file://src/repowiki/errors.py)
-- [src/repowiki/cli.py](file://src/repowiki/cli.py)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -2309,16 +2300,18 @@ ERR --> CLI
 - [src/repowiki/coverage.py:1-8](file://src/repowiki/coverage.py#L1-L8)
 - [src/repowiki/output.py:1-7](file://src/repowiki/output.py#L1-L7)
 
+<cite>
+**本文引用的文件**
+- [src/repowiki/validate.py](file://src/repowiki/validate.py)
+- [src/repowiki/coverage.py](file://src/repowiki/coverage.py)
+- [src/repowiki/output.py](file://src/repowiki/output.py)
+- [src/repowiki/errors.py](file://src/repowiki/errors.py)
+- [src/repowiki/cli.py](file://src/repowiki/cli.py)
+</cite>
+
 ---
 
 # CLI 命令与实现
-
-<cite>
-**本文引用的文件**
-- [cli.py](file://src/repowiki/cli.py)
-- [dispatch.py](file://src/repowiki/dispatch.py)
-- [site.py](file://src/repowiki/site.py)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -2552,17 +2545,16 @@ CLI 层是 repowiki「确定性构建系统」的可见表面：15 个顶层子�
 - [src/repowiki/cli.py:170-183](file://src/repowiki/cli.py#L170-L183)
 - [src/repowiki/site.py:36-88](file://src/repowiki/site.py#L36-L88)
 
+<cite>
+**本文引用的文件**
+- [cli.py](file://src/repowiki/cli.py)
+- [dispatch.py](file://src/repowiki/dispatch.py)
+- [site.py](file://src/repowiki/site.py)
+</cite>
+
 ---
 
 # 规划与扫描
-
-<cite>
-**本文引用的文件**
-- [plan.py](file://src/repowiki/plan.py)
-- [scanner.py](file://src/repowiki/scanner.py)
-- [catalog.py](file://src/repowiki/catalog.py)
-- [i18n.py](file://src/repowiki/i18n.py)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -2788,17 +2780,17 @@ PLAN --> ERR["errors.py<br/>UsageError"]
 - [catalog.py:1-7](file://src/repowiki/catalog.py#L1-L7)
 - [i18n.py:1-7](file://src/repowiki/i18n.py#L1-L7)
 
+<cite>
+**本文引用的文件**
+- [plan.py](file://src/repowiki/plan.py)
+- [scanner.py](file://src/repowiki/scanner.py)
+- [catalog.py](file://src/repowiki/catalog.py)
+- [i18n.py](file://src/repowiki/i18n.py)
+</cite>
+
 ---
 
 # worker 循环命令
-
-<cite>
-**本文引用的文件**
-- [src/repowiki/dispatch.py](file://src/repowiki/dispatch.py)
-- [src/repowiki/state.py](file://src/repowiki/state.py)
-- [src/repowiki/paths.py](file://src/repowiki/paths.py)
-- [src/repowiki/cli.py](file://src/repowiki/cli.py)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -3036,18 +3028,17 @@ worker 循环命令把「多 agent 安全分工」压缩为一组薄命令：nex
 - [src/repowiki/state.py:21-28](file://src/repowiki/state.py#L21-L28)
 - [src/repowiki/state.py:385-418](file://src/repowiki/state.py#L385-L418)
 
+<cite>
+**本文引用的文件**
+- [src/repowiki/dispatch.py](file://src/repowiki/dispatch.py)
+- [src/repowiki/state.py](file://src/repowiki/state.py)
+- [src/repowiki/paths.py](file://src/repowiki/paths.py)
+- [src/repowiki/cli.py](file://src/repowiki/cli.py)
+</cite>
+
 ---
 
 # 增量更新与过期检测
-
-<cite>
-**本文引用的文件**
-- [updater.py](file://src/repowiki/updater.py)
-- [gitutil.py](file://src/repowiki/gitutil.py)
-- [update_task.md](file://src/repowiki/templates/zh/update_task.md)
-- [wiki.yml](file://.github/workflows/wiki.yml)
-- [README.md](file://README.md)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -3297,17 +3288,18 @@ TB --> TPL["update_task.md 模板"]
 - [src/repowiki/updater.py:251-260](file://src/repowiki/updater.py#L251-L260)
 - [README.md:44-45](file://README.md#L44-L45)
 
+<cite>
+**本文引用的文件**
+- [updater.py](file://src/repowiki/updater.py)
+- [gitutil.py](file://src/repowiki/gitutil.py)
+- [update_task.md](file://src/repowiki/templates/zh/update_task.md)
+- [wiki.yml](file://.github/workflows/wiki.yml)
+- [README.md](file://README.md)
+</cite>
+
 ---
 
 # 知识卡片与 finalize
-
-<cite>
-**本文引用的文件**
-- [knowledge.py](file://src/repowiki/knowledge.py)
-- [metadata.py](file://src/repowiki/metadata.py)
-- [knowledge_task.md](file://src/repowiki/templates/zh/knowledge_task.md)
-- [state.py](file://src/repowiki/state.py)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -3542,19 +3534,17 @@ knowledge 命令与 finalize 共同构成 repowiki 的「增料与收尾」环�
 - [src/repowiki/metadata.py:28-58](file://src/repowiki/metadata.py#L28-L58)
 - [src/repowiki/metadata.py:123-134](file://src/repowiki/metadata.py#L123-L134)
 
+<cite>
+**本文引用的文件**
+- [knowledge.py](file://src/repowiki/knowledge.py)
+- [metadata.py](file://src/repowiki/metadata.py)
+- [knowledge_task.md](file://src/repowiki/templates/zh/knowledge_task.md)
+- [state.py](file://src/repowiki/state.py)
+</cite>
+
 ---
 
 # 离线站点与 llms.txt 导出
-
-<cite>
-**本文引用的文件**
-- [src/repowiki/site.py](file://src/repowiki/site.py)
-- [src/repowiki/llms.py](file://src/repowiki/llms.py)
-- [src/repowiki/templates/site.html](file://src/repowiki/templates/site.html)
-- [src/repowiki/templates/site/app.js](file://src/repowiki/templates/site/app.js)
-- [src/repowiki/vendor/README.md](file://src/repowiki/vendor/README.md)
-- [.github/workflows/wiki.yml](file://.github/workflows/wiki.yml)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -3787,16 +3777,19 @@ WF["wiki.yml<br/>publish-pages"] --> SITE
 - [src/repowiki/llms.py:1-8](file://src/repowiki/llms.py#L1-L8)
 - [.github/workflows/wiki.yml:1-12](file://.github/workflows/wiki.yml#L1-L12)
 
+<cite>
+**本文引用的文件**
+- [src/repowiki/site.py](file://src/repowiki/site.py)
+- [src/repowiki/llms.py](file://src/repowiki/llms.py)
+- [src/repowiki/templates/site.html](file://src/repowiki/templates/site.html)
+- [src/repowiki/templates/site/app.js](file://src/repowiki/templates/site/app.js)
+- [src/repowiki/vendor/README.md](file://src/repowiki/vendor/README.md)
+- [.github/workflows/wiki.yml](file://.github/workflows/wiki.yml)
+</cite>
+
 ---
 
 # skill 安装与 CLI 骨架
-
-<cite>
-**本文引用的文件**
-- [skill_install.py](file://src/repowiki/skill_install.py)
-- [cli.py](file://src/repowiki/cli.py)
-- [__init__.py](file://src/repowiki/__init__.py)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -4005,18 +3998,16 @@ skill 安装与 CLI 骨架是 repowiki「工具不感知、分发自包含」定
 - [cli.py:145-165](file://src/repowiki/cli.py#L145-L165)
 - [__init__.py:13-21](file://src/repowiki/__init__.py#L13-L21)
 
+<cite>
+**本文引用的文件**
+- [skill_install.py](file://src/repowiki/skill_install.py)
+- [cli.py](file://src/repowiki/cli.py)
+- [__init__.py](file://src/repowiki/__init__.py)
+</cite>
+
 ---
 
 # 测试、CI 与设计决策
-
-<cite>
-**本文引用的文件**
-- [conftest.py](file://tests/conftest.py)
-- [ci.yml](file://.github/workflows/ci.yml)
-- [DECISIONS.md](file://docs/zh/DECISIONS.md)
-- [CONTEXT.md](file://docs/zh/CONTEXT.md)
-- [README.md](file://README.md)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -4236,27 +4227,18 @@ CTX["CONTEXT.md<br/>术语表"] -->|"用语对齐"| DEC
 - [docs/zh/DECISIONS.md:1-5](file://docs/zh/DECISIONS.md#L1-L5)
 - [README.md:260-275](file://README.md#L260-L275)
 
----
-
-# 测试套件
-
 <cite>
 **本文引用的文件**
 - [conftest.py](file://tests/conftest.py)
-- [test_state.py](file://tests/test_state.py)
-- [test_validate.py](file://tests/test_validate.py)
-- [test_skill_install.py](file://tests/test_skill_install.py)
-- [test_site.py](file://tests/test_site.py)
-- [test_flow.py](file://tests/test_flow.py)
-- [test_i18n.py](file://tests/test_i18n.py)
-- [test_stale.py](file://tests/test_stale.py)
-- [test_coverage.py](file://tests/test_coverage.py)
-- [test_robustness.py](file://tests/test_robustness.py)
-- [test_scanner.py](file://tests/test_scanner.py)
-- [test_paths_catalog.py](file://tests/test_paths_catalog.py)
-- [test_output.py](file://tests/test_output.py)
-- [pyproject.toml](file://pyproject.toml)
+- [ci.yml](file://.github/workflows/ci.yml)
+- [DECISIONS.md](file://docs/zh/DECISIONS.md)
+- [CONTEXT.md](file://docs/zh/CONTEXT.md)
+- [README.md](file://README.md)
 </cite>
+
+---
+
+# 测试套件
 
 ## 目录
 1. [简介](#简介)
@@ -4512,17 +4494,27 @@ GITF["git_repo fixture"] --> GIT["git CLI<br/>仅此一处外部依赖"]
 - [tests/test_validate.py:1-1](file://tests/test_validate.py#L1-L1)
 - [README.md:275-275](file://README.md#L275-L275)
 
+<cite>
+**本文引用的文件**
+- [conftest.py](file://tests/conftest.py)
+- [test_state.py](file://tests/test_state.py)
+- [test_validate.py](file://tests/test_validate.py)
+- [test_skill_install.py](file://tests/test_skill_install.py)
+- [test_site.py](file://tests/test_site.py)
+- [test_flow.py](file://tests/test_flow.py)
+- [test_i18n.py](file://tests/test_i18n.py)
+- [test_stale.py](file://tests/test_stale.py)
+- [test_coverage.py](file://tests/test_coverage.py)
+- [test_robustness.py](file://tests/test_robustness.py)
+- [test_scanner.py](file://tests/test_scanner.py)
+- [test_paths_catalog.py](file://tests/test_paths_catalog.py)
+- [test_output.py](file://tests/test_output.py)
+- [pyproject.toml](file://pyproject.toml)
+</cite>
+
 ---
 
 # CI 与发布流水线
-
-<cite>
-**本文引用的文件**
-- [ci.yml](file://.github/workflows/ci.yml)
-- [pypi.yml](file://.github/workflows/pypi.yml)
-- [wiki.yml](file://.github/workflows/wiki.yml)
-- [AGENTS.md](file://AGENTS.md)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -4687,18 +4679,17 @@ F -->|"release published"| G["PyPI 上线<br/>sdist 与 wheel"]
 - [pypi.yml:1-41](file://.github/workflows/pypi.yml#L1-L41)
 - [AGENTS.md:3-11](file://AGENTS.md#L3-L11)
 
+<cite>
+**本文引用的文件**
+- [ci.yml](file://.github/workflows/ci.yml)
+- [pypi.yml](file://.github/workflows/pypi.yml)
+- [wiki.yml](file://.github/workflows/wiki.yml)
+- [AGENTS.md](file://AGENTS.md)
+</cite>
+
 ---
 
 # 架构决策与术语
-
-<cite>
-**本文引用的文件**
-- [docs/zh/DECISIONS.md](file://docs/zh/DECISIONS.md)
-- [docs/zh/CONTEXT.md](file://docs/zh/CONTEXT.md)
-- [docs/zh/adr/0001-windows-native-support.md](file://docs/zh/adr/0001-windows-native-support.md)
-- [docs/zh/adr/0002-single-file-offline-site.md](file://docs/zh/adr/0002-single-file-offline-site.md)
-- [docs/zh/research/competitive-analysis.md](file://docs/zh/research/competitive-analysis.md)
-</cite>
 
 ## 目录
 1. [简介](#简介)
@@ -4917,3 +4908,12 @@ repowiki 的架构决策体系由三层构成：DECISIONS.md 以 17 条最小合
 - [docs/zh/adr/0001-windows-native-support.md:15-20](file://docs/zh/adr/0001-windows-native-support.md#L15-L20)
 - [docs/zh/adr/0002-single-file-offline-site.md:18-24](file://docs/zh/adr/0002-single-file-offline-site.md#L18-L24)
 - [docs/zh/CONTEXT.md:7-9](file://docs/zh/CONTEXT.md#L7-L9)
+
+<cite>
+**本文引用的文件**
+- [docs/zh/DECISIONS.md](file://docs/zh/DECISIONS.md)
+- [docs/zh/CONTEXT.md](file://docs/zh/CONTEXT.md)
+- [docs/zh/adr/0001-windows-native-support.md](file://docs/zh/adr/0001-windows-native-support.md)
+- [docs/zh/adr/0002-single-file-offline-site.md](file://docs/zh/adr/0002-single-file-offline-site.md)
+- [docs/zh/research/competitive-analysis.md](file://docs/zh/research/competitive-analysis.md)
+</cite>

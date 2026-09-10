@@ -1,13 +1,5 @@
 # 安装与 Agent Skill 安装
 
-<cite>
-**本文引用的文件**
-- [README.md](file://README.md)
-- [skill_install.py](file://src/repowiki/skill_install.py)
-- [pypi.yml](file://.github/workflows/pypi.yml)
-- [pyproject.toml](file://pyproject.toml)
-</cite>
-
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -221,3 +213,11 @@ CLI --> PYAML["pyyaml >= 6<br/>唯一运行时依赖"]
 - [README.md:62-96](file://README.md#L62-L96)
 - [src/repowiki/skill_install.py:79-122](file://src/repowiki/skill_install.py#L79-L122)
 - [README.md:119-122](file://README.md#L119-L122)
+
+<cite>
+**本文引用的文件**
+- [README.md](file://README.md)
+- [skill_install.py](file://src/repowiki/skill_install.py)
+- [pypi.yml](file://.github/workflows/pypi.yml)
+- [pyproject.toml](file://pyproject.toml)
+</cite>

@@ -1,13 +1,5 @@
 # worker 循环命令
 
-<cite>
-**本文引用的文件**
-- [src/repowiki/dispatch.py](file://src/repowiki/dispatch.py)
-- [src/repowiki/state.py](file://src/repowiki/state.py)
-- [src/repowiki/paths.py](file://src/repowiki/paths.py)
-- [src/repowiki/cli.py](file://src/repowiki/cli.py)
-</cite>
-
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -243,3 +235,11 @@ worker 循环命令把「多 agent 安全分工」压缩为一组薄命令：nex
 - [src/repowiki/dispatch.py:127-200](file://src/repowiki/dispatch.py#L127-L200)
 - [src/repowiki/state.py:21-28](file://src/repowiki/state.py#L21-L28)
 - [src/repowiki/state.py:385-418](file://src/repowiki/state.py#L385-L418)
+
+<cite>
+**本文引用的文件**
+- [src/repowiki/dispatch.py](file://src/repowiki/dispatch.py)
+- [src/repowiki/state.py](file://src/repowiki/state.py)
+- [src/repowiki/paths.py](file://src/repowiki/paths.py)
+- [src/repowiki/cli.py](file://src/repowiki/cli.py)
+</cite>

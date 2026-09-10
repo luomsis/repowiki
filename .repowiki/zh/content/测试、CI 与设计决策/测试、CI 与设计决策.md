@@ -1,14 +1,5 @@
 # 测试、CI 与设计决策
 
-<cite>
-**本文引用的文件**
-- [conftest.py](file://tests/conftest.py)
-- [ci.yml](file://.github/workflows/ci.yml)
-- [DECISIONS.md](file://docs/zh/DECISIONS.md)
-- [CONTEXT.md](file://docs/zh/CONTEXT.md)
-- [README.md](file://README.md)
-</cite>
-
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -226,3 +217,12 @@ CTX["CONTEXT.md<br/>术语表"] -->|"用语对齐"| DEC
 - [.github/workflows/ci.yml:1-24](file://.github/workflows/ci.yml#L1-L24)
 - [docs/zh/DECISIONS.md:1-5](file://docs/zh/DECISIONS.md#L1-L5)
 - [README.md:260-275](file://README.md#L260-L275)
+
+<cite>
+**本文引用的文件**
+- [conftest.py](file://tests/conftest.py)
+- [ci.yml](file://.github/workflows/ci.yml)
+- [DECISIONS.md](file://docs/zh/DECISIONS.md)
+- [CONTEXT.md](file://docs/zh/CONTEXT.md)
+- [README.md](file://README.md)
+</cite>

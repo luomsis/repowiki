@@ -25,7 +25,7 @@ Rewrite the full updated page to: <b>{{OUTPUT_ABS}}</b> (repo-relative: {{OUTPUT
 ```
 
 ## Update rules
-1. Right after the `<cite>` block and before the table of contents, insert one section:
+1. Right after the H1 and before the table of contents, insert one section:
 
    ```markdown
    ## Update Summary

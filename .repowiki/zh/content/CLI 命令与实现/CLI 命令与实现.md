@@ -1,12 +1,5 @@
 # CLI 命令与实现
 
-<cite>
-**本文引用的文件**
-- [cli.py](file://src/repowiki/cli.py)
-- [dispatch.py](file://src/repowiki/dispatch.py)
-- [site.py](file://src/repowiki/site.py)
-</cite>
-
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -238,3 +231,10 @@ CLI 层是 repowiki「确定性构建系统」的可见表面：15 个顶层子�
 - [src/repowiki/cli.py:27-33](file://src/repowiki/cli.py#L27-L33)
 - [src/repowiki/cli.py:170-183](file://src/repowiki/cli.py#L170-L183)
 - [src/repowiki/site.py:36-88](file://src/repowiki/site.py#L36-L88)
+
+<cite>
+**本文引用的文件**
+- [cli.py](file://src/repowiki/cli.py)
+- [dispatch.py](file://src/repowiki/dispatch.py)
+- [site.py](file://src/repowiki/site.py)
+</cite>

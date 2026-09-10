@@ -1,11 +1,5 @@
 # {{TITLE}}
 
-<cite>
-**Files referenced by this page**
-- [<file name>](file://<repo-relative path>)
-- [<file name>](file://<repo-relative path>)
-</cite>
-
 ## Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -111,3 +105,9 @@ Section sources
 
 Section sources
 - [<path>:<start>-<end>](file://<path>#L<start>-L<end>)
+
+<cite>
+**Files referenced by this page**
+- [<file name>](file://<repo-relative path>)
+- [<file name>](file://<repo-relative path>)
+</cite>

@@ -1,13 +1,5 @@
 # 知识卡片与 finalize
 
-<cite>
-**本文引用的文件**
-- [knowledge.py](file://src/repowiki/knowledge.py)
-- [metadata.py](file://src/repowiki/metadata.py)
-- [knowledge_task.md](file://src/repowiki/templates/zh/knowledge_task.md)
-- [state.py](file://src/repowiki/state.py)
-</cite>
-
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -240,3 +232,11 @@ knowledge 命令与 finalize 共同构成 repowiki 的「增料与收尾」环�
 - [src/repowiki/knowledge.py:147-226](file://src/repowiki/knowledge.py#L147-L226)
 - [src/repowiki/metadata.py:28-58](file://src/repowiki/metadata.py#L28-L58)
 - [src/repowiki/metadata.py:123-134](file://src/repowiki/metadata.py#L123-L134)
+
+<cite>
+**本文引用的文件**
+- [knowledge.py](file://src/repowiki/knowledge.py)
+- [metadata.py](file://src/repowiki/metadata.py)
+- [knowledge_task.md](file://src/repowiki/templates/zh/knowledge_task.md)
+- [state.py](file://src/repowiki/state.py)
+</cite>

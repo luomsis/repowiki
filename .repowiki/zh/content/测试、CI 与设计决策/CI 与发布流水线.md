@@ -1,13 +1,5 @@
 # CI 与发布流水线
 
-<cite>
-**本文引用的文件**
-- [ci.yml](file://.github/workflows/ci.yml)
-- [pypi.yml](file://.github/workflows/pypi.yml)
-- [wiki.yml](file://.github/workflows/wiki.yml)
-- [AGENTS.md](file://AGENTS.md)
-</cite>
-
 ## 目录
 1. [简介](#简介)
 2. [流程总览](#流程总览)
@@ -170,3 +162,11 @@ F -->|"release published"| G["PyPI 上线<br/>sdist 与 wheel"]
 - [wiki.yml:1-12](file://.github/workflows/wiki.yml#L1-L12)
 - [pypi.yml:1-41](file://.github/workflows/pypi.yml#L1-L41)
 - [AGENTS.md:3-11](file://AGENTS.md#L3-L11)
+
+<cite>
+**本文引用的文件**
+- [ci.yml](file://.github/workflows/ci.yml)
+- [pypi.yml](file://.github/workflows/pypi.yml)
+- [wiki.yml](file://.github/workflows/wiki.yml)
+- [AGENTS.md](file://AGENTS.md)
+</cite>
