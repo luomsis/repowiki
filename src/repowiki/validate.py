@@ -189,6 +189,12 @@ def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False,
         text, note = toc_fixed
         res.fixed.append(note)
 
+    # <cite> block: canonical position is the very end of the page (auto-fix)
+    cite_moved = _fix_cite_position(text)
+    if cite_moved:
+        text, note = cite_moved
+        res.fixed.append(note)
+
     res.text = text
     return res
 
@@ -209,6 +215,22 @@ def _fix_toc(text: str, toc_name: str = "目录") -> tuple[str, str] | None:
     new_body = "\n" + "\n".join(f"{i}. [{h}](#{a})" for i, (h, a) in enumerate(expected, 1)) + "\n\n"
     new_text = text[:start] + new_body + text[start + len(body):]
     return new_text, f"「{toc_name}」锚点列表已按实际章节标题重建"
+
+
+def _fix_cite_position(text: str) -> tuple[str, str] | None:
+    """Move <cite> block(s) to the very end of the page; None if already there.
+
+    The canonical layout keeps the reference list last, after the conclusion.
+    Position is not a failure condition — old-habit pages are repaired, not rejected.
+    """
+    matches = list(_CITE_RE.finditer(text))
+    if not matches:
+        return None
+    if len(matches) == 1 and text[matches[0].end():].strip() == "":
+        return None  # already the only block, already at the end
+    blocks = "\n".join(m.group(0) for m in matches)
+    body = _CITE_RE.sub("", text).rstrip()
+    return body + "\n\n" + blocks + "\n", "「本文引用的文件」块已移至页面末尾"
 
 
 # --- catalog / knowledge plan ---

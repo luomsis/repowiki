@@ -285,3 +285,30 @@ class TestPageArchetype:
         res = check_page(flow_page("Request Lifecycle", locale="en"),
                          "Request Lifecycle", repo, locale="en", archetype="flow")
         assert res.ok, res.errors
+
+
+class TestCitePosition:
+    TOP_CITE = (
+        '<cite>\n**本文引用的文件**\n- [README.md](file://README.md)\n'
+        '- [src/demo/main.py](file://src/demo/main.py)\n</cite>\n\n'
+    )
+
+    def test_cite_moved_to_end_automatically(self, repo):
+        res = check_page(valid_page(), "项目概述", repo)
+        assert res.ok, res.errors
+        assert any("已移至页面末尾" in f for f in res.fixed)
+        assert res.text.rstrip().endswith("</cite>")
+        assert res.text.count("<cite>") == 1
+        # H1 与「目录」之间不再有 cite
+        assert "<cite>" not in res.text.split("## 目录")[0]
+
+    def test_cite_already_at_end_untouched(self, repo):
+        text = valid_page().replace(self.TOP_CITE, "").rstrip("\n") + "\n\n" + self.TOP_CITE.strip() + "\n"
+        res = check_page(text, "项目概述", repo)
+        assert res.ok, res.errors
+        assert not any("已移至页面末尾" in f for f in res.fixed)
+
+    def test_missing_cite_still_fails(self, repo):
+        text = valid_page().replace(self.TOP_CITE, "")
+        res = check_page(text, "项目概述", repo)
+        assert not res.ok and any("<cite>" in e for e in res.errors)
