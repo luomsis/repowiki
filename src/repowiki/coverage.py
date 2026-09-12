@@ -63,12 +63,16 @@ def run_coverage(paths: WikiPaths, as_json: bool) -> int:
     uncited = sorted(known - cited)
     total = len(known)
     covered = total - len(uncited)
+    breakdown = _classify_uncited(uncited, cited, paths.locale)
+    eff_total = total - len(breakdown["vendor"]) - len(breakdown["locale_mirror"])
     result = {
         "ok": True,
         "repo_files": total,
         "cited_files": covered,
         "coverage": round(covered / total, 4) if total else 1.0,
+        "effective_coverage": round(covered / eff_total, 4) if eff_total else 1.0,
         "uncited_files": uncited,
+        "uncited_breakdown": breakdown,
         "knowledge_files": sorted(knowledge_files),
         "pages": pages,
     }
@@ -76,15 +80,60 @@ def run_coverage(paths: WikiPaths, as_json: bool) -> int:
     return 0
 
 
+def _locale_mirrors(p: str, locale: str) -> set[str]:
+    """Candidate paths of the other-locale twin of ``p`` (deterministic)."""
+    out: set[str] = set()
+    for old, new in (
+        (f"/{locale}/", "/en/"), ("/en/", f"/{locale}/"),
+        (f".{locale}.", ".en."), (".en.", f".{locale}."), (".en.", "."),
+    ):
+        if old in p:
+            out.add(p.replace(old, new, 1))
+    return out
+
+
+def _classify_uncited(uncited: list[str], cited: set[str], locale: str) -> dict[str, list[str]]:
+    """Bucket uncited files: vendored third-party code, other-locale mirrors
+    of already-cited files, and the rest (the actionable residue)."""
+    vendor: list[str] = []
+    mirror: list[str] = []
+    other: list[str] = []
+    for p in uncited:
+        if "/vendor/" in f"/{p}":
+            vendor.append(p)
+        elif _locale_mirrors(p, locale) & cited:
+            mirror.append(p)
+        else:
+            other.append(p)
+    return {"vendor": sorted(vendor), "locale_mirror": sorted(mirror), "other": sorted(other)}
+
+
 def _coverage_human(r: dict) -> str:
     lines = [
         f"覆盖率 {r['cited_files']}/{r['repo_files']}（{r['coverage'] * 100:.1f}%）"
         "——被 wiki 页面/总览/知识卡片引用过的仓库文件占比"
     ]
+    if r.get("effective_coverage") != r["coverage"]:
+        lines.append(
+            f"有效覆盖率 {r['effective_coverage'] * 100:.1f}%"
+            "（剔除 vendor 与其他语言镜像后的口径）"
+        )
     uncited = r["uncited_files"]
     if uncited:
-        lines.append(f"未被引用 {len(uncited)} 个（至多列出 {MAX_LISTING} 个，JSON 输出含全量）:")
-        lines += [f"  → {p}" for p in uncited[:MAX_LISTING]]
+        bd = r.get("uncited_breakdown") or {}
+        mirror = bd.get("locale_mirror", [])
+        vendored = bd.get("vendor", [])
+        actionable = bd.get("other", uncited)
+        lines.append(f"未被引用 {len(uncited)} 个（JSON 输出含全量分组）:")
+        if mirror:
+            lines.append(f"  其他语言镜像（无需引用）: {', '.join(mirror[:5])}"
+                         + (f" 等 {len(mirror)} 个" if len(mirror) > 5 else ""))
+        if vendored:
+            lines.append(f"  vendor 第三方（无需引用）: {', '.join(vendored[:5])}"
+                         + (f" 等 {len(vendored)} 个" if len(vendored) > 5 else ""))
+        show = actionable[:MAX_LISTING]
+        lines.append(f"  值得补引用 {len(actionable)} 个（至多列出 {MAX_LISTING} 个）:")
+        lines += [f"  → {p}" for p in show]
     else:
         lines.append("仓库全部文件都被引用 ✓")
     zero = [p for p in r["pages"] if p["cited_files"] == 0]

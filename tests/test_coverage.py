@@ -87,3 +87,28 @@ def test_coverage_ignores_citations_to_deleted_files(repo, capsys):
     assert run("coverage", str(repo), "--json") == 0
     data = json.loads(capsys.readouterr().out)
     assert data["cited_files"] == 2  # api.py no longer in the inventory
+
+
+def test_coverage_breakdown_and_effective_rate(repo, capsys):
+    paths = setup(repo)
+    (repo / "src/demo/vendor").mkdir()
+    (repo / "src/demo/vendor/lib.py").write_text("x = 1\n", encoding="utf-8")
+    (repo / "docs/zh").mkdir(parents=True)
+    (repo / "docs/zh/CONTEXT.md").write_text("背景\n", encoding="utf-8")
+    (repo / "docs/en").mkdir(parents=True)
+    (repo / "docs/en/CONTEXT.md").write_text("context\n", encoding="utf-8")
+    # cite the zh twin so the en file classifies as a locale mirror
+    page = paths.root / "zh/content/快速开始.md"
+    page.write_text(
+        valid_page("快速开始").replace(
+            "</cite>", "- [docs/zh/CONTEXT.md](file://docs/zh/CONTEXT.md)\n</cite>"
+        ),
+        encoding="utf-8",
+    )
+    assert run("coverage", str(repo), "--json") == 0
+    data = json.loads(capsys.readouterr().out)
+    assert "src/demo/vendor/lib.py" in data["uncited_breakdown"]["vendor"]
+    assert "docs/en/CONTEXT.md" in data["uncited_breakdown"]["locale_mirror"]
+    assert "docs/zh/CONTEXT.md" not in data["uncited_files"]
+    # effective coverage excludes vendor + mirrors from the denominator
+    assert data["effective_coverage"] > data["coverage"]

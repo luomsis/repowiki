@@ -120,6 +120,9 @@ def valid_page(title: str = "项目概述") -> str:
 ## 简介
 demo 是一个微型示例服务。
 
+章节来源
+- [README.md:1-2](file://README.md#L1-L2)
+
 ## 项目结构
 - src/demo：核心包
 - tests：测试
@@ -155,6 +158,9 @@ A-->>U : "响应"
 图表来源
 - [src/demo/api.py:1-8](file://src/demo/api.py#L1-L8)
 
+章节来源
+- [src/demo/api.py:1-8](file://src/demo/api.py#L1-L8)
+
 ## 详细组件分析
 ### 入口
 - 职责：启动
@@ -171,6 +177,9 @@ A["api.py"] --> B["models.py"]
 ```
 
 图表来源
+- [src/demo/api.py:1-8](file://src/demo/api.py#L1-L8)
+
+章节来源
 - [src/demo/api.py:1-8](file://src/demo/api.py#L1-L8)
 
 ## 性能与一致性考量
@@ -222,6 +231,9 @@ def flow_page(title: str = "请求生命周期", locale: str = "zh") -> str:
 
 ## Introduction
 The lifecycle of a demo request.
+
+Section sources
+- [README.md:1-2](file://README.md#L1-L2)
 
 ## Flow Overview
 From entry to response.
@@ -305,6 +317,9 @@ Section sources
 
 ## 简介
 demo 请求的生命周期流程。
+
+章节来源
+- [README.md:1-2](file://README.md#L1-L2)
 
 ## 流程总览
 从入口到响应的端到端路径。

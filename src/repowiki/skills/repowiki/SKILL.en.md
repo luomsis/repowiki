@@ -131,10 +131,12 @@ code 3 (it created the overview task — normal progress).
   source code.
 - Pages follow the template and STYLE guide embedded in the spec: all required sections
   present, "Section sources" at the end of every section, "Diagram sources" after every
-  mermaid diagram, `[path:Lx-Ly](file://path#Lx-Ly)` format, line numbers within bounds,
+  mermaid diagram, `[path:Lx-Ly](file://path#Lx-Ly)` format, line numbers within bounds
+  (a start past EOF or an inverted range is rejected; only an overhanging end is clamped),
   zero cross-page links, no emoji/tables.
-- Deterministic defects caught by `check` (anchors/line numbers/H1) are auto-repaired —
-  no manual handling needed; only fix the semantic issues listed in `errors`.
+- Deterministic defects caught by `check` (anchors/H1/overhanging line-range ends) are
+  auto-repaired — no manual handling needed; only fix the semantic issues listed in
+  `errors`.
 - Output lives in `<repo>/.repowiki/` (`<locale>/content` pages, `<locale>/meta`
   metadata, `knowledge/<locale>/` knowledge cards, `<locale>/wiki.html` single-file
   viewer; locale was fixed at plan time).

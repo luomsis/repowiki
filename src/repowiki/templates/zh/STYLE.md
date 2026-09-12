@@ -7,7 +7,7 @@
 
 ## 章节来源与图表来源（引用格式，强制）
 - 每个正文章节末尾附「章节来源」列表；每个 mermaid 图后附「图表来源」列表。
-- 链接格式（路径相对仓库根目录，统一正斜杠，行号区间不得超出文件实际行数）：
+- 链接格式（路径相对仓库根目录，统一正斜杠，行号区间不得超出文件实际行数；仅终点越界会被自动钳制到文件末尾，起点越界或区间倒置会被 `check` 打回重写）：
   - `[README.md:1-120](file://README.md#L1-L120)`
   - `[graphiti_core/graphiti.py:146-283](file://graphiti_core/graphiti.py#L146-L283)`
 - 仅供整文件引用时可用 `[nodes.py](file://graphiti_core/nodes.py)` 形式（`<cite>` 块内）。

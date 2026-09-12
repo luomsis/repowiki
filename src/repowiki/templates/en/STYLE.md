@@ -6,7 +6,7 @@
 
 ## Section Sources & Diagram Sources (citation format, mandatory)
 - Every body section ends with a "Section sources" list; every mermaid diagram is followed by a "Diagram sources" list.
-- Link format (paths relative to the repo root, forward slashes, line ranges must not exceed the file's real length):
+- Link format (paths relative to the repo root, forward slashes, line ranges must not exceed the file's real length; only an overhanging end is auto-clamped, while a start past EOF or an inverted range is rejected by `check`):
   - `[README.md:1-120](file://README.md#L1-L120)`
   - `src/graphiti/graphiti.py:146-283` → `[graphiti/graphiti.py:146-283](file://graphiti/graphiti.py#L146-L283)`
 - Whole-file references may use the shorter form `[nodes.py](file://graphiti_core/nodes.py)` (inside the `<cite>` block).

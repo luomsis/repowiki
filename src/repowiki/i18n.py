@@ -32,6 +32,7 @@ STRINGS: dict[str, dict] = {
             ("结论", "exact"),
         ],
         "update_extra": ("更新摘要", "exact"),
+        "section_sources": "章节来源",
         "flow_sections": [
             ("简介", "exact"),
             ("流程总览", "exact"),
@@ -74,6 +75,7 @@ STRINGS: dict[str, dict] = {
             ("Conclusion", "exact"),
         ],
         "update_extra": ("Update Summary", "exact"),
+        "section_sources": "Section sources",
         "flow_sections": [
             ("Introduction", "exact"),
             ("Flow Overview", "exact"),

@@ -65,6 +65,9 @@ def en_page(title: str = "Project Overview") -> str:
 ## Introduction
 demo is a tiny sample service.
 
+Section sources
+- [README.md:1-3](file://README.md#L1-L3)
+
 ## Project Structure
 - src/demo: core package
 

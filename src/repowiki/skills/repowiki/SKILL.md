@@ -102,6 +102,6 @@ loop:
 ## 硬性规则
 
 - **只写任务规格指定的 output 文件**，绝不改动仓库源码。
-- 页面遵循规格内嵌的模板与 STYLE 规范：必备小节齐全、每节末尾「Section sources/章节来源」、每个 mermaid 图后「Diagram sources/图表来源」、`[path:Lx-Ly](file://path#Lx-Ly)` 格式、行号不越界、页间零链接、不用 emoji/表格。
-- `check` 的确定性缺陷（锚点/行号/H1）会被自动修复，无需手动处理；只需修复 `errors` 列出的语义问题。
+- 页面遵循规格内嵌的模板与 STYLE 规范：必备小节齐全、每节末尾「Section sources/章节来源」、每个 mermaid 图后「Diagram sources/图表来源」、`[path:Lx-Ly](file://path#Lx-Ly)` 格式、行号不越界（起点越界/区间倒置会被打回，仅终点越界自动钳制）、页间零链接、不用 emoji/表格。
+- `check` 的确定性缺陷（锚点/H1/越界的行区间终点）会被自动修复，无需手动处理；只需修复 `errors` 列出的语义问题。
 - 输出位于 `<repo>/.repowiki/`（`<locale>/content` 页面、`<locale>/meta` 元数据、`knowledge/<locale>/` 知识卡片、`<locale>/wiki.html` 单文件查看站点；locale 已在 plan 时确定）。

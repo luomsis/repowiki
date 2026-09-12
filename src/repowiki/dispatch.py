@@ -292,7 +292,8 @@ def _check_readonly(paths: WikiPaths, task: dict, inv) -> dict:
         node_id = task["id"][:-len("-update")] if task["id"].endswith("-update") else task["id"]
         res = check_page(raw, task["title"].replace("（增量更新）", ""), paths.repo_root,
                          is_update=(task["kind"] == "page_update"), locale=paths.locale,
-                         archetype=_node_archetype(paths, node_id))
+                         archetype=_node_archetype(paths, node_id),
+                         known_paths=inv.known_paths())
         return {**base, "ok": res.ok, "readonly": True, "errors": res.errors,
                 "fixed": [], "warnings": res.warnings,
                 "note": "done 为终态，此结果仅供参考，状态未改变"}
@@ -352,7 +353,8 @@ def _check_one(paths: WikiPaths, store: TaskStore, task: dict, inv) -> dict:
             node_id = tid[:-len("-update")] if tid.endswith("-update") else tid
             res = check_page(raw, task["title"].replace("（增量更新）", ""), paths.repo_root,
                              is_update=(kind == "page_update"), locale=paths.locale,
-                             archetype=_node_archetype(paths, node_id))
+                             archetype=_node_archetype(paths, node_id),
+                             known_paths=inv.known_paths())
         if res.fixed and res.text != raw:
             out_file.write_text(res.text, encoding="utf-8")
         status = "done" if res.ok else "failed"

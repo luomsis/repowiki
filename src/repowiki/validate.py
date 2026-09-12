@@ -1,8 +1,11 @@
 """Output validation: rule engine with deterministic auto-fix.
 
-Anything computable (anchors, line ranges, H1, path separators) is fixed
-silently and reported under ``fixed``; only semantic defects (missing
-sections, dangling file references, broken fences) fail the task.
+Anything computable (anchors, H1, path separators, overhanging range ends)
+is fixed silently and reported under ``fixed``; structural defects —
+impossible line ranges (start past EOF, inverted), blank cited slices,
+missing/empty sections, dangling file references, broken fences — fail the
+task. Whether a citation's *content* supports the claim it anchors remains
+the writer's responsibility; these rules only catch what is computable.
 """
 
 from __future__ import annotations
@@ -75,7 +78,8 @@ def _strip_code(text: str) -> str:
     return re.sub(r"`[^`\n]*`", " ", "".join(out))
 
 
-def _file_loc(repo_root: Path, rel: str) -> int | None:
+def _file_loc(repo_root: Path, rel: str) -> tuple[int, list[str]] | None:
+    """Line count and decoded lines of a repo file; None if missing/binary."""
     p = repo_root / rel
     try:
         if not p.is_file():
@@ -83,13 +87,22 @@ def _file_loc(repo_root: Path, rel: str) -> int | None:
         data = p.read_bytes()
         if b"\0" in data[:8192]:
             return None
-        return max(data.count(b"\n"), 1)
+        lines = data.decode("utf-8", errors="replace").splitlines()
+        return max(len(lines), 1), lines
     except OSError:
         return None
 
 
+# file-looking tokens inside mermaid node labels (checked against the inventory)
+_MERMAID_BLOCK_RE = re.compile(r"```mermaid\n(.*?)```", re.S)
+_FILEISH_TOKEN_RE = re.compile(
+    r"[A-Za-z0-9_][\w./\\-]*\.(?:py|md|toml|ya?ml|json|js|jsx?|tsx?|sh|html|txt)\b"
+)
+
+
 def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False,
-               locale: str = "zh", archetype: str = "module") -> CheckResult:
+               locale: str = "zh", archetype: str = "module",
+               known_paths: set[str] | None = None) -> CheckResult:
     res = CheckResult(text=raw)
     text = raw
     lang = strings(locale)
@@ -142,7 +155,7 @@ def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False,
     if len(mermaid_blocks) < MIN_MERMAID:
         res.fail(f"mermaid 图数量 {len(mermaid_blocks)} < {MIN_MERMAID}（至少需要结构图与时序/依赖图各一）")
 
-    # file:// links: existence (error) + line-range clamp / separator fix (auto-fix)
+    # file:// links: existence + line-range sanity (errors) / clamp + separator fix (auto-fix)
     cited_paths: list[str] = []
     missing: set[str] = set()
 
@@ -151,24 +164,39 @@ def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False,
         path = orig_path.replace("\\", "/")
         label = m.group("text").replace("\\", "/")
         start, end = m.group("start"), m.group("end")
-        loc = _file_loc(repo_root, path)
-        if loc is None:
+        located = _file_loc(repo_root, path)
+        if located is None:
             missing.add(orig_path)
             return m.group(0)
+        loc, lines = located
         changed = False
         if path != orig_path or label != m.group("text"):
             changed = True
             res.fixed.append(f"链接路径分隔符归一：{orig_path} → {path}")
         if start:
-            s = max(1, min(int(start), loc))
-            e = max(1, min(int(end or start), loc))
-            if str(s) != start or str(e or s) != (end or start):
-                changed = True
-                res.fixed.append(
-                    f"行区间钳制：{path}:{start}-{end or start} → {s}-{e}（文件共 {loc} 行）"
-                )
+            s = max(1, int(start))
+            e = max(1, int(end or start))
+            if s > loc:
+                # anchor points past EOF — almost certainly a hallucinated line number
+                res.fail(f"引用行号起点越界：{path} 共 {loc} 行，引用却从 L{s} 开始，请核对行号")
+                cited_paths.append(path)
+                return f"[{label}](file://{path})" if changed else m.group(0)
+            if e < s:
+                res.fail(f"行区间倒置：{path}#L{s}-L{e}（起点大于终点），请核对行号")
+                cited_paths.append(path)
+                return f"[{label}](file://{path})" if changed else m.group(0)
             cited_paths.append(path)
-            return f"[{path}:{s}-{e}](file://{path}#L{s}-L{e})" if changed else m.group(0)
+            e2 = min(e, loc)
+            if not any(ln.strip() for ln in lines[s - 1:e2]):
+                res.fail(f"引用区间全为空行：{path}#L{s}-{e2} 无法支撑任何论断，请核对行号")
+                return f"[{label}](file://{path})" if changed else m.group(0)
+            clamped = e2 != e or str(s) != start or str(e2) != (end or start)
+            if clamped:
+                res.fixed.append(
+                    f"行区间钳制：{path}:{start}-{end or start} → {s}-{e2}（文件共 {loc} 行）"
+                )
+                return f"[{path}:{s}-{e2}](file://{path}#L{s}-L{e2})"
+            return f"[{path}:{s}-{e2}](file://{path}#L{s}-L{e2})" if changed else m.group(0)
         cited_paths.append(path)
         return f"[{label}](file://{path})" if changed else m.group(0)
 
@@ -177,6 +205,39 @@ def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False,
         res.fail("引用了仓库中不存在的文件: " + ", ".join(sorted(missing)))
     if len(set(cited_paths)) > MAX_CITED_FILES:
         res.warnings.append(f"单页引用文件 {len(set(cited_paths))} 个 > {MAX_CITED_FILES}")
+
+    # mermaid node labels naming a file should reference real repo files.
+    # Label shorthand ("main.py") matches by basename; conceptual labels
+    # without a file extension never trigger this. Warn only.
+    if known_paths:
+        suspicious: set[str] = set()
+        for block in _MERMAID_BLOCK_RE.findall(text):
+            for token in _FILEISH_TOKEN_RE.findall(block):
+                norm = token.replace("\\", "/")
+                if norm not in known_paths and not any(
+                    k == norm or k.endswith("/" + norm) for k in known_paths
+                ):
+                    suspicious.add(norm)
+        if suspicious:
+            res.warnings.append(
+                "mermaid 图节点引用了仓库中不存在的文件名（概念命名可忽略）: "
+                + ", ".join(sorted(suspicious)[:5])
+            )
+
+    # per-section rules: every ## section (except the TOC / update summary)
+    # must be non-empty and carry a sources marker (auto-fix never applies)
+    src_marker = lang.get("section_sources", "章节来源")
+    skip_sections = {lang["toc"]}
+    if is_update:
+        skip_sections.add(lang["update_extra"][0])
+    parts = re.split(r"^## (.+?)\s*$", text, flags=re.M)
+    for h, body in zip(parts[1::2], parts[2::2]):
+        if h.strip() in skip_sections:
+            continue
+        if not _strip_code(body).strip():
+            res.fail(f"小节「{h.strip()}」内容为空")
+        elif src_marker not in body:
+            res.fail(f"小节「{h.strip()}」缺少「{src_marker}」来源列表")
 
     # wiki-to-wiki links (warn only)
     wiki_refs = [m.group(1) for m in _WIKI_LINK_RE.finditer(text)]
