@@ -2,7 +2,31 @@
 
 [中文](CHANGELOG.md) | **English**
 
-## Unreleased
+## 0.7.0 — 2026-09-12
+
+### Added
+
+- **Layered line-range validation**: a start past EOF and an inverted range
+  (start > end) are now errors bounced back to the agent instead of being silently
+  clamped — hallucinated line numbers no longer become format-valid but semantically
+  arbitrary citations; only an overhanging end (end > file length) keeps the
+  auto-clamp (a benign truncation).
+- **Cited-slice sanity check**: a cited line range that decodes to nothing but blank
+  lines is now an error ("cannot support any claim") — previously anchors landing on
+  blank lines or closing braces passed unnoticed.
+- **Mermaid node filename check**: file-path-like tokens inside mermaid node labels
+  are matched (by basename) against the repository inventory; misses produce a
+  warning (non-blocking, conceptual labels are fine). `check` now passes the scanned
+  inventory into `check_page` via the new `known_paths` parameter.
+- **Per-section source enforcement**: every `##` section (except the TOC and the
+  update summary) must be non-empty and contain a "Section sources / 章节来源" marker
+  (i18n-ized via a new `section_sources` key in `STRINGS`); violations are errors.
+  Sections that are empty after stripping fenced code are errors too.
+- **Coverage breakdown & effective rate**: uncited files are deterministically
+  bucketed into vendor / other-locale mirror (a locale-variant twin of an
+  already-cited file) / actionable residue; adds `effective_coverage` (denominator
+  excludes vendor and mirrors) and `uncited_breakdown` (JSON), with the human output
+  showing both rates and the grouped listing.
 
 ### Changed
 
@@ -10,6 +34,25 @@
   the page (after the H1) to the very end (after the Conclusion section); the incremental
   update task's insertion anchor was adjusted accordingly (after the H1, before the TOC);
   existing wiki pages have been migrated.
+- `validate._file_loc` now also returns the decoded lines (`utf-8` with
+  `errors="replace"`, binary `\0` detection kept) alongside the line count, feeding
+  the cited-slice sanity check.
+
+### Docs
+
+- templates (zh/en) `STYLE.md` and `page_task.md` describe the new line-range
+  semantics ("start-past-EOF / inverted ranges are rejected; only an overhanging end
+  is clamped"); `SKILL.md` / `SKILL.en.md` hard rules and the auto-fix scope were
+  synced accordingly.
+
+### Tests
+
+- 10 new validator cases: start past EOF, inverted range, blank cited slice, mermaid
+  unknown/known filenames, section without sources, empty section;
+  `test_line_range_clamped` keeps passing under the new policy (end-only clamp).
+- coverage gains breakdown/effective-rate cases (a vendor file plus an en mirror
+  whose zh twin is cited); conftest / test_i18n page fixtures gained the
+  per-section source markers required by the new rule; full suite: 202 passed.
 
 ## 0.6.1 — 2026-09-09
 

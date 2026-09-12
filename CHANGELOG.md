@@ -2,12 +2,45 @@
 
 **中文** | [English](CHANGELOG.en.md)
 
-## Unreleased
+## 0.7.0 — 2026-09-12
 
-### Changed
+### 新增
+
+- **行号校验分层**：起点越界（start > 文件行数）与区间倒置（start > end）从「静默钳制」
+  改为 error 打回 agent 重写——幻觉行号不再被转正为格式合法但语义任意的引用；
+  仅终点越界（end > 文件行数）保留自动钳制（良性截断）。
+- **引用区间内容 sanity check**：引用行区间经解码后若全为空白行，报 error
+  「无法支撑任何论断」——此前行号落在空行/闭括号上一视同仁放行。
+- **mermaid 节点文件名核对**：图节点标签中形如文件路径的 token（按 basename 匹配）
+  与仓库文件清单比对，未命中报 warning（非阻断，概念命名可忽略）；
+  `check` 执行时把 `scan()` 得到的清单经 `known_paths` 传入 `check_page`。
+- **小节来源强制**：每个 `##` 小节（「目录」与增量更新「更新摘要」豁免）必须非空、
+  且包含「章节来源 / Section sources」标记（i18n 化，`STRINGS` 新增 `section_sources`），
+  违例报 error；空小节（剔除代码围栏后无内容）同样报 error。
+- **coverage 报告分组与有效覆盖率**：未被引用文件确定性分为 vendor / 其他语言镜像
+  （按 locale 变体替换命中已引用集合判定）/ 值得补引用 三组，新增
+  `effective_coverage`（分母剔除 vendor 与镜像）与 `uncited_breakdown`（JSON），
+  人类可读输出同时给出两个口径并分组展示。
+
+### 变更
 
 - **页面布局**：「本文引用的文件」引用块由页首（H1 之后）移至页面末尾（结论小节之后）；
   增量更新任务的插入锚点同步调整（H1 之后、「目录」之前）；存量 wiki 页面已迁移。
+- `validate._file_loc` 除行数外同时返回解码后的行内容（`utf-8` + `errors="replace"`，
+  二进制 `\0` 判定保留），供引用区间 sanity check 使用。
+
+### 文档
+
+- templates（zh/en）`STYLE.md` 与 `page_task.md` 的行号规则补充新语义：
+  「起点越界/区间倒置会被打回，仅终点越界自动钳制」；`SKILL.md` / `SKILL.en.md`
+  硬性规则与自动修复范围描述同步。
+
+### 测试
+
+- 新增 10 个校验器用例：起点越界、区间倒置、空行区间、mermaid 未知/已知文件名、
+  小节缺来源、空小节；`test_line_range_clamped` 在新策略下保持通过（end-only 钳制）。
+- coverage 新增分组与有效覆盖率用例（vendor 文件 + en 镜像 + zh 双文件被引用场景）；
+  conftest / test_i18n 页面夹具补齐小节来源标记以符合新规则；全套 202 项通过。
 
 ## 0.6.1 — 2026-09-09
 
