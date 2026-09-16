@@ -29,23 +29,32 @@ automatically on every push to main).
 
 ## Why repowiki
 
-There are two well-trodden paths to a repo wiki today: cloud AI wiki services (your
-code leaves the machine, pay per use, output is a black box), or letting one agent
-read the whole repo and write it in one go (large repos don't fit in context, an
-interruption throws everything away, and parallelism is hard to coordinate).
-repowiki takes a third path: **the intelligence — reading code, writing the wiki —
+There are plenty of ways to get a repo wiki today, but each one locks you in somewhere:
+**cloud AI wiki services** such as DeepWiki (your code leaves the machine, pay per use,
+output is a black box); **built-in IDE / tool features** such as Qoder Repo Wiki or the
+ZCode repo wiki (handy, but tied to one vendor's ecosystem — generation billed in
+Credits/tokens, the wiki kept in a local user directory or vendor platform where it can't
+go through CI or gain version history, large repos capped, e.g. 10,000 files per project
+on Qoder); or letting one agent read the whole repo and write it in one go (large repos
+don't fit in context, an interruption throws everything away, and parallelism is hard to
+coordinate).
+repowiki takes a different path: **the intelligence — reading code, writing the wiki —
 stays with any agent you choose; everything else (task planning, atomic claiming,
 output validation, auto-repair, crash recovery) is a deterministic build system.**
+The wiki lands in your repository as markdown + mermaid + source references
+(wiki-as-code): reviewable, incrementally updatable, and enforceable by a CI stale gate.
 
-| | Cloud AI wiki service | One agent reads the repo | repowiki |
-|---|---|---|---|
-| Source of intelligence | Built-in LLM (fixed) | Your agent (any) | Your agent (any) |
-| Code leaves your machine | Yes | No | No |
-| API keys / network | Required | Depends on agent | repowiki itself needs none |
-| Large repos | Vendor quota limits | Doesn't fit in context | Split into page-level tasks |
-| Interruption / crash | — | Start over | State on disk, resume anytime |
-| Parallel speedup | — | Hard to coordinate | Multi-worker atomic claims, parallel by design |
-| Output quality | Black box | Agent's own discipline | Enforced templates + programmatic validation + auto-repair |
+| | Cloud AI wiki service | IDE / tool built-in (Qoder, ZCode, …) | One agent reads the repo | repowiki |
+|---|---|---|---|---|
+| Source of intelligence | Built-in LLM (fixed) | Vendor-bound model service | Your agent (any) | Your agent (any) |
+| Code leaves your machine | Yes (uploaded to platform) | Context sent to the selected model service | No | No |
+| Cost | Pay per service | Credits / tokens | Depends on agent | repowiki itself is free |
+| Wiki ownership | Vendor platform | Local user dir or `.qoder/`, weak/no in-repo presence | One-off artifact | Your repo (wiki-as-code) + offline site |
+| CI gate / incremental | — | In-tool auto refresh, no standalone gate | — | `stale --fail-if-stale` blocks stale PRs, `update` diffs git |
+| Large repos | Vendor quota limits | Capped (e.g. 10k files on Qoder) | Doesn't fit in context | Split into page-level tasks |
+| Interruption / crash | — | Closed loop inside the tool | Start over | State on disk, resume anytime |
+| Parallel speedup | — | — | Hard to coordinate | Multi-worker atomic claims, parallel by design |
+| Output quality | Black box | Closed loop, no programmatic validation | Agent's own discipline | Enforced templates + programmatic validation + auto-repair |
 
 In one sentence: **the agent supplies the intelligence; repowiki supplies the
 reliability.**
