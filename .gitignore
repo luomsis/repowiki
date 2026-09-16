@@ -20,3 +20,8 @@ venv/
 
 
 .repowiki/state/*.lock
+
+.v2c
+.video_agent
+out
+.pub*
