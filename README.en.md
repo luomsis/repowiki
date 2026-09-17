@@ -67,7 +67,7 @@ reliability.**
 - **Single-file offline site + agent indexes**: `site` produces a self-contained ~5 MB HTML file (navigation, search, mermaid, source popups — double-click to view), and exports `llms.txt` / `llms-full.txt` (the [llmstxt.org](https://llmstxt.org/) convention) so any agent / IDE can read the wiki by index, no MCP required;
 - **Strong validation, auto-repair**: enforced templates + programmatic validation; anchors, line ranges, H1s, and path separators are repaired programmatically — only semantic defects fail;
 - **Bilingual, cross-platform**: output language follows the target repo (zh / en); native macOS / Linux / Windows support (no WSL needed), CI regression on a 3-platform × Python 3.10-3.13 matrix;
-- **Knowledge cards and page archetypes**: mechanism cards / module docs with wholesale category customization (`--categories`); pages pick `module` (structural, default) or `flow` (process) templates by theme.
+- **Knowledge cards and page archetypes**: mechanism cards / module docs with wholesale category customization (`--categories`); pages pick one of six archetype templates by theme: `module` (structural, default) / `flow` (process) / `layer` (layered) / `data` (data model) / `api` (interface) / `event` (event-driven).
 
 ## Table of Contents
 
@@ -135,8 +135,10 @@ file** (`<repo>/.repowiki/<locale>/wiki.html`, roughly 5 MB):
 - works even after `repowiki clean` (section order degrades to directory order;
   content is unaffected).
 
-Pages are written in one of two archetypes, **module (structural, default) / flow
-(process)**, with templates and style rules enforced by the validator per language;
+Pages are written in one of six archetypes — **`module` (structural, default) / `flow`
+(process) / `layer` (layered) / `data` (data model) / `api` (interface) / `event`
+(event-driven)** — chosen per page by theme at planning time (falling back to `module`
+when unsure), with templates and style rules enforced by the validator per language;
 each section ends with "Section sources", each diagram with "Diagram sources", in the
 format `[path:Lx-Ly](file://path#Lx-Ly)`; zero cross-page links (which is exactly why
 all page tasks can run fully in parallel). The full section layout lives in

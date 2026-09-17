@@ -128,7 +128,7 @@ class TestFinalize:
         assert "overview" in index["tasks"]
         # simulate agent writing overview
         ov = repo / ".repowiki/zh/meta/wiki-overview.md"
-        ov.write_text("# demo Wiki 总览\n\n## 章节导航\n- 项目概述\n\n## 如何使用本 Wiki\nx\n", encoding="utf-8")
+        ov.write_text("# demo Wiki 总览\n\n## 章节导航\n- 项目概述\n\n## 如何使用本 Wiki\nx\n\n## 术语表\nz\n", encoding="utf-8")
         TaskStore(WikiPaths(repo)).update("overview", status="done")
         # done tasks must pass check first
         run("check", str(repo), "--task", "overview")
@@ -230,7 +230,7 @@ class TestUpdate:
         # the overview refresh task validates with the same shape as a fresh overview
         ov = paths.overview_file
         ov.parent.mkdir(parents=True, exist_ok=True)
-        ov.write_text("# demo Wiki 总览\n\n## 章节导航\n- 项目概述\n\n## 如何使用本 Wiki\nx\n", encoding="utf-8")
+        ov.write_text("# demo Wiki 总览\n\n## 章节导航\n- 项目概述\n\n## 如何使用本 Wiki\nx\n\n## 术语表\nz\n", encoding="utf-8")
         assert run("check", str(git_repo), "--task", "overview-update") == 0
 
     def test_update_requires_git(self, repo):
@@ -476,7 +476,7 @@ class TestCleanup:
         TaskStore(WikiPaths(repo)).update("catalog", status="done")
         run("finalize", str(repo))
         ov = repo / ".repowiki/zh/meta/wiki-overview.md"
-        ov.write_text("# demo Wiki 总览\n\n## 章节导航\nx\n\n## 如何使用本 Wiki\ny\n", encoding="utf-8")
+        ov.write_text("# demo Wiki 总览\n\n## 章节导航\nx\n\n## 如何使用本 Wiki\ny\n\n## 术语表\nz\n", encoding="utf-8")
         TaskStore(WikiPaths(repo)).update("overview", status="done")
         run("check", str(repo), "--task", "overview")
         assert run("finalize", str(repo)) == 0

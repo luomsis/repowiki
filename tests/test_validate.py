@@ -292,13 +292,13 @@ class TestOverview:
             "# demo Wiki 总览\n\n"
             "介绍。\n\n"
             "## 章节导航\n- 项目概述\n\n"
-            "## 如何使用本 Wiki\n先看概述。\n"
+            "## 如何使用本 Wiki\n先看概述。\n\n## 术语表\n- demo（demo）：示例项目。\n"
         )
         res = check_overview(text, "demo")
         assert res.ok, res.errors
 
     def test_h1_autofixed(self):
-        text = "# 总览\n\n## 章节导航\nx\n\n## 如何使用本 Wiki\ny\n"
+        text = "# 总览\n\n## 章节导航\nx\n\n## 如何使用本 Wiki\ny\n\n## 术语表\nz\n"
         res = check_overview(text, "demo")
         assert res.ok and "# demo Wiki 总览" in res.text
 

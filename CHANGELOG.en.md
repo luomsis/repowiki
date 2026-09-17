@@ -2,6 +2,76 @@
 
 [中文](CHANGELOG.md) | **English**
 
+## 0.8.0 — 2026-09-17
+
+### Added
+
+- **Source-snippet popup visual upgrade**: lightweight syntax highlighting (zero-dependency
+  hand-written scanner: keywords/strings/comments/numbers/decorators/constants, light+dark
+  palettes); popup header upgraded to file icon + split path (dim dirs, bold basename) +
+  line-range badge + one-click copy (check-mark feedback, execCommand fallback); card gets
+  rounded shadow/backdrop blur/open animation (disabled under prefers-reduced-motion); line
+  numbers get a gutter background and rows highlight on hover. Template assets only
+  (site.html/app.js), zero new dependencies; existing wikis pick it up by re-running
+  `repowiki site`.
+- **Generation specs adopt competitors' section-level strengths** (2026-09-17 section-level
+  research: DeepWiki public pages / deepwiki-open prompt / CodeWiki paper, see
+  `docs/zh/research/competitive-analysis.md`): multi-attribute enumerations as tables
+  (entities/components/dependencies/error codes, with reading hints), dependencies grouped
+  required/recommended/optional, intros quoting official README lines plus key
+  characteristics, fenced directory trees for project structure, index-page navigation
+  tables (sub-page | key entity | responsibility), flow steps mapped to sequence-diagram
+  participants with mandatory key-code citations, and a grounding discipline in STYLE
+  ("fewer sections beats fabricated ones"); the overview gains a required
+  "Glossary/术语表" section (8~15 bilingual terms, `overview_sections` updated).
+- **Page archetypes grow to six**: beyond `module` (structural, default) and `flow`
+  (process), four new page archetypes: `layer` (layered architecture), `data` (data
+  model), `api` (interface surface) and `event` (event-driven). Each carries 8 required
+  sections and ≥3 mermaid diagrams (layer: layer overview / inter-layer dependencies and
+  call rules / vertical slice; data: erDiagram model overview / stateDiagram-v2 state
+  machine / data lifecycle; api: endpoint inventory and grouping / request handling
+  sequence / contracts and error codes; event: event inventory / event flow topology /
+  consumer handling / reliability guarantees), with bilingual (zh/en) template assets.
+- **module / flow skeleton enrichment** (required-section tables unchanged): module's
+  Core Components gains an extension-points bullet, Detailed Component Analysis gains a
+  configuration-surface bullet, Architecture Overview may add a classDiagram; flow's Key
+  Steps gain a concurrency-and-retries bullet, Data and State Changes now prefers
+  stateDiagram-v2 for real state machines, Flow Overview may add a branch diagram.
+- **STYLE diagram vocabulary grows to six**: adds `erDiagram` and `stateDiagram-v2`
+  use cases and syntax notes (state aliases, ASCII entity names in erDiagram), plus
+  guidance to match diagram types to the page archetype.
+
+### Changed
+
+- **catalog planning rule 8 rewritten as a six-archetype selection guide**: topic-based
+  mapping + admission criteria + page_brief evidence requirements + fallback to `module`
+  when unsure — archetypes are optional per-page skeletons, not per-repo obligations;
+  a pure library repo can legitimately produce only module pages.
+- `dispatch._node_archetype`'s hardcoded whitelist now reuses the `catalog.ARCHETYPES`
+  constant (removing a desync hazard when adding archetypes); `tasks._page_template_name`
+  and validate's required-sections lookup switched from binary branches to mapping
+  tables with module fallback for unknown values.
+
+### Tests
+
+- New `tests/test_archetypes.py` (29 cases): three-way consistency guard (template
+  files / i18n section tables / template-name mapping, so future archetypes can't be
+  half-wired), unknown-archetype fallback in both catalog validation and dispatch
+  lookup, `check_page` positives and negatives for all six archetypes × both locales
+  (dropping a required section must fail), plan-time template embedding assertions and
+  end-to-end page checks in zh and en.
+
+### Docs
+
+- **STYLE gains a "body density" rule**: every body section leads with 2~4 sentences of
+  prose before bullets, one-item lists are rewritten as prose, each mermaid diagram gets
+  a lead-in and an interpretation sentence, and each section carries at least ~3 lines of
+  body text — preventing diagram-heavy, prose-thin pages; the error-prone placeholder
+  hints in all six page skeletons gained the same prose-first guidance.
+- READMEs, USAGE (bilingual "page archetypes" section rewritten) and the shipped SKILL
+  files (bilingual) now describe the six archetypes and their admission criteria;
+  `docs/zh/DECISIONS.md` gains decision entry #18.
+
 ## 0.7.0 — 2026-09-12
 
 ### Added

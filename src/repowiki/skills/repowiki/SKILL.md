@@ -40,7 +40,7 @@ repowiki site <repo>          # 7. 生成单文件离线查看站点 .repowiki/<
 
 增量更新或 finalize 后重跑了页面，都可随时重跑 `repowiki site <repo>` 重建站点（幂等）。
 
-任务类型：`catalog`（目录树规划，产出 state/catalog.json；流程/机制主题页可设可选字段 `"archetype": "flow"` 选用流程型模板，默认 module 结构型）→ `page`（逐页撰写）→ `overview`（总览）；
+任务类型：`catalog`（目录树规划，产出 state/catalog.json；页面可用可选字段 `"archetype"` 选六种原型模板：module 结构型（默认）/ flow 流程型 / layer 分层型 / data 数据模型型 / api 接口型 / event 事件型，按主题选型、无法确认时回退 module，非默认原型须在 page_brief 给出证据）→ `page`（逐页撰写）→ `overview`（总览）；
 可选：`repowiki knowledge <repo> [--categories <file>]`（知识卡片，类别清单可整表自定义）、`repowiki update <repo> [--dirty]`（基于 git diff 的增量更新，重写受影响页与总览页并附「更新摘要/Update Summary」小节；`--dirty` 纳入未提交/未跟踪变更）、`repowiki stale <repo> [--fail-if-stale]`（只读过期报告：哪些页面/卡片/模块会过期，不创建任务——CI 门禁用）、`repowiki coverage <repo>`（只读覆盖率报告：wiki 从未引用的仓库文件）。
 产出语言由 plan 时确定（README 权重最高的自动检测，或 `--locale zh|en`），持久化于 `state/locale`，规格中的模板即对应语言。
 

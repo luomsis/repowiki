@@ -116,3 +116,47 @@ git-URL 安装 + 手动驱动循环是最大的漏斗瓶颈。
 - GitDiagram：<https://github.com/ahmedkhaleel2004/gitdiagram>
 - Swimm：<https://swimm.io/>
 - Repomix：<https://repomix.com/> · Gitingest：<https://gitingest.com/>
+
+## 章节级内容调研（2026-09-17 补充）
+
+> 背景：六原型落地后用户反馈「图多文薄」。本轮不再看产品形态，而是抓取竞品**实际生成页面的章节结构**：
+> DeepWiki 公开页两例（pallets/flask、yt-dlp/yt-dlp）、DeepWiki-Open 开源生成 prompt（api/prompts.py）、
+> CodeWiki 论文（arXiv 2510.24428）与 README。方法同前：公开材料核对，未逆向。
+
+### 证据：竞品页面怎么写章节
+
+- **页首「Relevant source files」**：每页标题下列出本页分析的具体源码文件（flask 24 个、yt-dlp 9 个，带仓库链接）。
+- **多维清单表格化**：依赖表（Library / PyPI / Min Version / Role）、组件表（Component / Primary Files / Purpose）、
+  上下文代理表（Name / Type / Backed by / Available when）、发布二进制表——flask 8 节中 3 节是表格。
+- **依赖三档分级**：yt-dlp 的 Dependencies 分 Required / Strongly Recommended / Optional。
+- **「What X Is」开篇**：引用 README 原句（blockquote）+ 特征 bullets（语言/许可证/平台）。
+- **目录树代码块**：Source Code Layout 用 fenced text 目录树而非 bullet。
+- **配置优先级排序列表**：Configuration System 用 ranked list 表达配置层叠。
+- **索引页导航表**：Subsystem Index（Subsystem / Key Code Entity / Wiki Page）；CodeWiki 父级页同构——
+  「模块协作综述 + 能力摘要 + 公共接口使用指南」。
+- **站点级术语表**：flask 站点的 Glossary 是独立一级主题（第 11 个）。
+- **步骤化代码走读**（deepwiki-open codemap prompt）：编号 section + 有序子步骤（1a/1b）+ 每步
+  citation(file, start, end) + verbatim snippet。
+- **Grounding 纪律**（同 prompt 原文）："You may ONLY cite files that appear in the context…Never invent a path"、
+  "produce fewer sections rather than fabricating"。
+- **CodeWiki 内容四要素**：repository overview with architecture guide / module docs with API references /
+  usage examples and implementation patterns / cross-module interaction analysis。
+
+### 采纳（已落入生成规范）
+
+1. **多维清单表格化**：STYLE 修订——叙事内容禁表格不变，多维枚举清单（实体/组件/依赖/错误码）应用表格并附读法说明；六骨架相应小节提示同步（核心组件/依赖分析/实体字段/错误码/事件清单）。
+2. **依赖三档分级**：module「依赖关系分析」按 必选/推荐/可选 分组。
+3. **开篇引用官方原句 + 关键特征**：module「简介」提示补充。
+4. **目录树代码块**：module「项目结构」提示补充。
+5. **索引页导航表**：详细组件分析提示——索引页给「子页 | 核心实体 | 一句话职责」无链接表格。
+6. **站点级术语表**：overview 新增必备小节「术语表/Glossary」（8~15 个专有术语，中英对照）。
+7. **步骤-图对应 + 关键代码引用**：flow「关键步骤」步骤编号对应时序图参与者，处理 bullet 必须附 file:// 引用。
+8. **Grounding 纪律**：STYLE 新增——证据不足写薄并声明，禁止编造，宁少勿造。
+
+### 不采纳及理由
+
+- **页间交叉链接**（Related Documentation / 带链接的 Subsystem Index）：破坏页间零链接——并行安全的基石。
+- **正文内嵌 verbatim 代码片段**：repowiki 的 file:// 引用 + 站点弹层（内嵌真实行）机制更优；嵌码会加剧「图多文薄」并引入重复。
+- **mermaid Node 语法校验**：违反零依赖离线承诺。
+- **页首源码文件区**：与 0.7.0「引用块置尾」决策冲突，维持页尾（信息已由规格内嵌参考文件清单承担）。
+- **CodeWiki 四 doc-type**：六原型已覆盖且更细（layer/data/event 为其没有）。

@@ -23,6 +23,17 @@ MIN_SECTIONS = 6
 MIN_MERMAID = 2
 MAX_CITED_FILES = 15
 
+# i18n required-sections table key per page archetype; unknown archetypes
+# (e.g. catalogs written by older planners) fall back to the module table.
+_SECTION_TABLE_BY_ARCHETYPE = {
+    "module": "required_sections",
+    "flow": "flow_sections",
+    "layer": "layer_sections",
+    "data": "data_sections",
+    "api": "api_sections",
+    "event": "event_sections",
+}
+
 PLACEHOLDER_RE = re.compile(r"\{\{[A-Z][A-Z0-9_]*\}\}")
 _H1_RE = re.compile(r"^# (.+?)\s*$", re.M)
 _H2_RE = re.compile(r"^## (.+?)\s*$", re.M)
@@ -122,9 +133,9 @@ def check_page(raw: str, title: str, repo_root: Path, is_update: bool = False,
             text = _H1_RE.sub(f"# {expected}\n", text, count=1)
             res.fixed.append(f"H1 由「{h1s[0]}」改为「{expected}」")
 
-    # required sections (per page archetype: module = structure pages, flow = mechanism/process pages)
+    # required sections (per page archetype, see _SECTION_TABLE_BY_ARCHETYPE)
     headings = _headings(text)
-    section_table = lang["flow_sections"] if archetype == "flow" else lang["required_sections"]
+    section_table = lang[_SECTION_TABLE_BY_ARCHETYPE.get(archetype, "required_sections")]
     required = list(section_table)
     if is_update:
         required.insert(0, lang["update_extra"])

@@ -13,7 +13,7 @@
 <One paragraph: what this flow is, what triggers it, where it ends, and where it lives in the repository.>
 
 ## Flow Overview
-<One paragraph sketching the end-to-end path (entry → key stages → exit), with a sequence diagram.>
+<One paragraph sketching the end-to-end path (entry → key stages → exit), with a sequence diagram; for a heavily branched flow, a graph TB branch diagram may accompany the sequence diagram.>
 
 ```mermaid
 sequenceDiagram
@@ -33,9 +33,11 @@ Section sources
 - [<path>:<from>-<to>](file://<path>#L<from>-L<to>)
 
 ## Key Steps
+<Step numbers correspond one-to-one with participants in the Flow Overview sequence diagram.>
 ### Step 1: <name>
 - Input: <what enters this step>
-- Handling: <what happens, key code path>
+- Handling: <what happens, with a file:// citation to the key code>
+- Concurrency and retries: <this step's concurrency semantics / retries / idempotency; omit if none>
 - Failure path: <how failures surface and are handled>
 
 Section sources
@@ -48,13 +50,13 @@ Section sources
 - [<path>:<from>-<to>](file://<path>#L<from>-L<to>)
 
 ## Involved Components
-- <component/module>: its role in this flow (bullet list, in call order).
+One sentence of prose on how the components collaborate, then bullets in call order: - <component/module>: its role in this flow.
 
 Section sources
 - [<path>:<from>-<to>](file://<path>#L<from>-L<to>)
 
 ## Data and State Changes
-<Before/after comparison of data and state: inputs/outputs, side effects, state-machine transitions; use a flow diagram when transitions are involved.>
+<Before/after comparison of data and state: inputs/outputs, side effects, state-machine transitions; prefer stateDiagram-v2 for a real state machine, and a flow diagram for simple transitions.>
 
 ```mermaid
 graph LR
@@ -69,7 +71,7 @@ Section sources
 - [<path>:<from>-<to>](file://<path>#L<from>-L<to>)
 
 ## Troubleshooting Guide
-- <common failure → cause → how to locate → relevant code location.>
+- One sentence of prose on the troubleshooting approach, then at least 3 scenarios as bullets: symptom → cause → how to locate → relevant code location.
 
 Section sources
 - [<path>:<from>-<to>](file://<path>#L<from>-L<to>)

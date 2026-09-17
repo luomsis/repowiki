@@ -26,6 +26,7 @@ Write the overview to: <b>{{OUTPUT_ABS}}</b> (repo-relative: {{OUTPUT}}).
 2. 2~4 paragraphs on the repository's positioning and core value (objective tone).
 3. A "Section Navigation" section: for each chapter in the tree, `chapter title —— one-sentence description` (bullet list, plain text, no links).
 4. A "How to Use This Wiki" section: suggested reading order (newcomer path vs contributor path).
+5. A "Glossary" section: distill 8~15 domain terms from the README/code (bilingual), each with a one-sentence definition, in the form `- 术语 (English): definition`.
 
 ## Style
 {{STYLE}}

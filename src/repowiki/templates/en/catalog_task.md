@@ -58,7 +58,13 @@ Write every human-readable field (`title`, `summary`, `page_brief`) in **English
 5. `page_brief` states the concrete points the page must cover — it becomes the prompt for the page-writing task, so be specific (which modules/classes/flows/configs).
 6. Coverage expectations (mirroring wikis of comparable projects): project overview, quick start, core concepts, main features/SDK usage, configuration, deployment/operations, API reference, examples/contributing — trim to what this repository actually contains; do not force sections that do not apply.
 7. `slug` is lowercase English and hyphens (e.g. `project-overview`, `quick-start`).
-8. (Optional) page nodes may set `archetype` to pick the page template: mechanism/process-themed pages (e.g. "lifecycle of a request", "build & release pipeline", "event loop") use `"archetype": "flow"` (Flow Overview / Key Steps / Involved Components / Data and State Changes); all other structural themes default to `"archetype": "module"` (Project Structure / Core Components / Architecture Overview / Dependency Analysis). The field may be omitted (same as module); every flow page should state the flow's start and end in its page_brief.
+8. (Optional) page nodes may set `archetype` to pick the page skeleton: one of `module` / `flow` / `layer` / `data` / `api` / `event` (omitted = `module`). Choose by the page's topic; **when in doubt, use `module`**. Every non-default archetype has admission criteria, and choosing one requires corresponding evidence in page_brief, or the page will fail validation:
+   - `flow`: end-to-end process/mechanism topics (e.g. "lifecycle of a request", "build & release pipeline"). Admission: a fully traceable start and end exists. Evidence: page_brief states the flow's start and end.
+   - `layer`: layered-architecture / calling-convention topics (e.g. "layered architecture and dependency direction"). Admission: the code has a clear layering with call-direction rules. Evidence: page_brief lists the layers.
+   - `data`: data-model / entity / state-machine topics (e.g. "data model and storage", "order state machine"). Admission: explicit data structures and/or state transitions exist. Evidence: page_brief names the core entities.
+   - `api`: outward-facing interface / command-surface topics (e.g. "CLI reference", "REST API"). Admission: a stable caller-facing interface surface exists. Evidence: page_brief states the endpoint grouping / inventory source.
+   - `event`: event / message / pub-sub topics (e.g. "event bus", "message flow"). Admission: an event or message mechanism exists. Evidence: page_brief states where the event inventory comes from.
+   - `module` (structure, default): component / structure / dependency topics (Project Structure / Core Components / Architecture Overview / Dependency Analysis).
 
 ## Self-check (before writing the file)
 - [ ] JSON parses (re-read the file after writing to confirm)

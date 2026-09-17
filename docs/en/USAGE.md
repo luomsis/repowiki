@@ -152,16 +152,39 @@ and set the Pages source to GitHub Actions in the repo settings.
 
 ## Page templates: module and flow
 
-Page templates (enforced by the validator per language) come in two archetypes:
-**module (default, structural)**: H1 → `<cite>` citation block → TOC → intro → project
-structure (mermaid graph TB) → core components → architecture overview (sequenceDiagram) →
-detailed component analysis → dependency analysis (graph LR) → performance & consistency
-considerations → troubleshooting guide → conclusion; **flow (process)**: introduction →
-flow overview (sequenceDiagram) → key steps → involved components → data and state
-changes (graph LR) → troubleshooting guide → conclusion. Pick per page via the optional
-`archetype` field on catalog nodes; each section ends with "Section sources", each
-diagram with "Diagram sources", in the format `[path:Lx-Ly](file://path#Lx-Ly)`; zero
-cross-page links (which is exactly why all page tasks can run fully in parallel).
+Page templates (enforced by the validator per language) come in six archetypes, picked
+per page via the optional `archetype` field on catalog nodes (omitted = `module`; the
+planning rules demand falling back to `module` when unsure — every non-default archetype
+has admission criteria and requires corresponding evidence in page_brief, or the page
+fails validation):
+
+- **module (default, structural)**: intro → project structure (mermaid graph TB) → core
+  components → architecture overview (sequenceDiagram) → detailed component analysis →
+  dependency analysis (graph LR) → performance & consistency considerations →
+  troubleshooting guide → conclusion;
+- **flow (process; admission: a fully traceable start and end)**: introduction → flow
+  overview (sequenceDiagram) → key steps → involved components → data and state changes
+  (stateDiagram-v2 / graph LR) → troubleshooting guide → conclusion;
+- **layer (layered; admission: a clear layering with call-direction rules)**:
+  introduction → layer overview (stacked graph TB) → layer responsibilities → layer
+  dependencies and call rules (graph LR) → vertical slice (sequenceDiagram) →
+  cross-cutting concerns → troubleshooting guide → conclusion;
+- **data (data model; admission: explicit data structures and state transitions)**:
+  introduction → data model overview (erDiagram) → core entity analysis → state machine
+  (stateDiagram-v2) → storage and serialization → data lifecycle (graph LR) →
+  troubleshooting guide → conclusion;
+- **api (interface; admission: a stable caller-facing interface surface)**: introduction
+  → endpoint inventory and grouping (graph TB) → request handling sequence
+  (sequenceDiagram) → contracts and error codes → authentication and access control →
+  quotas, idempotency and rate limits → troubleshooting guide → conclusion;
+- **event (event-driven; admission: an event / message / pub-sub mechanism)**:
+  introduction → event inventory → event flow topology (graph LR) → event contracts →
+  consumer handling (sequenceDiagram) → reliability guarantees → troubleshooting guide →
+  conclusion.
+
+Each section ends with "Section sources", each diagram with "Diagram sources", in the
+format `[path:Lx-Ly](file://path#Lx-Ly)`; zero cross-page links (which is exactly why
+all page tasks can run fully in parallel).
 
 ## Reliability internals
 

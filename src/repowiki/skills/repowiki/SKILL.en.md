@@ -45,9 +45,12 @@ repowiki site <repo>          # 7. build the single-file offline site .repowiki/
 After an incremental update or any post-finalize page rewrites, re-run
 `repowiki site <repo>` anytime to rebuild the site (idempotent).
 
-Task types: `catalog` (section-tree planning, produces state/catalog.json; process- or
-mechanism-themed pages may set the optional `"archetype": "flow"` field to use the flow
-template — default `module` is structural) → `page` (one page each) → `overview`;
+Task types: `catalog` (section-tree planning, produces state/catalog.json; pages may set
+the optional `"archetype"` field to pick one of six skeleton templates: `module`
+(structural, default) / `flow` (process) / `layer` (layered) / `data` (data model) /
+`api` (interface) / `event` (event-driven) — chosen by theme, falling back to `module`
+when unsure; non-default archetypes require evidence in page_brief) → `page` (one page
+each) → `overview`;
 optional: `repowiki knowledge <repo> [--categories <file>]` (knowledge cards; the
 category list can be replaced wholesale), `repowiki update <repo> [--dirty]`
 (git-diff-based incremental update; rewrites affected pages and the overview with an

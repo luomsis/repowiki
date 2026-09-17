@@ -56,7 +56,7 @@ repowiki 走另一条路：**读代码、写 wiki 的智能留给任意 agent，
 - **单文件离线站点 + agent 索引**：`site` 产出约 5 MB 自包含 HTML（导航、搜索、mermaid、源码弹层，双击即看），同时导出 `llms.txt` / `llms-full.txt`（[llmstxt.org](https://llmstxt.org/) 约定），任何 agent / IDE 按索引直接读，无需 MCP；
 - **强校验，自动修复**：模板强制 + 程序化校验；锚点 / 行号 / H1 / 路径分隔符自动修复，只有语义缺陷才判失败；
 - **双语产出，跨平台**：语言自动跟随目标仓库（zh / en）；macOS / Linux / Windows 原生支持（无需 WSL），CI 三平台 × Python 3.10-3.13 矩阵回归；
-- **知识卡片与页面原型**：机制卡片 / 模块文档，类别可整表自定义（`--categories`）；页面按主题选 module（结构型，默认）/ flow（流程型）两种模板。
+- **知识卡片与页面原型**：机制卡片 / 模块文档，类别可整表自定义（`--categories`）；页面按主题选六种原型模板：module 结构型（默认）/ flow 流程型 / layer 分层型 / data 数据模型型 / api 接口型 / event 事件型。
 
 ## 目录
 
@@ -115,8 +115,9 @@ repowiki skill status                   # 查看已装版本、是否过期
 - 幂等可重跑：finalize、update 或手动改了页面之后随时重新执行 `repowiki site` 重建；
 - 执行过 `repowiki clean` 也能重建（此时章节顺序退化为目录序，内容不受影响）。
 
-页面按 **module（结构型，默认）/ flow（流程型）** 两种原型撰写，模板与文风规范由校验器
-按语言强制；每节末尾「Section sources/章节来源」、每图后「Diagram sources/图表来源」，
+页面按 **module 结构型（默认）/ flow 流程型 / layer 分层型 / data 数据模型型 / api 接口型 /
+event 事件型** 六种原型撰写，规划时按页面主题选择（无法确认时回退 module），模板与文风规范由
+校验器按语言强制；每节末尾「Section sources/章节来源」、每图后「Diagram sources/图表来源」，
 引用格式 `[path:Lx-Ly](file://path#Lx-Ly)`，页间零链接（正因如此所有页面任务可完全并行）。
 完整小节结构见 [docs/zh/USAGE.md](docs/zh/USAGE.md)。
 

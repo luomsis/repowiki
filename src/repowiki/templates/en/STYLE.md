@@ -2,7 +2,13 @@
 
 ## Language
 - Write plain English; keep code identifiers, class names, file paths, and config keys verbatim.
-- Objective, factual tone — no marketing language. No emoji. No tables (unless a config listing truly needs one).
+- Objective, factual tone — no marketing language. No emoji. Narrative prose uses no tables; enumerated lists with multiple attributes per item (e.g. entity|type|constraint, component|key files|responsibility, dependency|min version|role, error code|meaning|trigger) should be rendered as tables, with one sentence before each table explaining how to read it.
+
+## Body density (content quality, mandatory)
+- Every body section first explains in 2~4 sentences of prose (what it is, how it works, where the boundaries are), then uses bullets only for enumerable facts; a section that is a single sentence or a single bullet fails the bar.
+- Before each mermaid diagram, one sentence states what it shows and why it is worth reading; after the diagram, one sentence interprets the takeaway — diagrams never replace prose.
+- Rewrite one-item lists as prose. Each section carries at least ~3 lines of body text (excluding diagrams and source lists).
+- Grounding discipline: when evidence runs thin, write the section honestly short with the conceptual-statement disclaimer; never invent files, line numbers, or behavior — fewer sections beats fabricated content.
 
 ## Section Sources & Diagram Sources (citation format, mandatory)
 - Every body section ends with a "Section sources" list; every mermaid diagram is followed by a "Diagram sources" list.
@@ -14,7 +20,8 @@
 - If a section has no corresponding code, write: `[This section is conceptual; no specific files are analyzed, hence no "Section sources"]`
 
 ## Mermaid diagram style
-- Structure diagrams use `graph TB`, dependency/relationship diagrams `graph LR`, interaction flows `sequenceDiagram`, type relationships `classDiagram`.
+- Structure diagrams use `graph TB`, dependency/relationship diagrams `graph LR`, interaction flows `sequenceDiagram`, type relationships `classDiagram`, entity relations `erDiagram`, state transitions `stateDiagram-v2`. Diagram types should match the page archetype (data pages favor `erDiagram`/`stateDiagram-v2`, layer pages favor a layered `graph TB`).
+- Syntax notes: node labels in `graph`/`flowchart` must be double-quoted; `stateDiagram-v2` transition labels are written `stateA --> stateB : "trigger"`, with display names via `state "Label" as id` aliases; `erDiagram` entity names use ASCII identifiers, relation labels go inside quotes.
 - Node labels must be wrapped in double quotes; wrap long labels with `<br/>` and keep the key identifier visible:
 
 ```mermaid

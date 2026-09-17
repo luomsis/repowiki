@@ -138,3 +138,16 @@ funnel bottleneck today.
 - GitDiagram: <https://github.com/ahmedkhaleel2004/gitdiagram>
 - Swimm: <https://swimm.io/>
 - Repomix: <https://repomix.com/> · Gitingest: <https://gitingest.com/>
+
+## Section-level research addendum (2026-09-17)
+
+> Follow-up to the product-level analysis above: after the six-archetype release, user feedback noted
+> "diagram-heavy, prose-thin" pages. This pass examined competitors' actual generated page structures:
+> two DeepWiki public pages (pallets/flask, yt-dlp/yt-dlp), DeepWiki-Open's open-source generation prompt
+> (api/prompts.py), and the CodeWiki paper (arXiv 2510.24428) + README.
+
+**Adopted into the generation specs**: multi-attribute enumerations rendered as tables (entities/components/dependencies/error codes, with a reading hint); required/recommended/optional dependency grouping; quoting official README lines plus key-characteristic bullets in intros; fenced directory trees; index-page navigation tables (sub-page | key entity | one-line responsibility, no links); a site-level Glossary section in the overview (8~15 bilingual terms); step numbers mapped to sequence-diagram participants with mandatory file:// citations; a grounding discipline ("write thin honestly when evidence is thin; never invent").
+
+**Rejected, with reasons**: cross-page links (breaks zero-page-links parallelism); verbatim snippets inline (the file:// + popup mechanism is superior); Node-based mermaid validation (breaks the zero-dependency offline promise); a page-top source-files block (conflicts with the deliberate cite-at-end decision); CodeWiki's four doc types (the six archetypes already cover more).
+
+See the Chinese section above for the full evidence details.

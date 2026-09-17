@@ -140,14 +140,30 @@ done
 在你的仓库启用：拷贝该 workflow 文件，提交 `.repowiki/`（finalize 之后），并在仓库设置里把
 Pages 来源设为 GitHub Actions。
 
-## 页面模板：module 与 flow
+## 页面原型：module / flow / layer / data / api / event
 
-页面模板（校验器按语言强制）按原型分两种：**module（默认，结构型）** H1 → `<cite>` 引用块 →
-目录 → 简介 → 项目结构（mermaid graph TB）→ 核心组件 → 架构总览（sequenceDiagram）→ 详细组件
-分析 → 依赖关系分析（graph LR）→ 性能与一致性考量 → 故障排查指南 → 结论；**flow（流程型）**
-简介 → 流程总览（sequenceDiagram）→ 关键步骤 → 参与组件 → 数据与状态变化（graph LR）→ 故障
-排查指南 → 结论。规划时在 catalog 节点上用可选 `archetype` 字段选择；每节末尾「Section
-sources/章节来源」、每图后「Diagram sources/图表来源」，链接格式
+页面模板（校验器按语言强制）按原型分六种，规划时在 catalog 节点上用可选 `archetype` 字段
+选择（省略等价 `module`；规划规则要求无法确认时一律回退 `module`，每种非默认原型都有准入
+条件，且选定后必须在 page_brief 中给出对应证据，否则页面校验会被打回）：
+
+- **module（默认，结构型）**：简介 → 项目结构（mermaid graph TB）→ 核心组件 → 架构总览
+  （sequenceDiagram）→ 详细组件分析 → 依赖关系分析（graph LR）→ 性能与一致性考量 → 故障排查
+  指南 → 结论；
+- **flow（流程型；准入：有可完整追踪的起点与终点）**：简介 → 流程总览（sequenceDiagram）→
+  关键步骤 → 参与组件 → 数据与状态变化（stateDiagram-v2 / graph LR）→ 故障排查指南 → 结论；
+- **layer（分层型；准入：有清晰的层次划分与调用方向约定）**：简介 → 分层总览（graph TB 层叠）
+  → 各层职责 → 层间依赖与调用规则（graph LR）→ 纵向切片（sequenceDiagram）→ 横切关注点 →
+  故障排查指南 → 结论；
+- **data（数据模型型；准入：有显式数据结构与状态迁移）**：简介 → 数据模型总览（erDiagram）→
+  核心实体分析 → 状态机（stateDiagram-v2）→ 存储与序列化 → 数据生命周期（graph LR）→ 故障
+  排查指南 → 结论；
+- **api（接口型；准入：有面向使用者的稳定接口面）**：简介 → 接口清单与分组（graph TB）→
+  请求处理时序（sequenceDiagram）→ 接口契约与错误码 → 鉴权与访问控制 → 配额、幂等与限流 →
+  故障排查指南 → 结论；
+- **event（事件型；准入：有事件/消息/发布订阅机制）**：简介 → 事件清单 → 事件流拓扑
+  （graph LR）→ 事件契约 → 消费端处理（sequenceDiagram）→ 可靠性保障 → 故障排查指南 → 结论。
+
+每节末尾「Section sources/章节来源」、每图后「Diagram sources/图表来源」，链接格式
 `[path:Lx-Ly](file://path#Lx-Ly)`；页间零链接（正因如此所有页面任务可完全并行）。
 
 ## 可靠性设计细节

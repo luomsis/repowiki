@@ -12,10 +12,10 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
-<One paragraph: what this page's topic is, what problem it solves, where it lives in the repository.>
+<One paragraph: what this page's topic is, what problem it solves, where it lives; may quote the README/official docs verbatim for positioning (file:// citation) plus 2~4 key-characteristic bullets (language/scale/form).>
 
 ## Project Structure
-<Repository directories/files relevant to this chapter (bullet list, plain-text paths).>
+<Repository directories/files relevant to this chapter: lead with a fenced plain-text directory tree, then bullets explaining key directories.>
 
 ```mermaid
 graph TB
@@ -33,13 +33,15 @@ Section sources
 - [<path>:<start>-<end>](file://<path>#L<start>-L<end>)
 
 ## Core Components
+<With ≥4 components prefer a table (| Component | Key files | Responsibility |) with a one-line reading hint; otherwise bullets.>
 - <component/concept name>: <one-sentence responsibility>
+- Extension points: <where it can be customized / plugged into; omit if none>
 
 Section sources
 - [<path>:<start>-<end>](file://<path>#L<start>-L<end>)
 
 ## Architecture Overview
-<One paragraph + a sequence diagram describing the runtime interaction or data flow of this topic.>
+<One paragraph + a sequence diagram describing the runtime interaction or data flow of this topic; when type/inheritance relations matter, a classDiagram may accompany the sequence diagram.>
 
 ```mermaid
 sequenceDiagram
@@ -59,10 +61,12 @@ Section sources
 - [<path>:<start>-<end>](file://<path>#L<start>-L<end>)
 
 ## Detailed Component Analysis
+<Index (chapter) pages: give a navigation table here (| Sub-page | Key entity/mechanism | One-line responsibility |, no links); topic pages expand sub-components one by one.>
 ### <sub-component / sub-topic 1>
 - Responsibility: <...>
 - Key behaviors: <...>
 - Implementation notes: <...>
+- Configuration surface: <relevant config keys / environment variables; omit if none>
 
 Section sources
 - [<path>:<start>-<end>](file://<path>#L<start>-L<end>)
@@ -74,7 +78,7 @@ Section sources
 - [<path>:<start>-<end>](file://<path>#L<start>-L<end>)
 
 ## Dependency Analysis
-- <upstream/downstream dependencies (bullet list).>
+- First a short prose paragraph on the overall dependency picture; group dependencies as required / recommended / optional, and with ≥4 entries use a table (| Dependency | Min version | Role |).
 
 ```mermaid
 graph LR
@@ -89,13 +93,13 @@ Section sources
 - [<path>:<start>-<end>](file://<path>#L<start>-L<end>)
 
 ## Performance and Consistency Considerations
-- <performance characteristics, concurrency, caching, consistency trade-offs (bullet list).>
+- First a short prose paragraph on overall characteristics and key trade-offs, then bullets for the points (performance / concurrency / caching / consistency).
 
 Section sources
 - [<path>:<start>-<end>](file://<path>#L<start>-L<end>)
 
 ## Troubleshooting Guide
-- <common error/symptom → cause → how to locate → relevant code location.>
+- One sentence of prose on the troubleshooting approach, then at least 3 scenarios as bullets: symptom → cause → how to locate → relevant code location.
 
 Section sources
 - [<path>:<start>-<end>](file://<path>#L<start>-L<end>)

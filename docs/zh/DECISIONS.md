@@ -84,3 +84,18 @@
     Discussions。同日 PyPI 分发名定为 `repowiki-cli`（`repowiki` 名被同用途项目
     he-yufeng/RepoWiki 占用；命令名与 import 包名保持 `repowiki` 不变），发布流水线走
     Trusted Publisher（`pypi.yml`，OIDC 免 token）。
+18. **页面原型扩至六种**（2026-09-16）：沿用第 16 条①的机制（catalog 可选字段 + 规格引导 +
+    check 按 id 反查 catalog），`ARCHETYPES` 由 `(module, flow)` 扩为
+    `(module, flow, layer, data, api, event)`。视图分类学依据 4+1 视图 / C4 / arc42 /
+    SEI Views & Beyond 新增四种原型：`layer` 分层型（分层总览/各层职责/层间依赖与调用规则/
+    纵向切片/横切关注点）、`data` 数据模型型（erDiagram/状态机/存储与序列化/数据生命周期）、
+    `api` 接口型（接口清单与分组/契约与错误码/鉴权/配额幂等限流）、`event` 事件型（事件清单/
+    事件流拓扑/事件契约/消费端处理/可靠性保障），各 8 必备小节、≥3 mermaid，沿用小节来源/
+    图表来源/cite 约定。防误选三件套：规划规则 8 写明准入条件（仓库确有对应机制才允许选）、
+    page_brief 证据要求（选定原型必须写明对应证据，否则校验打回）、无法确认一律回退 module——
+    原型是每页可选骨架而非每仓必配产物，纯工具库可以全程只出 module 页。校验侧以
+    archetype→小节表键映射取代二元分支，dispatch 反查白名单改复用 `ARCHETYPES` 常量；
+    内置 mermaid 11.17.2 已支持全部新图型，site/finalize/update/coverage 原型无关零改动。
+    `deploy`/`domain` 等候选原型暂缓（与 data/layer 重叠度高）；`--archetypes` 白名单参数
+    列为后续可选项。同期把 module/flow 骨架做了不改变必备小节表的引导丰富化（扩展点/配置面/
+    并发与重试/stateDiagram-v2），STYLE 图表词汇扩至六种。

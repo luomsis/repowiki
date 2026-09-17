@@ -11,7 +11,7 @@ import json
 import os
 import socket
 
-from .catalog import flatten, validate_catalog
+from .catalog import ARCHETYPES, flatten, validate_catalog
 from .errors import ConflictError, UsageError
 from .output import emit
 from .paths import WikiPaths
@@ -274,7 +274,7 @@ def _node_archetype(paths: WikiPaths, node_id: str) -> str:
         if not isinstance(n, dict):
             continue
         if n.get("id") == node_id:
-            return n.get("archetype") if n.get("archetype") in ("module", "flow") else "module"
+            return n.get("archetype") if n.get("archetype") in ARCHETYPES else "module"
         stack.extend(n.get("children") or [])
     return "module"
 

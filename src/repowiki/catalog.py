@@ -16,7 +16,7 @@ from .validate import PLACEHOLDER_RE
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 MAX_DEPTH = 4  # root chapters are depth 1
-ARCHETYPES = ("module", "flow")  # page templates; default "module"
+ARCHETYPES = ("module", "flow", "layer", "data", "api", "event")  # page templates; default "module"
 
 
 @dataclass
@@ -31,7 +31,7 @@ class FlatNode:
     parent_id: str | None
     depth: int
     output: str  # relative to .repowiki/, e.g. zh/content/Overview/Overview.md
-    archetype: str = "module"  # page template shape: "module" | "flow"
+    archetype: str = "module"  # page template shape, one of ARCHETYPES
 
     def chapter_path(self, by_id: dict[str, "FlatNode"]) -> str:
         parts = [self.title]
@@ -107,7 +107,7 @@ def validate_catalog(data, known_paths: set[str]) -> tuple[list[str], list[str]]
             archetype = node.get("archetype", "module")
             if archetype not in ARCHETYPES:
                 errors.append(
-                    f"{where}（{title or nid}）: archetype 必须是 module 或 flow（可省略，默认 module），得到 {archetype!r}"
+                    f"{where}（{title or nid}）: archetype 必须是 {'/'.join(ARCHETYPES)} 之一（可省略，默认 module），得到 {archetype!r}"
                 )
                 archetype = "module"
             brief = node.get("page_brief")

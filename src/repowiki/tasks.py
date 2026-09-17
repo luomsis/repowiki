@@ -80,8 +80,18 @@ def build_catalog_task(paths: WikiPaths, inv: Inventory) -> dict:
 
 # --- phase 2: pages ---
 
+_PAGE_TEMPLATE_BY_ARCHETYPE = {
+    "module": "page_template.md",
+    "flow": "flow_template.md",
+    "layer": "layer_template.md",
+    "data": "data_template.md",
+    "api": "api_template.md",
+    "event": "event_template.md",
+}
+
+
 def _page_template_name(node: FlatNode) -> str:
-    return "flow_template.md" if node.archetype == "flow" else "page_template.md"
+    return _PAGE_TEMPLATE_BY_ARCHETYPE.get(node.archetype, "page_template.md")
 
 
 def build_page_tasks(paths: WikiPaths, nodes: list[FlatNode], inv: Inventory, max_pages: int | None = None) -> list[dict]:

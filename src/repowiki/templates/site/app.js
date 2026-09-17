@@ -14,6 +14,7 @@
   $('#theme-btn').title = D.ui.theme_label;
   $('#theme-btn').setAttribute('aria-label', D.ui.theme_label);
   $('#modal-close').title = D.ui.close_label;
+  $('#modal-copy').title = D.ui.copy_label || 'Copy';
   $('#toc-label').textContent = zh ? '本页内容' : 'On this page';
 
   var ICON_COPY = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1"/></svg>';
@@ -276,6 +277,7 @@
   }
 
   // --- snippet modal (file:// references) ----------------------------------
+  $('#modal-copy').innerHTML = ICON_COPY;
   document.addEventListener('click', function (ev) {
     var a = ev.target.closest ? ev.target.closest('a[href^="file://"]') : null;
     if (!a) return;
@@ -283,16 +285,66 @@
     showSnippet(a.getAttribute('href').slice('file://'.length));
   });
 
+  // lightweight line highlighter: comments / strings / keywords / constants /
+  // numbers / decorators. Pure sequential scan, per line, no regex backtracking.
+  var KW = {};
+  ('def class return if elif else for while import from as with try except finally raise pass break continue lambda global yield assert del in is not and or ' +
+    'const let var function export default async await new this typeof instanceof of do switch case ' +
+    'fn pub impl struct enum trait use mod match where type interface extends implements package public private protected static void int string bool char float double long short unsigned').split(' ').forEach(function (w) { KW[w] = 1; });
+  var LIT = { true: 1, false: 1, null: 1, none: 1 };
+  function escTok(cls, text) { return '<span class="' + cls + '">' + esc(text) + '</span>'; }
+  function highlightLine(raw) {
+    var out = '', i = 0, n = raw.length;
+    while (i < n) {
+      var ch = raw[i];
+      if (ch === '#' || (ch === '/' && raw[i + 1] === '/')) { out += escTok('tok-com', raw.slice(i)); break; }
+      if (ch === '"' || ch === "'") {
+        var j = i + 1;
+        while (j < n && raw[j] !== ch) { if (raw[j] === '\\') j++; j++; }
+        var end = Math.min(j + 1, n);
+        out += escTok('tok-str', raw.slice(i, end)); i = end; continue;
+      }
+      if (ch === '@' && (i === 0 || !/[\w'"]/.test(raw[i - 1]))) {
+        var dm = /^@[\w.]+/.exec(raw.slice(i));
+        if (dm) { out += escTok('tok-dec', dm[0]); i += dm[0].length; continue; }
+      }
+      if (/[A-Za-z_]/.test(ch)) {
+        var w = /^[A-Za-z0-9_]*/.exec(raw.slice(i))[0];
+        var low = w.toLowerCase();
+        if (KW[low]) out += escTok('tok-kw', w);
+        else if (LIT[low]) out += escTok('tok-const', w);
+        else out += esc(w);
+        i += w.length; continue;
+      }
+      if (/[0-9]/.test(ch)) {
+        var nm = /^(0[xXbBoO][0-9a-fA-F_]+|\d[\d_]*(\.\d+)?([eE][+-]?\d+)?)/.exec(raw.slice(i));
+        if (nm && nm[0]) { out += escTok('tok-num', nm[0]); i += nm[0].length; continue; }
+      }
+      out += esc(ch); i++;
+    }
+    return out;
+  }
+
+  var currentSnippet = null;
   function showSnippet(key) {
     var sn = D.snippets[key];
     var path = key.split('#')[0];
-    $('#modal-title').textContent = path + (sn ? ' · ' + sn.start + '–' + sn.end + ' ' + D.ui.lines_label : '');
+    var cut = path.lastIndexOf('/');
+    var dir = cut >= 0 ? path.slice(0, cut + 1) : '';
+    var base = cut >= 0 ? path.slice(cut + 1) : path;
+    $('#modal-title').innerHTML = '<span class="rw-dir">' + esc(dir) + '</span><span class="rw-base">' + esc(base) + '</span>';
+    var badge = $('#modal-badge');
     if (!sn || sn.missing) {
+      badge.hidden = true;
+      currentSnippet = null;
       $('#modal-body').innerHTML = '<p class="rw-missing">' + esc(D.ui.snippet_missing) + '</p>';
     } else {
+      badge.hidden = false;
+      badge.textContent = sn.start + '–' + sn.end + ' ' + D.ui.lines_label;
+      currentSnippet = sn;
       var html = '<table class="rw-code"><tbody>';
       for (var i = 0; i < sn.lines.length; i++) {
-        html += '<tr><td class="rw-ln">' + (sn.start + i) + '</td><td><pre>' + esc(sn.lines[i]) + '</pre></td></tr>';
+        html += '<tr><td class="rw-ln">' + (sn.start + i) + '</td><td><pre>' + highlightLine(sn.lines[i]) + '</pre></td></tr>';
       }
       $('#modal-body').innerHTML = html + '</tbody></table>';
     }
@@ -300,6 +352,24 @@
     $('#modal-close').focus();
   }
   function closeModal() { $('#modal').hidden = true; }
+  var copyReset = null;
+  $('#modal-copy').addEventListener('click', function () {
+    if (!currentSnippet) return;
+    var text = currentSnippet.lines.join('\n');
+    var btn = this;
+    var done = function () {
+      btn.classList.add('ok');
+      btn.title = D.ui.copied_label || 'Copied';
+      btn.innerHTML = ICON_CHECK;
+      clearTimeout(copyReset);
+      copyReset = setTimeout(function () {
+        btn.classList.remove('ok');
+        btn.title = D.ui.copy_label || 'Copy';
+        btn.innerHTML = ICON_COPY;
+      }, 1400);
+    };
+    navigator.clipboard.writeText(text).then(done);
+  });
   $('#modal-close').addEventListener('click', closeModal);
   $('#modal').addEventListener('click', function (ev) { if (ev.target === this) closeModal(); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') closeModal(); });

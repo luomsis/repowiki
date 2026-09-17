@@ -2,6 +2,56 @@
 
 **中文** | [English](CHANGELOG.en.md)
 
+## 0.8.0 — 2026-09-17
+
+### 新增
+
+- **站点源码弹层视觉升级**：轻量语法高亮（零依赖手写扫描器：关键字/字符串/注释/数字/
+  装饰器/常量，深浅两套主题配色）；弹层头部升级为 文件图标 + 路径分色（目录淡化、文件名
+  加重）+ 行区间徽章 + 一键复制片段（成功态打勾反馈，含 execCommand 回落）；卡片加圆角
+  阴影/遮罩模糊/开启动画（prefers-reduced-motion 禁用）；行号栏淡背景、行悬停高亮。
+  仅改模板资产（site.html/app.js），零新依赖；存量 wiki 重跑 `repowiki site` 即生效。
+- **生成规范借鉴竞品章节级优点**（2026-09-17 章节级调研：DeepWiki 实例页 / deepwiki-open prompt /
+  CodeWiki 论文，见 `docs/zh/research/competitive-analysis.md`）：多维枚举清单表格化（实体/组件/
+  依赖/错误码，附读法说明）、依赖按必选/推荐/可选三档分组、简介引用官方原句+关键特征、
+  项目结构目录树代码块、索引页「子页|核心实体|职责」导航表、flow 步骤与时序图参与者对应并
+  强制关键代码引用、STYLE 新增 grounding 纪律（宁少勿造）；overview 新增必备小节
+  「术语表/Glossary」（8~15 个专有术语，i18n `overview_sections` 同步）。
+- **页面原型扩至六种**：`module` 结构型（默认）/ `flow` 流程型之外，新增 `layer` 分层型、
+  `data` 数据模型型、`api` 接口型、`event` 事件型四种页面原型。各 8 个必备小节、≥3 张
+  mermaid（layer：分层总览/层间依赖与调用规则/纵向切片等；data：erDiagram 数据模型总览/
+  stateDiagram-v2 状态机/数据生命周期；api：接口清单与分组/请求处理时序/契约与错误码等；
+  event：事件清单/事件流拓扑/消费端处理/可靠性保障），模板资产 zh/en 双语各四份。
+- **module / flow 骨架丰富化**（必备小节表不变）：module「核心组件」增加扩展点、「详细组件
+  分析」子组件增加配置面、「架构总览」允许补 classDiagram；flow「关键步骤」步骤增加并发与
+  重试、「数据与状态变化」引导真实状态机改用 stateDiagram-v2、「流程总览」允许补分支图。
+- **STYLE 图表词汇扩至六种**：补 `erDiagram` 与 `stateDiagram-v2` 的适用场景与语法注意
+  （state 别名写法、erDiagram 实体名用 ASCII），并引导图表类型与页面 archetype 匹配。
+
+### 变更
+
+- **catalog 规划规则 8 重写为六原型选型指南**：按主题特征映射 + 准入条件 + page_brief 证据
+  要求 + 无法确认一律回退 `module`——原型是每页可选骨架而非每仓必配产物，纯工具库可以全程
+  只出 module 页。
+- `dispatch._node_archetype` 的硬编码白名单改为复用 `catalog.ARCHETYPES` 常量（消除新增
+  原型时两处不同步的隐患）；`tasks._page_template_name` 与 `validate` 的必备小节表选择由
+  二元分支改为 archetype→映射表，未知值回落 module。
+
+### 测试
+
+- 新增 `tests/test_archetypes.py`（29 例）：模板文件 / i18n 小节表 / 模板名映射三方一致性
+  守卫（防将来加原型漏配）、非法 archetype 在 catalog 校验与 dispatch 反查双处回落 module、
+  六原型 × 双 locale 的 `check_page` 正反例（删必备小节必须打回）、plan 内嵌对应模板断言与
+  zh/en 端到端页面 check。
+
+### 文档
+
+- **STYLE 新增「正文密度」规范**：每个正文章节先 2~4 句散文再说 bullet、单 bullet 列表改写为
+  散文、每个 mermaid 图前后各一句引导与解读、每节正文不少于约 3 行——防止页面「图多文薄」；
+  六份页面骨架中易薄小节的占位符提示同步补充散文引导。
+- README（双语）、USAGE（双语「页面原型」一节重写）、随 wheel 分发的 SKILL（双语）同步
+  六原型说明与准入条件；`docs/zh/DECISIONS.md` 新增第 18 条决策记录。
+
 ## 0.7.0 — 2026-09-12
 
 ### 新增

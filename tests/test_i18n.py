@@ -242,12 +242,12 @@ def test_en_page_update_requires_summary(repo):
 
 def test_en_overview_passes_and_fixes_h1(repo):
     ok = check_overview(
-        "# demo Wiki Overview\n\n## Section Navigation\nx\n\n## How to Use This Wiki\ny\n",
+        "# demo Wiki Overview\n\n## Section Navigation\nx\n\n## How to Use This Wiki\ny\n\n## Glossary\nz\n",
         "demo", locale="en",
     )
     assert ok.ok, ok.errors
     fixed = check_overview(
-        "# wrong\n\n## Section Navigation\nx\n\n## How to Use This Wiki\ny\n",
+        "# wrong\n\n## Section Navigation\nx\n\n## How to Use This Wiki\ny\n\n## Glossary\nz\n",
         "demo", locale="en",
     )
     assert fixed.ok and fixed.fixed  # H1 rewritten to the expected title
@@ -321,7 +321,7 @@ def test_en_end_to_end(tmp_path):
     assert ov.as_posix().endswith("en/meta/wiki-overview.md")
     ov.write_text(
         "# demo Wiki Overview\n\n## Section Navigation\n- Project Overview\n\n"
-        "## How to Use This Wiki\nStart with Project Overview.\n",
+        "## How to Use This Wiki\nStart with Project Overview.\n\n## Glossary\n- demo (demo): demo project\n",
         encoding="utf-8",
     )
     assert cli_main(["check", str(repo), "--task", "overview"]) == 0
