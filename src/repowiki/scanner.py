@@ -80,18 +80,19 @@ def _git_ls_files(root: Path) -> list[str] | None:
     return [p for p in out.split("\0") if p]
 
 
-def _walk_files(root: Path) -> list[str]:
+def _walk_files(root: Path, extra_ignore: frozenset[str] = frozenset()) -> list[str]:
     found: list[str] = []
-    for dirpath, dirnames, filenames in os_walk_pruned(root):
+    for dirpath, dirnames, filenames in os_walk_pruned(root, extra_ignore):
         for name in filenames:
             rel = (Path(dirpath) / name).relative_to(root).as_posix()
             found.append(rel)
     return sorted(found)
 
 
-def os_walk_pruned(root: Path):
+def os_walk_pruned(root: Path, extra_ignore: frozenset[str] = frozenset()):
+    ignore = IGNORE_DIRS | extra_ignore
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in IGNORE_DIRS and not d.startswith(".git")]
+        dirnames[:] = [d for d in dirnames if d not in ignore and not d.startswith(".git")]
         yield dirpath, dirnames, filenames
 
 
@@ -113,13 +114,14 @@ def _count_loc(path: Path, size: int) -> int:
         return 0
 
 
-def scan(repo_root: str | Path) -> Inventory:
+def scan(repo_root: str | Path, extra_ignore: str | None = None) -> Inventory:
     root = Path(repo_root).resolve()
+    ignore = IGNORE_DIRS | ({extra_ignore} if extra_ignore else set())
     rels = _git_ls_files(root)
     if rels is None:
-        rels = _walk_files(root)
+        rels = _walk_files(root, frozenset(ignore - IGNORE_DIRS))
     else:
-        rels = [r for r in rels if not any(part in IGNORE_DIRS for part in Path(r).parts[:-1])]
+        rels = [r for r in rels if not any(part in ignore for part in Path(r).parts[:-1])]
 
     files: list[FileEntry] = []
     for rel in sorted(rels):

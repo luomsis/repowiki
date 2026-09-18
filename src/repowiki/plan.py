@@ -52,7 +52,7 @@ def run_plan(paths: WikiPaths, replan: bool = False, max_pages: int | None = Non
             )
         shutil.rmtree(paths.root)
     store = TaskStore(paths)
-    inv = scan(paths.repo_root)
+    inv = scan(paths.repo_root, extra_ignore=paths.root_name)
 
     if inv.code_file_count < MIN_CODE_FILES:
         raise UsageError(

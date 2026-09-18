@@ -157,6 +157,8 @@ all page tasks can run fully in parallel). The full section layout lives in
 | `skill install` / `status` | Install / inspect the agent skill |
 | `status` / `clean` | Progress stats / wipe task state |
 
+**Global option (all repo-scoped commands):** `-o, --output DIR` sets the output directory relative to the repo root (default `.repowiki`; also via the `REPOWIKI_OUTPUT` env var). State and wiki move together, so `update`/`stale` incremental runs keep working against the chosen directory, e.g. `repowiki plan . -o docs`.
+
 All 15 commands and every flag: `repowiki <command> --help` or
 [docs/en/USAGE.md](docs/en/USAGE.md).
 Exit codes: `0` success, `1` validation failure or usage error, `2` state conflict

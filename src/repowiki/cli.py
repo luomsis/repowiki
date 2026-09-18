@@ -32,7 +32,23 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"repowiki {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p = sub.add_parser("plan", help="scan repo and create the task manifest (phase 1: catalog task)")
+    # Shared option so every repo-scoped subcommand accepts -o/--output in the
+    # natural trailing position (e.g. `repowiki plan . -o docs`). argparse only
+    # honours a top-level option placed BEFORE the subcommand, so attach it to
+    # each repo subparser via a parent parser instead.
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument(
+        "-o", "--output", default=None, metavar="DIR",
+        help="output directory name relative to the repo root "
+             "(default: .repowiki; also settable via REPOWIKI_OUTPUT). "
+             "State and wiki move together, so incremental update/stale keep working.",
+    )
+
+    def addp(*args, **kwargs):
+        kwargs.setdefault("parents", []).append(common)
+        return sub.add_parser(*args, **kwargs)
+
+    p = addp("plan", help="scan repo and create the task manifest (phase 1: catalog task)")
     p.add_argument("repo", help="path to the repository")
     p.add_argument("--replan", action="store_true", help="discard existing catalog and plan again")
     p.add_argument("--force", action="store_true", help="with --replan: proceed even if tasks are in flight")
@@ -45,14 +61,14 @@ def build_parser() -> argparse.ArgumentParser:
         paths, replan=a.replan, max_pages=a.max_pages, knowledge=a.knowledge,
         force=a.force, as_json=a.json, locale=a.locale))
 
-    p = sub.add_parser("next", help="list (and optionally claim) ready tasks")
+    p = addp("next", help="list (and optionally claim) ready tasks")
     p.add_argument("repo")
     p.add_argument("--claim", action="store_true", help="atomically claim the returned tasks")
     p.add_argument("--worker", default=None, help="worker identifier recorded on claim")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_next(paths, claim=a.claim, worker=a.worker, as_json=a.json))
 
-    p = sub.add_parser("check", help="validate task output, auto-fix deterministic defects, update status")
+    p = addp("check", help="validate task output, auto-fix deterministic defects, update status")
     p.add_argument("repo")
     p.add_argument("--task", default=None, help="check a single task id")
     p.add_argument("--all", dest="select_all", action="store_true",
@@ -64,14 +80,14 @@ def build_parser() -> argparse.ArgumentParser:
         paths, task_id=a.task, as_json=a.json, select_all=a.select_all,
         worker=a.worker, force=a.force))
 
-    p = sub.add_parser("touch", help="refresh a task's claim while executing (heartbeat)")
+    p = addp("touch", help="refresh a task's claim while executing (heartbeat)")
     p.add_argument("repo")
     p.add_argument("--task", required=True)
     p.add_argument("--worker", default=None)
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_touch(paths, task_id=a.task, worker=a.worker, as_json=a.json))
 
-    p = sub.add_parser("watch", help="block until all tasks are done (or stalled/timeout); exit 0=completed, 1=stalled/timeout")
+    p = addp("watch", help="block until all tasks are done (or stalled/timeout); exit 0=completed, 1=stalled/timeout")
     p.add_argument("repo")
     p.add_argument("--interval", type=float, default=10.0, help="poll interval seconds (default 10)")
     p.add_argument("--timeout", type=float, default=3600.0, help="give up after this many seconds (default 3600)")
@@ -79,7 +95,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=lambda a, paths: run_watch(
         paths, interval=a.interval, timeout=a.timeout, as_json=a.json))
 
-    p = sub.add_parser("release", help="return an in_progress task to pending")
+    p = addp("release", help="return an in_progress task to pending")
     p.add_argument("repo")
     p.add_argument("--task", required=True)
     p.add_argument("--force", action="store_true", help="release even if claimed by another worker")
@@ -87,12 +103,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=lambda a, paths: run_release(
         paths, task_id=a.task, force=a.force, as_json=a.json))
 
-    p = sub.add_parser("finalize", help="assemble zh/meta/repowiki-metadata.json (requires all tasks done)")
+    p = addp("finalize", help="assemble zh/meta/repowiki-metadata.json (requires all tasks done)")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_finalize(paths, as_json=a.json))
 
-    p = sub.add_parser("site", help="render the finished wiki into one offline HTML file (.repowiki/<locale>/wiki.html) plus llms.txt / llms-full.txt agent indexes")
+    p = addp("site", help="render the finished wiki into one offline HTML file (<output>/<locale>/wiki.html) plus llms.txt / llms-full.txt agent indexes")
     p.add_argument("repo")
     p.add_argument("--open", dest="open_browser", action="store_true",
                    help="open the generated file in the default browser")
@@ -100,7 +116,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=lambda a, paths: run_site(
         paths, open_browser=a.open_browser, as_json=a.json))
 
-    p = sub.add_parser("update", help="map git changes to page_update tasks (incremental regeneration)")
+    p = addp("update", help="map git changes to page_update tasks (incremental regeneration)")
     p.add_argument("repo")
     p.add_argument("--since", default=None, help="commit sha to diff from (default: last_commit_id in metadata)")
     p.add_argument("--dirty", action="store_true",
@@ -108,7 +124,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_update(paths, since=a.since, as_json=a.json, dirty=a.dirty))
 
-    p = sub.add_parser("stale", help="read-only: report which pages `update` would affect for since..HEAD (CI staleness gate)")
+    p = addp("stale", help="read-only: report which pages `update` would affect for since..HEAD (CI staleness gate)")
     p.add_argument("repo")
     p.add_argument("--since", default=None, help="git ref to diff from (default: last_commit_id in metadata)")
     p.add_argument("--dirty", action="store_true",
@@ -119,7 +135,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=lambda a, paths: run_stale(
         paths, since=a.since, fail_if_stale=a.fail_if_stale, as_json=a.json, dirty=a.dirty))
 
-    p = sub.add_parser("knowledge", help="append the knowledge-card task set (planning + cards)")
+    p = addp("knowledge", help="append the knowledge-card task set (planning + cards)")
     p.add_argument("repo")
     p.add_argument("--categories", default=None, metavar="FILE",
                    help="YAML/JSON file with a custom mechanism-card category list "
@@ -127,22 +143,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_knowledge(paths, as_json=a.json, categories=a.categories))
 
-    p = sub.add_parser("status", help="show task statistics, failures and stale claims")
+    p = addp("status", help="show task statistics, failures and stale claims")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_status(paths, as_json=a.json))
 
-    p = sub.add_parser("coverage", help="read-only: which repo files has the wiki never cited (coverage report)")
+    p = addp("coverage", help="read-only: which repo files has the wiki never cited (coverage report)")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_coverage(paths, as_json=a.json))
 
-    p = sub.add_parser("clean", help="remove .repowiki/state entirely (wiki output is kept)")
+    p = addp("clean", help="remove <output>/state entirely (wiki output is kept)")
     p.add_argument("repo")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=lambda a, paths: run_clean(paths, as_json=a.json))
 
-    p = sub.add_parser("skill", help="manage the bundled agent skill (pip installs carry it; no repo context needed)")
+    p = addp("skill", help="manage the bundled agent skill (pip installs carry it; no repo context needed)")
     skill_sub = p.add_subparsers(dest="skill_command", required=True)
 
     s = skill_sub.add_parser("install",
@@ -169,7 +185,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    paths = WikiPaths(args.repo) if getattr(args, "repo", None) is not None else None
+    paths = (
+        WikiPaths(args.repo, output_dir=getattr(args, "output", None))
+        if getattr(args, "repo", None) is not None
+        else None
+    )
     try:
         return args.func(args, paths)
     except ConflictError as e:

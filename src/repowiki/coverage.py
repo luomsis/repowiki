@@ -31,7 +31,7 @@ def run_coverage(paths: WikiPaths, as_json: bool) -> int:
             f"state/catalog.json 损坏（{e}）：可手工修复该文件，或 `repowiki plan --replan` 重新规划"
         ) from e
 
-    inv = scan(paths.repo_root)
+    inv = scan(paths.repo_root, extra_ignore=paths.root_name)
     known = {f.path for f in inv.files}
 
     cited: set[str] = set()

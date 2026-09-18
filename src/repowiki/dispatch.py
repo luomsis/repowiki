@@ -240,7 +240,7 @@ def run_check(paths: WikiPaths, task_id: str | None, as_json: bool,
                         f"任务 {tid} 由 {held} 认领；如确要代为校验请加 --force"
                     )
 
-    inv = scan(paths.repo_root)
+    inv = scan(paths.repo_root, extra_ignore=paths.root_name)
     results = []
     all_ok = True
     for tid in targets:

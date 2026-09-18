@@ -121,7 +121,7 @@ def run_update(paths: WikiPaths, since: str | None, as_json: bool, dirty: bool =
             f"state/catalog.json 损坏（{e}）：可手工修复该文件，或 `repowiki plan --replan` 重新规划"
         ) from e
     nodes = flatten(catalog, paths.locale)
-    inv = scan(paths.repo_root)
+    inv = scan(paths.repo_root, extra_ignore=paths.root_name)
     affected = map_affected(nodes, changed_set)
 
     store = TaskStore(paths)
