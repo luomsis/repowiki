@@ -2,6 +2,26 @@
 
 **中文** | [English](CHANGELOG.en.md)
 
+## 0.8.1 — 2026-09-21
+
+### 新增
+
+- **可配置输出目录**：所有仓库级子命令新增全局 `-o/--output DIR` 选项（亦可经
+  `REPOWIKI_OUTPUT` 环境变量设置），指定 wiki 的写入目录（相对仓库根，默认不变仍为
+  `.repowiki`）。整棵目录树——`state/`、`<locale>/content`、meta、`wiki.html`、
+  `llms.txt`——一起迁移；任务规格与 `state/catalog.json` 中内嵌的路径相对该根目录记录，
+  增量 `update`/`stale` 照常工作（如 `repowiki plan . -o docs`）。scanner 同时忽略所配
+  置的输出目录，wiki 不会把自己写进文档。
+
+### 文档
+
+- README（英文版）命令表补充全局 `-o/--output` 选项说明。
+
+### 测试
+
+- 新增 `tests/test_output_dir.py`：覆盖 plan/next/check/site 各命令的输出目录贯通与
+  scanner 自忽略。
+
 ## 0.8.0 — 2026-09-17
 
 ### 新增

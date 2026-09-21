@@ -2,11 +2,19 @@
 
 [中文](CHANGELOG.md) | **English**
 
-## Unreleased
+## 0.8.1 — 2026-09-21
 
 ### Added
 
 - **Configurable output directory**: new global `-o/--output DIR` option (and `REPOWIKI_OUTPUT` env var) on every repo-scoped command sets where the wiki is written, relative to the repo root (default unchanged: `.repowiki`). The entire tree — `state/`, `<locale>/content`, `meta`, `wiki.html`, `llms.txt` — moves together, and the paths embedded in task specs / `state/catalog.json` follow it, so incremental `update`/`stale` keep working against the chosen directory (e.g. `repowiki plan . -o docs`). The scanner also ignores the configured output dir so the wiki never documents itself.
+
+### Documentation
+
+- README (EN) command table now documents the global `-o/--output` option.
+
+### Tests
+
+- New `tests/test_output_dir.py`: output-dir plumbing across plan/next/check/site and scanner self-ignore.
 
 ## 0.8.0 — 2026-09-17
 
