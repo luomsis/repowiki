@@ -2,6 +2,15 @@
 
 **中文** | [English](CHANGELOG.en.md)
 
+## Unreleased
+
+### 文档
+
+- README.md 的跨文件相对链接改为绝对 GitHub URL：PyPI 项目页描述取自本文件，相对链接
+  在 pypi.org 上按项目页 URL 解析（如「English」落到
+  `pypi.org/project/repowiki-cli/README.en.md/` 而 404，截图相对路径裂图）；
+  绝对链接在 GitHub 与 PyPI 上行为一致。页内 `#锚点` 不变。
+
 ## 0.8.1 — 2026-09-21
 
 ### 新增

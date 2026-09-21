@@ -1,10 +1,10 @@
 # repowiki
 
-**中文** | [English](README.en.md)
+**中文** | [English](https://github.com/luomsis/repowiki/blob/main/README.en.md)
 
 [![CI](https://github.com/luomsis/repowiki/actions/workflows/ci.yml/badge.svg)](https://github.com/luomsis/repowiki/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/repowiki-cli)](https://pypi.org/project/repowiki-cli/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/luomsis/repowiki/blob/main/LICENSE)
 [![Python ≥ 3.10](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)](#可靠性设计)
 
@@ -15,9 +15,9 @@
 零 API Key、零网络调用、零 agent CLI 依赖——任何「能跑 shell + 读写文件」的执行者都能参与，包括并发。
 Wiki 产出语言自动跟随目标仓库（中文仓库 → `zh/`，英文仓库 → `en/`；`plan --locale` 可显式指定）。
 
-![repowiki 系统架构图](docs/assets/repowiki-architecture.png)
+![repowiki 系统架构图](https://raw.githubusercontent.com/luomsis/repowiki/main/docs/assets/repowiki-architecture.png)
 
-*交互版架构图：[docs/repowiki-architecture.html](docs/repowiki-architecture.html)（明暗主题 · 路径高亮 · 节点搜索，下载后在浏览器打开）*
+*交互版架构图：[docs/repowiki-architecture.html](https://github.com/luomsis/repowiki/blob/main/docs/repowiki-architecture.html)（明暗主题 · 路径高亮 · 节点搜索，下载后在浏览器打开）*
 
 **看效果**：repowiki 为自己生成的 wiki 已发布为在线样例 → **[直接打开](https://luomsis.github.io/repowiki/zh/wiki.html)**
 （每次 push main 自动重建）。
@@ -94,15 +94,15 @@ repowiki skill status                   # 查看已装版本、是否过期
 运行时依赖只有 `pyyaml`：在有网机器上下载 `PyYAML` wheel 与 Release 页附带的
 [`repowiki_cli-*.whl`](https://github.com/luomsis/repowiki/releases)，拷到目标机后
 `pip install --no-index` 两个 wheel 即可；skill 已随 whl 打包，装好后同样执行
-`repowiki skill install`（纯本地拷贝）。完整步骤见 [docs/zh/USAGE.md](docs/zh/USAGE.md)。
+`repowiki skill install`（纯本地拷贝）。完整步骤见 [docs/zh/USAGE.md](https://github.com/luomsis/repowiki/blob/main/docs/zh/USAGE.md)。
 
 ## 查看 Wiki（单文件离线站点）
 
 上方在线样例即由 `repowiki site` 生成、push main 后自动重建。
 
-![阅读视图：章节导航 + mermaid 渲染 + 源码引用](docs/assets/site-preview-reading.png)
+![阅读视图：章节导航 + mermaid 渲染 + 源码引用](https://raw.githubusercontent.com/luomsis/repowiki/main/docs/assets/site-preview-reading.png)
 
-![点击 file:// 源码引用，页内弹层查看带行号的源码片段](docs/assets/site-preview-snippet.png)
+![点击 file:// 源码引用，页内弹层查看带行号的源码片段](https://raw.githubusercontent.com/luomsis/repowiki/main/docs/assets/site-preview-snippet.png)
 
 `repowiki site <repo> [--open]` 把整个 wiki 打包成**一个自包含的 HTML 文件**
 （`<repo>/.repowiki/<locale>/wiki.html`，约 5 MB）：
@@ -119,7 +119,7 @@ repowiki skill status                   # 查看已装版本、是否过期
 event 事件型** 六种原型撰写，规划时按页面主题选择（无法确认时回退 module），模板与文风规范由
 校验器按语言强制；每节末尾「Section sources/章节来源」、每图后「Diagram sources/图表来源」，
 引用格式 `[path:Lx-Ly](file://path#Lx-Ly)`，页间零链接（正因如此所有页面任务可完全并行）。
-完整小节结构见 [docs/zh/USAGE.md](docs/zh/USAGE.md)。
+完整小节结构见 [docs/zh/USAGE.md](https://github.com/luomsis/repowiki/blob/main/docs/zh/USAGE.md)。
 
 ## 命令一览
 
@@ -134,7 +134,7 @@ event 事件型** 六种原型撰写，规划时按页面主题选择（无法�
 | `skill install` / `status` | 安装 / 检查 agent skill |
 | `status` / `clean` | 进度统计 / 清空任务状态 |
 
-完整 15 条命令与全部参数：`repowiki <命令> --help` 或 [docs/zh/USAGE.md](docs/zh/USAGE.md)。
+完整 15 条命令与全部参数：`repowiki <命令> --help` 或 [docs/zh/USAGE.md](https://github.com/luomsis/repowiki/blob/main/docs/zh/USAGE.md)。
 退出码：`0` 成功，`1` 校验失败或用法错误，`2` 状态冲突（任务被他人认领），`3` 进展性等待
 （finalize 已创建 overview 任务，完成后再次运行即可）。
 
@@ -145,7 +145,7 @@ event 事件型** 六种原型撰写，规划时按页面主题选择（无法�
 - `watch` 不假活：过期认领不计入「执行中」，真停滞及时报告而非干等超时；
 - finalize 后自动瘦身运行时产物，保留增量更新所需状态。
 
-机制细节（过期窗口调参、`.stale-*` 留痕、心跳语义、瘦身清单）见 [docs/zh/USAGE.md](docs/zh/USAGE.md)。
+机制细节（过期窗口调参、`.stale-*` 留痕、心跳语义、瘦身清单）见 [docs/zh/USAGE.md](https://github.com/luomsis/repowiki/blob/main/docs/zh/USAGE.md)。
 
 ## 设计边界
 
@@ -174,14 +174,14 @@ pytest
 
 全部文档集中于 `docs/`（`zh/` 与 `en/` 镜像目录，同名文件一一对应）：
 
-- [使用详解](docs/zh/USAGE.md)（[English](docs/en/USAGE.md)）——完整命令参考、Worker 循环契约、并发配方、可靠性机制细节
-- [版本日志](CHANGELOG.md)（[English](CHANGELOG.en.md)，位于仓库根部）
-- [领域词汇表](docs/zh/CONTEXT.md)（产出物 / 编排 / 执行三组术语与 Avoid 对照）
-- [决策记录](docs/zh/DECISIONS.md)（规格空白处的 15 条最小合理决策）
-- 架构决策记录（ADR）：[Windows 原生支持的双锁后端](docs/zh/adr/0001-windows-native-support.md) ·
-  [单文件离线站点](docs/zh/adr/0002-single-file-offline-site.md)
-- Agent Skill 指引：[中文](src/repowiki/skills/repowiki/SKILL.md) · [English](src/repowiki/skills/repowiki/SKILL.en.md)
+- [使用详解](https://github.com/luomsis/repowiki/blob/main/docs/zh/USAGE.md)（[English](https://github.com/luomsis/repowiki/blob/main/docs/en/USAGE.md)）——完整命令参考、Worker 循环契约、并发配方、可靠性机制细节
+- [版本日志](https://github.com/luomsis/repowiki/blob/main/CHANGELOG.md)（[English](https://github.com/luomsis/repowiki/blob/main/CHANGELOG.en.md)，位于仓库根部）
+- [领域词汇表](https://github.com/luomsis/repowiki/blob/main/docs/zh/CONTEXT.md)（产出物 / 编排 / 执行三组术语与 Avoid 对照）
+- [决策记录](https://github.com/luomsis/repowiki/blob/main/docs/zh/DECISIONS.md)（规格空白处的 15 条最小合理决策）
+- 架构决策记录（ADR）：[Windows 原生支持的双锁后端](https://github.com/luomsis/repowiki/blob/main/docs/zh/adr/0001-windows-native-support.md) ·
+  [单文件离线站点](https://github.com/luomsis/repowiki/blob/main/docs/zh/adr/0002-single-file-offline-site.md)
+- Agent Skill 指引：[中文](https://github.com/luomsis/repowiki/blob/main/src/repowiki/skills/repowiki/SKILL.md) · [English](https://github.com/luomsis/repowiki/blob/main/src/repowiki/skills/repowiki/SKILL.en.md)
 
 ## License
 
-[MIT](LICENSE) © luomsis
+[MIT](https://github.com/luomsis/repowiki/blob/main/LICENSE) © luomsis

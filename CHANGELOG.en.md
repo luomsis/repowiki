@@ -2,6 +2,16 @@
 
 [中文](CHANGELOG.md) | **English**
 
+## Unreleased
+
+### Documentation
+
+- README.md: cross-file relative links converted to absolute GitHub URLs. The PyPI
+  project-page description comes from this file, where relative links resolve against
+  pypi.org (the "English" switcher landed on `pypi.org/project/repowiki-cli/README.en.md/`
+  — a 404; relative screenshot paths rendered as broken images). Absolute links behave
+  identically on GitHub and PyPI. In-page `#anchors` unchanged.
+
 ## 0.8.1 — 2026-09-21
 
 ### Added
