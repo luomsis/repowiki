@@ -27,7 +27,7 @@
       "type": "backend",
       "label": "repowiki CLI",
       "sublabel": "deterministic task orchestration",
-      "tag": "plan · next · check",
+      "tag": "15 subcommands · -o/--output",
       "pos": [
         350,
         276
@@ -166,7 +166,8 @@
       "title": "Outputs",
       "items": [
         "zh/content/**.md per-page wiki + knowledge cards",
-        "finalize assembles metadata; site builds the single-file site"
+        "pages follow six archetypes: module / flow / layer / data / api / event",
+        "finalize assembles metadata; site builds the single-file site with syntax-highlighted source popups"
       ]
     },
     {
