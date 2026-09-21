@@ -67,6 +67,7 @@ def build_catalog_task(paths: WikiPaths, inv: Inventory) -> dict:
     spec = templates.render_file(
         "catalog_task.md",
         locale=paths.locale,
+        ROOT=paths.root_name,
         REPO_NAME=Path(inv.repo_root).name,
         CODE_FILE_COUNT=inv.code_file_count,
         KEY_FILES=", ".join(inv.key_files) or "<未发现>",
@@ -103,10 +104,11 @@ def build_page_tasks(paths: WikiPaths, nodes: list[FlatNode], inv: Inventory, ma
             n.title for n in nodes
             if n.parent_id == node.parent_id and n.id != node.id
         ]
-        output_abs = str(Path(".repowiki") / node.output)
+        output_abs = str(Path(paths.root_name) / node.output)
         spec = templates.render_file(
             "page_task.md",
             locale=paths.locale,
+            ROOT=paths.root_name,
             TASK_ID=node.id,
             TITLE=node.title,
             OUTPUT=node.output,
@@ -132,8 +134,9 @@ def build_overview_task(paths: WikiPaths, repo_name: str, nodes: list[FlatNode])
     spec = templates.render_file(
         "overview_task.md",
         locale=paths.locale,
+        ROOT=paths.root_name,
         OUTPUT=overview_rel,
-        OUTPUT_ABS=f".repowiki/{overview_rel}",
+        OUTPUT_ABS=f"{paths.root_name}/{overview_rel}",
         LOCALE=paths.locale,
         REPO_NAME=repo_name,
         CATALOG_TREE=catalog_tree_text(nodes),
@@ -157,9 +160,10 @@ def build_overview_update_task(paths: WikiPaths, repo_name: str, nodes: list[Fla
     spec = templates.render_file(
         "overview_update_task.md",
         locale=paths.locale,
+        ROOT=paths.root_name,
         TASK_ID=task_id,
         OUTPUT=overview_rel,
-        OUTPUT_ABS=f".repowiki/{overview_rel}",
+        OUTPUT_ABS=f"{paths.root_name}/{overview_rel}",
         REPO_NAME=repo_name,
         CHANGED_FILES=_hint_list(changed_files, inv),
         CATALOG_TREE=catalog_tree_text(nodes),
@@ -174,7 +178,7 @@ def build_overview_update_task(paths: WikiPaths, repo_name: str, nodes: list[Fla
 
 def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str], inv: Inventory) -> dict:
     task_id = f"{node.id}-update"
-    output_abs = str(Path(".repowiki") / node.output)
+    output_abs = str(Path(paths.root_name) / node.output)
     old = paths.root / node.output
     if not old.exists():
         # nothing to update against — treat as a fresh page task (a brand-new
@@ -182,6 +186,7 @@ def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str]
         spec = templates.render_file(
             "page_task.md",
             locale=paths.locale,
+            ROOT=paths.root_name,
             TASK_ID=task_id,
             TITLE=node.title,
             OUTPUT=node.output,
@@ -200,6 +205,7 @@ def build_update_task(paths: WikiPaths, node: FlatNode, changed_files: list[str]
     spec = templates.render_file(
         "update_task.md",
         locale=paths.locale,
+        ROOT=paths.root_name,
         TASK_ID=task_id,
         TITLE=node.title,
         OUTPUT=node.output,
@@ -246,6 +252,7 @@ def build_knowledge_plan_task(paths: WikiPaths, inv: Inventory,
     spec = templates.render_file(
         "knowledge_task.md",
         locale=paths.locale,
+        ROOT=paths.root_name,
         REPO_NAME=Path(inv.repo_root).name,
         KEY_FILES=", ".join(inv.key_files) or "<未发现>",
         TREE_SUMMARY=inv.tree_summary or "<空仓库>",
@@ -268,10 +275,11 @@ def build_knowledge_tasks(paths: WikiPaths, plan: dict) -> list[dict]:
         spec = templates.render_file(
             "knowledge_module_task.md",
             locale=paths.locale,
+            ROOT=paths.root_name,
             TASK_ID=task_id,
             TITLE=mod["title"],
             OUTPUT_DIR=out_dir,
-            OUTPUT_DIR_ABS=f".repowiki/{out_dir}",
+            OUTPUT_DIR_ABS=f"{paths.root_name}/{out_dir}",
             SCOPE=", ".join(mod.get("scope") or []) or "<整个仓库>",
             CHILDREN=", ".join(
                 m["title"] for m in plan.get("modules", []) if m["id"] in (mod.get("children") or [])
@@ -287,11 +295,12 @@ def build_knowledge_tasks(paths: WikiPaths, plan: dict) -> list[dict]:
         spec = templates.render_file(
             "knowledge_card_task.md",
             locale=paths.locale,
+            ROOT=paths.root_name,
             TASK_ID=task_id,
             TITLE=card["title"],
             CATEGORY=card.get("category", ""),
             OUTPUT=out,
-            OUTPUT_ABS=f".repowiki/{out}",
+            OUTPUT_ABS=f"{paths.root_name}/{out}",
             SCOPE_YAML=_yaml_list(card.get("scope") or ["**"]),
             SOURCE_FILES_YAML=_yaml_list(card.get("source_files") or []),
             SOURCE_FILES=_hint_list(card.get("source_files") or [], Inventory(repo_root="")),
@@ -313,12 +322,13 @@ def build_knowledge_card_update_task(paths, card_task: dict, card: dict,
     """
     task_id = f"{card_task['id']}-update"
     out = card_task["output"]
-    output_abs = str(Path(".repowiki") / out)
+    output_abs = str(Path(paths.root_name) / out)
     old = paths.root / out
     if old.exists():
         spec = templates.render_file(
             "knowledge_card_update_task.md",
             locale=paths.locale,
+            ROOT=paths.root_name,
             TASK_ID=task_id,
             TITLE=card.get("title", card_task["title"]),
             OUTPUT=out,
@@ -332,6 +342,7 @@ def build_knowledge_card_update_task(paths, card_task: dict, card: dict,
         spec = templates.render_file(
             "knowledge_card_task.md",
             locale=paths.locale,
+            ROOT=paths.root_name,
             TASK_ID=task_id,
             TITLE=card.get("title", card_task["title"]),
             CATEGORY=card.get("category", ""),
@@ -353,10 +364,11 @@ def build_knowledge_module_update_task(paths, module_task: dict, mod: dict,
     spec = templates.render_file(
         "knowledge_module_update_task.md",
         locale=paths.locale,
+        ROOT=paths.root_name,
         TASK_ID=task_id,
         TITLE=mod.get("title", ""),
         OUTPUT_DIR=out_dir,
-        OUTPUT_DIR_ABS=f".repowiki/{out_dir}",
+        OUTPUT_DIR_ABS=f"{paths.root_name}/{out_dir}",
         SCOPE=", ".join(mod.get("scope") or []) or "<整个仓库>",
         CHANGED_FILES="\n".join(f"- {p}" for p in changed_files) or "- <无>",
     )

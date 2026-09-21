@@ -39,7 +39,7 @@ def run_knowledge(paths: WikiPaths, as_json: bool, categories: str | None = None
         raise UsageError("请先运行 `repowiki plan <repo>`")
     effective = effective_categories(paths)
     added = store.add_tasks([
-        task_builders.build_knowledge_plan_task(paths, scan(paths.repo_root), effective)
+        task_builders.build_knowledge_plan_task(paths, scan(paths.repo_root, extra_ignore=paths.root_name), effective)
     ])
     result = {
         "ok": True,

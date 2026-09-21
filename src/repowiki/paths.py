@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import unicodedata
 from pathlib import Path
@@ -81,9 +82,17 @@ class WikiPaths:
     else the persisted ``state/locale`` file, else the default (zh).
     """
 
-    def __init__(self, repo_root: str | Path, locale: str | None = None):
+    def __init__(
+        self,
+        repo_root: str | Path,
+        locale: str | None = None,
+        output_dir: str | None = None,
+    ):
         self.repo_root = Path(repo_root).resolve()
         self._locale = locale
+        # Output directory name (relative to the repo root). Explicit arg wins,
+        # else the REPOWIKI_OUTPUT env var, else the default ``.repowiki``.
+        self.root_name = output_dir or os.environ.get("REPOWIKI_OUTPUT") or ".repowiki"
 
     @property
     def locale(self) -> str:
@@ -106,7 +115,7 @@ class WikiPaths:
 
     @property
     def root(self) -> Path:
-        return self.repo_root / ".repowiki"
+        return self.repo_root / self.root_name
 
     @property
     def state_dir(self) -> Path:

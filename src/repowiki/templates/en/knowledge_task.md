@@ -8,7 +8,7 @@ output: state/knowledge.json
 
 # Task: plan the repository knowledge base (module tree + mechanism card list)
 
-Your only output is one JSON file: `.repowiki/state/knowledge.json`.
+Your only output is one JSON file: `{{ROOT}}/state/knowledge.json`.
 **Do not write any cards or module docs; do not modify any other repository files.**
 
 ## Repository info

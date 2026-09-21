@@ -8,7 +8,7 @@ output: state/catalog.json
 
 # Task: plan the wiki chapter tree for this repository
 
-Your only output is one JSON file: `.repowiki/state/catalog.json` (relative to the repo root).
+Your only output is one JSON file: `{{ROOT}}/state/catalog.json` (relative to the repo root).
 **Do not write any wiki pages; do not modify any other repository files.**
 
 ## Repository info

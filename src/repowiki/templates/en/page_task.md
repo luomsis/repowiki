@@ -38,7 +38,7 @@ Write the finished page to: <b>{{OUTPUT_ABS}}</b> (repo-relative: {{OUTPUT}}).
 4. After the Introduction, every section ends with "Section sources"; every mermaid diagram is followed by "Diagram sources"; link format `[path:Lx-Ly](file://path#Lx-Ly)` with line numbers within the file's real length (a start past EOF or an inverted range is rejected; only an overhanging end is auto-clamped).
 5. At least 2 mermaid diagrams (a structure diagram + a sequence/dependency diagram).
 6. Beyond the required sections above you may add "Appendix: <topic>" sections as needed.
-7. Never link any other page under `.repowiki/`.
+7. Never link any other page under `{{ROOT}}/`.
 
 While writing, run `repowiki touch <repo path> --task {{TASK_ID}}` every few minutes to renew your claim (long tasks are otherwise reclaimed).
 

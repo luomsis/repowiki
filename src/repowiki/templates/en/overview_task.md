@@ -19,7 +19,7 @@ Write the overview to: <b>{{OUTPUT_ABS}}</b> (repo-relative: {{OUTPUT}}).
 {{CATALOG_TREE}}
 ```
 
-- Skim a few representative pages (under `.repowiki/{{LOCALE}}/content/`) before writing.
+- Skim a few representative pages (under `{{ROOT}}/{{LOCALE}}/content/`) before writing.
 
 ## Content requirements (plain markdown, no YAML front matter)
 1. The H1 is "{{REPO_NAME}} Wiki Overview".
